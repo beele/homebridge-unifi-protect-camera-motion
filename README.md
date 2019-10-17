@@ -10,6 +10,7 @@ The Tensorflow logic/model runs on your device and no data is ever sent to any o
 - Checkout the git repo
 - Install Homebridge (you can use `npm run install-homebridge`)
 - Adjust the dummy config under `resources/test-config/config.json`
+- Swap the commented line in the `setMotionCheckInterval` function to allow for local development & testing
 - use `npm run homebridge` to start a homebridge instance that points to the local config
 
 ## Installation:
