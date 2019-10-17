@@ -45,7 +45,4 @@ src/utils/*.js
 src/utils/*.js.map
 
 resources/test-config/accessories/
-
 resources/test-config/persist/
-
-homebridge-unifi-protect-camera-motion/

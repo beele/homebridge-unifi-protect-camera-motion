@@ -39,8 +39,6 @@ UnifiProtectCameraMotion.prototype.didFinishLaunching = function () {
     const videoProcessor = self.config.videoProcessor || 'ffmpeg';
     const interfaceName = self.config.interfaceName || '';
 
-    //TODO: Enumerate cameras from unifi, not from config!
-    // Do not provide a cameras config object but only a single videoConfig object on the root level, other camera info will be retrieved from unifi!
     if (self.config.videoConfig) {
         const configuredAccessories = [];
 
