@@ -1,4 +1,4 @@
-#Unifi-Protect-Camera-Motion
+# Unifi-Protect-Camera-Motion
 
 This Homebridge plugin extends the standard FFMPEG Homebridge plugin and provides your cameras and motion sensors for use in Homekit.
 
@@ -6,12 +6,13 @@ This plugin will enumerate all the cameras in your protect account and provide b
 Motion events will be triggered either by the motion events from protect itself (when the score is sufficient) or will be processed with Tensorflow for smarter analysis.
 The Tensorflow logic/model runs on your device and no data is ever sent to any online source.
 
-To experiment with this plugin:
+## To experiment with this plugin:
 - Checkout the git repo
 - Install Homebridge (you can use `npm run install-homebridge`)
 - Adjust the dummy config under `resources/test-config/config.json`
 - use `npm run homebridge` to start a homebridge instance that points to the local config
 
+## Installation:
 To install this plugin simple type `sudo npm install homebridge-unifi-protect-camera-motion -g --unsafe-perm=true`.
 Next open the config.json that contains your Homebridge configuration and add a block like the following one to the platforms array:
 
@@ -32,7 +33,7 @@ Next open the config.json that contains your Homebridge configuration and add a 
         ]
     },
     "videoConfig": {
-        "vcodec": "h264 - or h264_omx",
+        "vcodec": "h264 or h264_omx",
         "audio": false,
         "maxStreams": 2,
         "maxWidth": 1024,
@@ -65,7 +66,7 @@ Config fields:
         - To enable an RTSP stream: <br/> 
           ![Enable RTSP stream](resources/images/enable_rtsp.jpg?raw=true "CloudKey Gen2 Plus")
 
-How to add the cameras to your Homekit setup:
+### How to add the cameras to your Homekit setup:
 
 - Click the (+) icon on the top
 - Select 'Add Accessory'
@@ -74,14 +75,19 @@ How to add the cameras to your Homekit setup:
 - Enter the code for your Homebridge in the prompt, the camera will be added
 - Repeat for all the cameras you want to add
 
-How to enable rich notifications (with image preview):
+### How to enable rich notifications (with image preview):
 
 - Go to the settings of the camera in the Home app
 - Each camera has an accompanying motion sensor 
 - Enable notifications for the camera
 - whenever motion is detected you will get a notification from the home app with a snapshot from the camera
 
-Tested with:
+
+### For installation on the Raspberry Pi:
+
+- TODO
+
+### Tested with:
 
 - Ubiquiti UniFi CloudKey Gen2 Plus - Cloud key with unifi protect functionality
   <br/>![CloudKey Gen2 Plus](resources/images/cloudkey-gen2plus.jpg?raw=true "CloudKey Gen2 Plus")
