@@ -12,7 +12,7 @@ To experiment with this plugin:
 - Adjust the dummy config under `resources/test-config/config.json`
 - use `npm run homebridge` to start a homebridge instance that points to the local config
 
-To install this plugin simple type `sudo npm install TODO -g --unsafe-perm=true`.
+To install this plugin simple type `sudo npm install homebridge-unifi-protect-camera-motion -g --unsafe-perm=true`.
 Next open the config.json that contains your Homebridge configuration and add a block like the following one to the platforms array:
 
 ```javascript
