@@ -1,0 +1,5 @@
+src/experimental
+.idea
+.travis.yml
+*.iml
+resources/test-config
