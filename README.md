@@ -33,7 +33,7 @@ Next open the config.json that contains your Homebridge configuration and add a 
         ]
     },
     "videoConfig": {
-        "vcodec": "h264 or h264_omx",
+        "vcodec": "h264 - or h264_omx",
         "audio": false,
         "maxStreams": 2,
         "maxWidth": 1024,
@@ -99,3 +99,8 @@ Config fields:
   <br/><br/>![CloudKey Gen2 Plus](resources/images/cloudkey-gen2plus.jpg?raw=true "CloudKey Gen2 Plus")
 - 2x Ubiquiti UniFi Video UVC-G3-AF - PoE Camera
   <br/><br/>![Camera UVC-G3-AF](resources/images/camera.jpeg?raw=true "Camera UVC-G3-AF")
+
+### TODO:
+
+- Get sound working in the livestreams
+- Get the livestreams to use a higher quality
