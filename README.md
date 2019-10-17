@@ -68,6 +68,7 @@ Config fields:
 
 ### How to add the cameras to your Homekit setup:
 
+- Open the Home app
 - Click the (+) icon on the top
 - Select 'Add Accessory'
 - In the next screen select 'I Don't Have a Code or Cannot Scan'
@@ -77,10 +78,10 @@ Config fields:
 
 ### How to enable rich notifications (with image preview):
 
-- Go to the settings of the camera in the Home app
+- Go to the settings of the camera view in the Home app
 - Each camera has an accompanying motion sensor 
 - Enable notifications for the camera
-- whenever motion is detected you will get a notification from the home app with a snapshot from the camera
+- Whenever motion is detected you will get a notification from the home app with a snapshot from the camera
 
 
 ### For installation on the Raspberry Pi:
