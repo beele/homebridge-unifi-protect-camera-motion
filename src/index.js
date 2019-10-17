@@ -1,3 +1,5 @@
+const path = require("path");
+
 const FFMPEG = require('./ffmpeg/ffmpeg').FFMPEG;
 
 const Unifi = require("./unifi/unifi").Unifi;
@@ -95,7 +97,7 @@ UnifiProtectCameraMotion.prototype.didFinishLaunching = function () {
 function setMotionCheckInterval(unifiConfig, unifiFlows, cameras, configuredAccessories) {
     if (unifiConfig.enhanced_motion) {
         Loader
-            .loadCoco(false, '../')
+            .loadCoco(false, path.dirname(require.resolve('homebridge-unifi-protect-camera-motion/package.json'))
             .then((detector) => {
                 setInterval(checkMotionEnhanced.bind(this,unifiConfig.enhanced_classes, unifiFlows, cameras, configuredAccessories, detector), unifiConfig.motion_interval);
             });
