@@ -1,0 +1,39 @@
+{
+  "name": "homebridge-unifi-protect-camera-motion",
+  "version": "0.0.1",
+  "description": "Unifi Protect cameras & motion sensors for Homekit with Homebridge",
+  "main": "src/index.js",
+  "scripts": {
+    "postinstall": "tsc",
+    "install-debs-raspberry": "sudo apt-get update && sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev",
+    "homebridge": "homebridge -P . -U ./resources/test-config/"
+  },
+  "license": "ISC",
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/beele/homebridge-unifi-protect-camera-motion.git"
+  },
+  "bugs": {
+    "url": "http://github.com/beele/homebridge-unifi-protect-camera-motion/issues"
+  },
+  "engines": {
+    "node": ">=10.0.0",
+    "homebridge": ">=0.4.5"
+  },
+  "dependencies": {
+    "googleapis": ">=39.1.0",
+    "ip": "^1.1.5",
+    "debug": "^2.6.9",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7",
+    "@tensorflow/tfjs-node": "^1.2.11",
+    "canvas": "^2.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^3.6.4",
+    "jest": "^24.9.0"
+  }
+}

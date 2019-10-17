@@ -1,0 +1,39 @@
+{
+    "bridge": {
+        "name": "test-bridge",
+        "username": "11:11:22:33:44:55",
+        "port": 51828,
+        "pin": "123-45-678"
+    },
+    "description": "Test configuration for local homebridge, test purposes only!",
+    "accessories": [
+    ],
+    "platforms": [
+        {
+            "platform": "Unifi-Protect-Camera-Motion",
+            "name": "Unifi protect cameras & motion sensors",
+            "unifi": {
+                "controller": "https://controller-ip:web-ui-port",
+                "controller_rtsp": "rtsp://controller-ip:rtsp-port",
+                "username": "username",
+                "password": "password",
+                "motion_interval": 5000,
+                "motion_score": 50,
+                "enhanced_motion": true,
+                "enhanced_classes": [
+                    "Person"
+                ]
+            },
+            "videoConfig": {
+                "vcodec": "h264",
+                "audio": false,
+                "maxStreams": 2,
+                "maxWidth": 1024,
+                "maxHeight": 576,
+                "maxFPS": 15,
+                "mapvideo": "0:1",
+                "mapaudio": "0:0"
+            }
+        }
+    ]
+}
