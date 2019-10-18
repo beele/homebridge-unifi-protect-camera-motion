@@ -20,9 +20,11 @@
                 "motion_interval": 5000,
                 "motion_score": 50,
                 "enhanced_motion": true,
+                "enhanced_motion_score": 50,
                 "enhanced_classes": [
                     "Person"
-                ]
+                ],
+                "debug": true
             },
             "videoConfig": {
                 "vcodec": "h264",

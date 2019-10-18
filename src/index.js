@@ -97,10 +97,14 @@ UnifiProtectCameraMotion.prototype.didFinishLaunching = function () {
 function setMotionCheckInterval(unifiConfig, unifiFlows, cameras, configuredAccessories) {
     if (unifiConfig.enhanced_motion) {
         Loader
-            //.loadCoco(false, '../') //Uncomment this line and comment the line belows for local development & testing
-            .loadCoco(false, path.dirname(require.resolve('homebridge-unifi-protect-camera-motion/package.json')))
+            .loadCoco(false, '../') //Uncomment this line and comment the line belows for local development & testing
+            //.loadCoco(false, path.dirname(require.resolve('homebridge-unifi-protect-camera-motion/package.json')))
             .then((detector) => {
-                setInterval(checkMotionEnhanced.bind(this,unifiConfig.enhanced_classes, unifiFlows, cameras, configuredAccessories, detector), unifiConfig.motion_interval);
+                setInterval(
+                    checkMotionEnhanced.bind(
+                        this, unifiConfig.enhanced_classes, unifiFlows, cameras, configuredAccessories, detector, unifiConfig.debug ? unifiConfig.debug : false
+                    ), unifiConfig.motion_interval
+                );
             });
     } else {
         setInterval(checkMotion.bind(this, unifiFlows, cameras, configuredAccessories), unifiConfig.motion_interval);
@@ -126,7 +130,7 @@ function checkMotion(unifiFlows, cameras, configuredAccessories) {
         });
 }
 
-function checkMotionEnhanced(classesToDetect, unifiFlows, cameras, configuredAccessories, detector) {
+function checkMotionEnhanced(classesToDetect, unifiFlows, cameras, configuredAccessories, detector, debugEnabled) {
     unifiFlows
         .detectMotion(cameras)
         .then((motionEvents) => {
@@ -135,11 +139,18 @@ function checkMotionEnhanced(classesToDetect, unifiFlows, cameras, configuredAcc
                 configuredAccessory.getService(Service.MotionSensor).setCharacteristic(Characteristic.MotionDetected, 0);
 
                 for (const motionEvent of motionEvents) {
+                    let image;
+
                     if (motionEvent.camera.id === configuredAccessory.context.id) {
+                        if (debugEnabled) {
+                            console.log('Motion detected, running CoCo detection...');
+                        }
+
                         Loader
                             .createImage('http://' + motionEvent.camera.ip + '/snap.jpeg')
                             .then((snapshot) => {
-                                return detector.detect(snapshot);
+                                image = snapshot;
+                                return detector.detect(snapshot, debugEnabled);
                             })
                             .then((detectedClasses) => {
                                 for (const classToDetect of classesToDetect) {
@@ -147,6 +158,7 @@ function checkMotionEnhanced(classesToDetect, unifiFlows, cameras, configuredAcc
                                     if (cls) {
                                         console.log('!!!! ' + classToDetect +' detected (' + Math.round(cls.score * 100) + '%) by camera ' + motionEvent.camera.name + ' !!!!');
                                         configuredAccessory.getService(Service.MotionSensor).setCharacteristic(Characteristic.MotionDetected, 1);
+                                        Loader.saveAnnotatedImage(image, [cls]);
                                     }
                                 }
                             })
