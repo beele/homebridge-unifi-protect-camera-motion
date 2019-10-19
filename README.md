@@ -34,7 +34,7 @@ Next open the config.json that contains your Homebridge configuration and add a 
         "enhanced_classes": [
             "Person - or any other COCO classes, look in src/coco/classes.ts"
         ],
-        "false"
+        "debug": false
     },
     "videoConfig": {
         "vcodec": "h264 - or h264_omx",
