@@ -127,5 +127,5 @@ TODOs:
 
 ## Disclaimer
 
-This plugin is provided free of charge and without any warranty of it functionality.
+This plugin is provided free of charge and without any warranty of its functionality.
 The creator cannot be held responsible for any damages, missed motion notifications that cause damage or harm.
