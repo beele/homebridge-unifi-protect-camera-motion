@@ -5,16 +5,16 @@ import {Image} from "canvas";
 
 export class MotionDetector {
 
-    private homebridge: any;
-    private Service: any;
-    private Characteristic: any;
+    private readonly homebridge: any;
+    private readonly Service: any;
+    private readonly Characteristic: any;
 
-    private config: UnifiConfig;
-    private flows: UnifiFlows;
-    private cameras: UnifiCamera[];
+    private readonly config: UnifiConfig;
+    private readonly flows: UnifiFlows;
+    private readonly cameras: UnifiCamera[];
+    private readonly log: Function;
+
     private detector: Detector;
-    private log: Function;
-
     private configuredAccessories: any[];
 
     constructor(homebridge: any, unifiConfig: UnifiConfig, unifiFlows: UnifiFlows, cameras: UnifiCamera[], logger: Function) {
@@ -42,19 +42,25 @@ export class MotionDetector {
         } else {
             intervalFunction = this.checkMotion.bind(this);
         }
-        setInterval(intervalFunction, this.config.motion_interval);
+        setInterval(() => {
+            try {
+                intervalFunction();
+            } catch (error) {
+                this.log('Error during motion interval loop: ' + error);
+            }
+        }, this.config.motion_interval);
         return;
     }
 
     private async checkMotion(): Promise<any> {
-        const motionEvents: UnifiMotionEvent[] = await this.flows.detectMotion(this.cameras);
+        const motionEvents: UnifiMotionEvent[] = await this.flows.getMotionEvents(this.cameras);
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
             configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 0);
 
             for (const motionEvent of motionEvents) {
                 if (motionEvent.camera.id === configuredAccessory.context.id) {
-                    console.log('!!!! Motion detected (' + motionEvent.score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
+                    this.log('!!!! Motion detected (' + motionEvent.score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
                     configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 1);
 
                     continue outer;
@@ -64,7 +70,7 @@ export class MotionDetector {
     }
 
     private async checkMotionEnhanced(): Promise<any> {
-        const motionEvents: UnifiMotionEvent[] = await this.flows.detectMotion(this.cameras);
+        const motionEvents: UnifiMotionEvent[] = await this.flows.getMotionEvents(this.cameras);
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
             configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 0);
@@ -72,7 +78,7 @@ export class MotionDetector {
             for (const motionEvent of motionEvents) {
                 if (motionEvent.camera.id === configuredAccessory.context.id) {
                     if (this.config.debug) {
-                        console.log('Motion detected, running CoCo object detection...');
+                        this.log('Motion detected, running CoCo object detection...');
                     }
 
                     const snapshot: Image = await Loader.createImage('http://' + motionEvent.camera.ip + '/snap.jpeg');
@@ -82,7 +88,7 @@ export class MotionDetector {
                         const detection: Detection = this.getDetectionForClassName(classToDetect, detections);
 
                         if (detection) {
-                            console.log('!!!! ' + classToDetect +' detected (' + Math.round(detection.score * 100) + '%) by camera ' + motionEvent.camera.name + ' !!!!');
+                            this.log('!!!! ' + classToDetect +' detected (' + Math.round(detection.score * 100) + '%) by camera ' + motionEvent.camera.name + ' !!!!');
                             configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 1);
                             Loader.saveAnnotatedImage(snapshot, [detection]);
 
@@ -96,7 +102,7 @@ export class MotionDetector {
         }
 
         //TODO: Error handling!
-        // console.log('Error with enhanced detection: ' + error);
+        // this.log('Error with enhanced detection: ' + error);
     }
 
     private getDetectionForClassName(className: string, detections: Detection[]) {
