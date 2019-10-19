@@ -3,6 +3,8 @@ import {Detection, Detector, Loader} from "../coco/loader";
 import {UnifiFlows} from "../unifi/unifi-flows";
 import {Image} from "canvas";
 
+const path = require('path');
+
 export class MotionDetector {
 
     private readonly homebridge: any;
@@ -36,8 +38,8 @@ export class MotionDetector {
 
         let intervalFunction: Function;
         if (this.config.enhanced_motion) {
-            //this.detector = await Loader.loadCoco(false, path.dirname(require.resolve('homebridge-unifi-protect-camera-motion/package.json')));
-            this.detector = await Loader.loadCoco(false, '../');
+            this.detector = await Loader.loadCoco(false, path.dirname(require.resolve('homebridge-unifi-protect-camera-motion/package.json')));
+            //this.detector = await Loader.loadCoco(false, '../');
             intervalFunction = this.checkMotionEnhanced.bind(this);
         } else {
             intervalFunction = this.checkMotion.bind(this);
