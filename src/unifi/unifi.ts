@@ -4,9 +4,7 @@ const request = require('request-promise-native');
 
 export class Unifi {
 
-    private readonly controller: string;
-    private readonly motionScore: number;
-    private readonly motionIntervaldelay: number;
+    private readonly config: UnifiConfig;
 
     private readonly initialBackoffDelay: number;
     private readonly maxRetries: number;
@@ -14,10 +12,7 @@ export class Unifi {
     private readonly log: any;
 
     constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, logger: Function) {
-        this.controller = config.controller;
-        this.motionScore = config.motion_score;
-        this.motionIntervaldelay = config.motion_interval;
-
+        this.config = config;
         this.initialBackoffDelay = initialBackoffDelay;
         this.maxRetries = maxRetries;
 
@@ -30,7 +25,7 @@ export class Unifi {
         }
 
         const opts = {
-            uri: this.controller + '/api/auth',
+            uri: this.config.controller + '/api/auth',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -71,7 +66,7 @@ export class Unifi {
 
     public async enumerateMotionCameras(session: UnifiSession): Promise<UnifiCamera[]> {
         const opts = {
-            uri: this.controller + '/api/bootstrap',
+            uri: this.config.controller + '/api/bootstrap',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + session.authorization
@@ -83,13 +78,16 @@ export class Unifi {
         };
 
         const response: any = await Utils.backoff(this.maxRetries, request.get(opts), this.initialBackoffDelay);
-        Utils.checkResponseForErrors(response, 'body',['cameras']);
+        Utils.checkResponseForErrors(response, 'body', ['cameras']);
 
         this.log('Cameras retrieved, enumerating motion sensors');
         const cams = response.body.cameras;
 
-        const sensors: UnifiCamera[] = [];
-        for (const cam of cams) {
+        return cams.map((cam: any) => {
+            if (this.config.debug) {
+                this.log(cam);
+            }
+
             const streams: UnifiCameraStream[] = [];
             for (const channel of cam.channels) {
                 if (channel.rtspAlias) {
@@ -103,7 +101,7 @@ export class Unifi {
                 }
             }
 
-            const sensor: UnifiCamera = {
+            return {
                 id: cam.id,
                 name: cam.name,
                 ip: cam.host,
@@ -111,18 +109,16 @@ export class Unifi {
                 type: cam.type,
                 firmware: cam.firmwareVersion,
                 streams: streams
-            };
-            sensors.push(sensor);
-        }
-        return sensors;
+            }
+        });
     }
 
-    public async detectMotion(cameras: UnifiCamera[], session: UnifiSession): Promise<UnifiMotionEvent[]> {
+    public async getMotionEvents(session: UnifiSession): Promise<UnifiMotionEvent[]> {
         const endEpoch = Date.now();
-        const startEpoch = endEpoch - (this.motionIntervaldelay * 2);
+        const startEpoch = endEpoch - (this.config.motion_interval * 2);
 
         const opts = {
-            uri: this.controller + '/api/events?end=' + endEpoch + '&start=' + startEpoch + '&type=motion',
+            uri: this.config.controller + '/api/events?end=' + endEpoch + '&start=' + startEpoch + '&type=motion',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + session.authorization
@@ -137,28 +133,19 @@ export class Unifi {
         Utils.checkResponseForErrors(response, 'body');
 
         const events: any[] = response.body;
-        const motionEvents: UnifiMotionEvent[] = [];
-
-        outer: for (const camera of cameras) {
-            for (const event of events) {
-
-                if (camera.id === event.camera) {
-                    if (event.score >= this.motionScore) {
-                        //this.log('Motion detected! for camera: ' + camera.name + ' - Score: ' + event.score);
-                        motionEvents.push({
-                            camera,
-                            score: event.score,
-                            timestamp: event.start //event.end is null when the motion is still ongoing!
-                        });
-                    } else {
-                        this.log('Motion rejected! for camera: ' + camera.name + ' - Score: ' + event.score);
-                    }
-                    continue outer;
-                }
+        return events.map((event: any) => {
+            if (this.config.debug) {
+                this.log(event);
             }
-        }
 
-        return motionEvents;
+            return {
+                id: event.id,
+                cameraId: event.camera,
+                camera: null,
+                score: event.score,
+                timestamp: event.start //event.end is null when the motion is still ongoing!
+            }
+        });
     }
 }
 
@@ -186,7 +173,9 @@ export interface UnifiCameraStream {
 }
 
 export interface UnifiMotionEvent {
-    camera: UnifiCamera;
+    id: string;
+    cameraId: string;
+    camera?: UnifiCamera;
     score: number;
     timestamp: number;
 }
