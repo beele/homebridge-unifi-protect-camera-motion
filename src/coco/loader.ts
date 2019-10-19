@@ -1,4 +1,5 @@
 const fs = require('fs');
+const homedir = require('os').homedir();
 
 import {Canvas, createCanvas, Image, loadImage} from "canvas";
 import {createCocoModel, ObjectDetection} from "./coco";
@@ -55,10 +56,11 @@ export class Loader {
     }
 
     private static  saveImage(canvas: Canvas) {
-        const out = fs.createWriteStream(__dirname + '/snapshot-' + new Date().toISOString() + '.jpg');
+        const snapshotName: string = 'snapshot-' + new Date().toISOString() + '.jpg';
+        const out = fs.createWriteStream(homedir + '/' + snapshotName);
         const stream = canvas.createJPEGStream();
         stream.pipe(out);
-        out.on('finish', () =>  console.log('The snapshot has been saved!'));
+        out.on('finish', () =>  console.log('The snapshot has been saved to: ' + homedir + '/' + snapshotName));
     }
 
     private static printProcessDuration(name: string, start: number): void {
@@ -69,7 +71,6 @@ export class Loader {
         for (const result of results) {
             console.log('==> Detected: ' + result.class + ' [' + Math.round(result.score * 100) + '%]');
         }
-        console.log('');
     }
 }
 

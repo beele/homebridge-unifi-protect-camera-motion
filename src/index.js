@@ -63,7 +63,8 @@ UnifiProtectCameraMotion.prototype.didFinishLaunching = function () {
                     cameraAccessoryInfo.setCharacteristic(Characteristic.FirmwareRevision, camera.firmware);
 
                     cameraAccessory.context.id = camera.id;
-                    cameraAccessory.context.log = self.log;
+                    cameraAccessory.context.lastMotionId = null;
+                    cameraAccessory.context.lastMotionIdRepeatCount = 0;
                     cameraAccessory.addService(new Service.MotionSensor(camera.name));
 
                     const videoConfigCopy = JSON.parse(JSON.stringify(self.config.videoConfig));
@@ -88,7 +89,7 @@ UnifiProtectCameraMotion.prototype.didFinishLaunching = function () {
                         self.log('Motion checking setup done!');
                     })
                     .catch((error) => {
-                        self.log('Error during motion checking setup or interval loop: ' + error);
+                        self.log('Error during motion checking setup: ' + error);
                     });
 
                 self.api.publishCameraAccessories('Unifi-Protect-Camera-Motion', configuredAccessories);

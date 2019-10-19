@@ -18,6 +18,7 @@
                 "username": "username",
                 "password": "password",
                 "motion_interval": 5000,
+                "motion_repeat_interval": 30000,
                 "motion_score": 50,
                 "enhanced_motion": true,
                 "enhanced_motion_score": 50,
