@@ -186,6 +186,7 @@ export interface UnifiConfig {
     "username": string;
     "password": string;
     "motion_interval": number;
+    "motion_repeat_interval": number;
     "motion_score": number;
     "enhanced_motion": boolean;
     "enhanced_motion_score": number;

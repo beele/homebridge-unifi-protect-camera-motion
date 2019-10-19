@@ -42,6 +42,7 @@ export class MotionDetector {
         } else {
             intervalFunction = this.checkMotion.bind(this);
         }
+
         setInterval(() => {
             try {
                 intervalFunction();
@@ -60,6 +61,10 @@ export class MotionDetector {
 
             for (const motionEvent of motionEvents) {
                 if (motionEvent.camera.id === configuredAccessory.context.id) {
+                    if (this.isSkippableLongRunningMotion(configuredAccessory, motionEvent)) {
+                        return;
+                    }
+
                     this.log('!!!! Motion detected (' + motionEvent.score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
                     configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 1);
 
@@ -77,10 +82,6 @@ export class MotionDetector {
 
             for (const motionEvent of motionEvents) {
                 if (motionEvent.camera.id === configuredAccessory.context.id) {
-                    if (this.config.debug) {
-                        this.log('Motion detected, running CoCo object detection...');
-                    }
-
                     const snapshot: Image = await Loader.createImage('http://' + motionEvent.camera.ip + '/snap.jpeg');
                     const detections: Detection[] = await this.detector.detect(snapshot, this.config.debug);
 
@@ -88,6 +89,10 @@ export class MotionDetector {
                         const detection: Detection = this.getDetectionForClassName(classToDetect, detections);
 
                         if (detection) {
+                            if (this.isSkippableLongRunningMotion(configuredAccessory, motionEvent)) {
+                                return;
+                            }
+
                             this.log('!!!! ' + classToDetect +' detected (' + Math.round(detection.score * 100) + '%) by camera ' + motionEvent.camera.name + ' !!!!');
                             configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 1);
                             Loader.saveAnnotatedImage(snapshot, [detection]);
@@ -100,9 +105,28 @@ export class MotionDetector {
                 }
             }
         }
+    }
 
-        //TODO: Error handling!
-        // this.log('Error with enhanced detection: ' + error);
+    private isSkippableLongRunningMotion(accessory: any, motionEvent: UnifiMotionEvent): boolean {
+        //Prevent repeat motion notifications for motion events that are longer then the motion_interval config setting!
+        if (this.config.motion_repeat_interval) {
+            if (accessory.context.lastMotionId === motionEvent.id) {
+                accessory.context.lastMotionIdRepeatCount++;
+
+                if (accessory.context.lastMotionIdRepeatCount === (this.config.motion_repeat_interval / this.config.motion_interval)) {
+                    accessory.context.lastMotionIdRepeatCount = 0;
+                } else {
+                    if (this.config.debug) {
+                        this.log('Motion detected inside of skippable timeframe, ignoring!');
+                    }
+                    return true;
+                }
+            } else {
+                accessory.context.lastMotionId = motionEvent.id;
+                accessory.context.lastMotionIdRepeatCount = 0;
+            }
+        }
+        return false;
     }
 
     private getDetectionForClassName(className: string, detections: Detection[]) {
