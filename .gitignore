@@ -43,6 +43,8 @@ src/unifi/*.js
 src/unifi/*.js.map
 src/utils/*.js
 src/utils/*.js.map
+src/motion/*.js
+src/motion/*.js.map
 
 resources/test-config/accessories/
 resources/test-config/persist/

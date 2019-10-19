@@ -1,4 +1,4 @@
-import {Unifi, UnifiMotionEvent, UnifiCamera, UnifiSession} from "./unifi";
+import {Unifi, UnifiMotionEvent, UnifiCamera, UnifiSession, UnifiConfig} from "./unifi";
 
 export class UnifiFlows {
 
@@ -9,10 +9,10 @@ export class UnifiFlows {
 
     private session: UnifiSession;
 
-    constructor(unifi: Unifi, username: string, password: string, logger: any) {
+    constructor(unifi: Unifi, config: UnifiConfig, logger: Function) {
         this.unifi = unifi;
-        this.username = username;
-        this.password = password;
+        this.username = config.username;
+        this.password = config.password;
         this.log = logger;
     }
 

@@ -13,10 +13,10 @@ export class Unifi {
 
     private readonly log: any;
 
-    constructor(controller: string, motionScore: number, motionIntervalDelay: number, initialBackoffDelay: number, maxRetries: number, logger: any) {
-        this.controller = controller;
-        this.motionScore = motionScore;
-        this.motionIntervaldelay = motionIntervalDelay;
+    constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, logger: Function) {
+        this.controller = config.controller;
+        this.motionScore = config.motion_score;
+        this.motionIntervaldelay = config.motion_interval;
 
         this.initialBackoffDelay = initialBackoffDelay;
         this.maxRetries = maxRetries;
@@ -189,4 +189,17 @@ export interface UnifiMotionEvent {
     camera: UnifiCamera;
     score: number;
     timestamp: number;
+}
+
+export interface UnifiConfig {
+    "controller": string;
+    "controller_rtsp": string;
+    "username": string;
+    "password": string;
+    "motion_interval": number;
+    "motion_score": number;
+    "enhanced_motion": boolean;
+    "enhanced_motion_score": number;
+    "enhanced_classes": string[];
+    "debug": boolean;
 }
