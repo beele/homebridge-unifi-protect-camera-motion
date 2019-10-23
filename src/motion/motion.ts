@@ -95,15 +95,21 @@ export class MotionDetector {
                                 return;
                             }
 
-                            this.log('!!!! ' + classToDetect +' detected (' + Math.round(detection.score * 100) + '%) by camera ' + motionEvent.camera.name + ' !!!!');
-                            configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 1);
-                            Loader.saveAnnotatedImage(snapshot, [detection]);
+                            const score: number = Math.round(detection.score * 100);
+                            if(score >= this.config.enhanced_motion_score) {
+                                this.log('!!!! ' + classToDetect +' detected (' + score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
+                                configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 1);
 
-                            continue outer;
+                                if(this.config.save_snapshot) {
+                                    Loader.saveAnnotatedImage(snapshot, [detection]);
+                                }
+
+                                continue outer;
+                            } else {
+                                this.log('!!!! Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.config.enhanced_motion_score + '% or higher) !!!!');
+                            }
                         }
                     }
-
-                    continue outer;
                 }
             }
         }
@@ -118,9 +124,7 @@ export class MotionDetector {
                 if (accessory.context.lastMotionIdRepeatCount === (this.config.motion_repeat_interval / this.config.motion_interval)) {
                     accessory.context.lastMotionIdRepeatCount = 0;
                 } else {
-                    if (this.config.debug) {
-                        this.log('Motion detected inside of skippable timeframe, ignoring!');
-                    }
+                    this.log('Motion detected inside of skippable timeframe, ignoring!');
                     return true;
                 }
             } else {

@@ -25,7 +25,8 @@
                 "enhanced_classes": [
                     "Person"
                 ],
-                "debug": true
+                "debug": true,
+                "save_snapshot": true
             },
             "videoConfig": {
                 "vcodec": "h264",

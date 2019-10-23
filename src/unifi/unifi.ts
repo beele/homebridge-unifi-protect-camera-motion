@@ -192,4 +192,5 @@ export interface UnifiConfig {
     "enhanced_motion_score": number;
     "enhanced_classes": string[];
     "debug": boolean;
+    "save_snapshot": boolean;
 }
