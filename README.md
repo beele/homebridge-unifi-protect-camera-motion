@@ -62,7 +62,7 @@ Config fields:
     - `motion_repeat_interval`: This field is optional and contains the repeat interval during which new motion events will not be triggered if they belong to the same ongoing motion, a good default is 30000 to 60000(ms). This will prevent a bunch of notifications for events which are longer then the motion_interval! Omit this field to disable this functionality.
     - `motion_score`: This field is required and contains the minimum score a motion event has to have to be processed, a good default is 50 (%). This is the value that is defined in the Protect interface!
     - `enhanced_motion`: This field is required and enables or disables the enhanced motion & object detection detection with Tensorflow, value should be true or false
-    - `enhanced_motion_score`: This field is required and contains the minimum score/certainty the enhanced detection should reach before allowing an motion event to be triggered
+    - `enhanced_motion_score`: This field is required if the `enhanced_motion` field is set to true and contains the minimum score/certainty the enhanced detection should reach before allowing an motion event to be triggered
     - `enhanced_classes`: this field is required and contains an array of string describing the classes of objects to dispatch motion events for, can be an empty array when `enhanced_motion` is set to false! 
     - `debug`: This field is optional and contains a boolean indicating whether or not to enable debug logging, defaults to false if omitted.
     - `save_snapshot`: This field is optional and contains a boolean indicating whether or not to save each detection to a jpg file in the user's home directory. When using enhanced mode the image is annotated with the class/score that was detected.
