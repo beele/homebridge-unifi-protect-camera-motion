@@ -1,11 +1,12 @@
 {
   "name": "homebridge-unifi-protect-camera-motion",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Unifi Protect cameras & motion sensors for Homekit with Homebridge",
   "main": "src/index.js",
   "scripts": {
     "postinstall": "tsc",
     "install-debs-raspberry": "sudo apt-get update && sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev",
+    "compile": "tsc",
     "homebridge": "homebridge -P . -U ./resources/test-config/"
   },
   "license": "ISC",

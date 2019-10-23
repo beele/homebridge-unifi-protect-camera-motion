@@ -44,21 +44,31 @@ export class Loader {
         const ctx = canvas.getContext('2d');
         for (const detection of detections) {
             Loader.drawRect(ctx, detection.bbox);
+            Loader.drawText(ctx, detection);
         }
         Loader.saveImage(canvas);
     }
 
-    private static drawRect(ctx: any, bbox: number[]) {
+    private static drawRect(ctx: any, bbox: number[]): void {
         ctx.strokeStyle = 'rgba(255,0,0,1)';
         ctx.beginPath();
         ctx.rect(bbox[0], bbox[1], bbox[2], bbox[3]);
         ctx.stroke();
     }
 
+    private static drawText(ctx: any, detection: Detection): void {
+        ctx.font = '16px Arial';
+        ctx.fillStyle = 'red';
+        ctx.fillText(detection.class + ': ' + Math.round(detection.score * 100) + '%', detection.bbox[0] + 5, detection.bbox[1] + 15);
+    }
+
     private static  saveImage(canvas: Canvas) {
         const snapshotName: string = 'snapshot-' + new Date().toISOString() + '.jpg';
         const out = fs.createWriteStream(homedir + '/' + snapshotName);
-        const stream = canvas.createJPEGStream();
+        const stream = canvas.createJPEGStream({
+            quality: 0.95,
+            chromaSubsampling: false
+        });
         stream.pipe(out);
         out.on('finish', () =>  console.log('The snapshot has been saved to: ' + homedir + '/' + snapshotName));
     }
