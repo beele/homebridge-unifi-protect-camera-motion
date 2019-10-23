@@ -38,7 +38,7 @@ export class UnifiFlows {
                             motionEvent.camera = camera;
                             filteredMotionEvents.push(motionEvent);
                         } else {
-                            this.log('!!!! Unifi Motion event  (' + motionEvent.id + ') rejected for camera: ' + camera.name + ' - Score: ' + motionEvent.score + ' !!!!');
+                            this.log('!!!! Unifi Motion event (' + motionEvent.id + ') rejected for camera: ' + camera.name + ' - Score: ' + motionEvent.score + ' !!!!');
                         }
                         continue outer;
                     }
