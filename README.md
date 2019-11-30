@@ -15,6 +15,11 @@ The Tensorflow logic/model runs on your device and no data is ever sent to any o
 
 ## Installation:
 To install this plugin simple type `sudo npm install homebridge-unifi-protect-camera-motion -g --unsafe-perm=true`.
+
+If you have trouble installing make sure you have the required dependencies installed to build node-canvas from source.
+This can be done by executing the command for your operating system as listed table under `Compiling` on the [node-canvas github page](https://github.com/Automattic/node-canvas#compiling), further actions are not required.
+After this try running the npm install command again.
+
 Next open the config.json that contains your Homebridge configuration and add a block like the following one to the platforms array:
 
 ```javascript
