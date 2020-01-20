@@ -48,3 +48,5 @@ src/motion/*.js.map
 
 resources/test-config/accessories/
 resources/test-config/persist/
+
+.idea/

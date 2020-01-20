@@ -43,14 +43,17 @@ Next open the config.json that contains your Homebridge configuration and add a 
         "save_snapshot": true
     },
     "videoConfig": {
-        "vcodec": "h264 - or h264_omx",
-        "audio": false,
+        "vcodec": "h264_omx",
+        "audio": true,
         "maxStreams": 2,
         "maxWidth": 1024,
         "maxHeight": 576,
         "maxFPS": 15,
         "mapvideo": "0:1",
-        "mapaudio": "0:0"
+        "mapaudio": "0:0",
+        "maxBitrate": 3000,
+        "packetSize": 376,
+        "additionalCommandline": "-protocol_whitelist https,crypto,srtp,rtp,udp"
     }
 }
 ```
@@ -105,9 +108,28 @@ Config fields:
 - Can be ran on any Raspberry Pi, however when making use of the enhanced motion/object detection feature you should at least use a Raspberry Pi 3 or newer!
     - Make sure that you set the `motion_interval` field to a multiple of 2 seconds per camera, so 5 cameras would mean an interval of at least 10 seconds!
       This is to make sure you do not overload the Raspberry Pi! On the Latest Pi 4 the timings can be lower, experiment with this to find the best timings!
-- Make sure you have FFmpeg installed, preferably compiled with OMX support
-    - Follow [these](https://github.com/legotheboss/YouTube-files/wiki/(RPi)-Compile-FFmpeg-with-the-OpenMAX-H.264-GPU-acceleration) instructions to compile FFmpeg with the correct options
-    - It is possible to use FFmpeg with the OpenMax driver (OMX) but performance will be lower!
+- Make sure you have FFmpeg installed, preferably compiled with OMX and AAC support:
+    ```
+    # install build tools
+    sudo apt-get install git pkg-config autoconf automake libtool libx264-dev
+    
+    # download and build fdk-aac
+    git clone https://github.com/mstorsjo/fdk-aac.git
+    cd fdk-aac
+    ./autogen.sh
+    ./configure --prefix=/usr/local --enable-shared --enable-static
+    make -j4
+    sudo make install
+    sudo ldconfig
+    cd ..
+    
+    # download and build ffmpeg
+    git clone https://github.com/FFmpeg/FFmpeg.git
+    cd FFmpeg
+    ./configure --prefix=/usr/local --arch=armel --target-os=linux --enable-omx-rpi --enable-nonfree --enable-gpl --enable-libfdk-aac --enable-mmal --enable-libx264 --enable-decoder=h264 --enable-network --enable-protocol=tcp --enable-demuxer=rtsp
+    make -j4
+    sudo make install
+    ```
 
 ### Tested with:
 
