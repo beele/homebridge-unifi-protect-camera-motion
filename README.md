@@ -82,7 +82,7 @@ Config fields:
           ![Anonymous snapshot](resources/images/anonymous_snapshot.jpg?raw=true "CloudKey Gen2 Plus")
         - To enable an RTSP stream: Login on the Protect web UI and go the settings of the camera and open the manage tab<br/> 
           Make sure that all your cameras have the same port for the RTSP stream!
-          For optimal results it is best to assign a static ip to your cameras
+          For optimal results it is best to assign a static ip to your cameras <br/>
           ![Enable RTSP stream](resources/images/enable_rtsp.jpg?raw=true "CloudKey Gen2 Plus")
 
 ### How to add the cameras to your Homekit setup:
@@ -151,7 +151,6 @@ Limitations:
 
 TODOs:
 
-- Get sound working in the livestreams.
 - Get the livestreams to use a higher quality as right now it will not stream at 720p or higher.
 
 ## Disclaimer
