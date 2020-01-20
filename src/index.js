@@ -70,7 +70,7 @@ UnifiProtectCameraMotion.prototype.didFinishLaunching = function () {
                     const videoConfigCopy = JSON.parse(JSON.stringify(self.config.videoConfig));
                     videoConfigCopy.stillImageSource = '-i http://' + camera.ip + '/snap.jpeg';
                     //TODO: Pick the correct stream!
-                    videoConfigCopy.source = '-rtsp_transport http -re -i ' + self.config.unifi.controller_rtsp + '/' + camera.streams[0].alias;
+                    videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + self.config.unifi.controller_rtsp + '/' + camera.streams[0].alias;
 
                     const cameraConfig = {
                         name: camera.name,
