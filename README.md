@@ -105,40 +105,29 @@ Config fields:
 
 ### For installation on the Raspberry Pi:
 
+- If the install of the plugin fails or if you have issues with FFMpeg:
+    - Make sure you have FFmpeg installed, preferably compiled with OMX and AAC support:
+        - Go to the folder where the library has been installed: `/usr/lib/node_modules/homebridge-unifi-protect-camera-motion/`
+        - Execute `sudo npm run install-ffmpeg-aac-audio-raspberry` to compile FFmpeg locally (this can take up to an hour!).
+    - Make sure you have the dependencies installed for compiling node-canvas locally:
+        - Go to the folder where the library has been installed: `/usr/lib/node_modules/homebridge-unifi-protect-camera-motion/`
+        - Execute `sudo npm run install-canvas-debs-raspberry` to install the required dependencies to compile node-canvas
+    - Reinstall the plugin by executing: `sudo npm install homebridge-unifi-protect-camera-motion -g --unsafe-perm=true`
 - Can be ran on any Raspberry Pi, however when making use of the enhanced motion/object detection feature you should at least use a Raspberry Pi 3 or newer!
     - Make sure that you set the `motion_interval` field to a multiple of 2 seconds per camera, so 5 cameras would mean an interval of at least 10 seconds!
       This is to make sure you do not overload the Raspberry Pi! On the Latest Pi 4 the timings can be lower, experiment with this to find the best timings!
-- Make sure you have FFmpeg installed, preferably compiled with OMX and AAC support:
-    ```
-    # install build tools
-    sudo apt-get install git pkg-config autoconf automake libtool libx264-dev
-    
-    # download and build fdk-aac
-    git clone https://github.com/mstorsjo/fdk-aac.git
-    cd fdk-aac
-    ./autogen.sh
-    ./configure --prefix=/usr/local --enable-shared --enable-static
-    make -j4
-    sudo make install
-    sudo ldconfig
-    cd ..
-    
-    # download and build ffmpeg
-    git clone https://github.com/FFmpeg/FFmpeg.git
-    cd FFmpeg
-    ./configure --prefix=/usr/local --arch=armel --target-os=linux --enable-omx-rpi --enable-nonfree --enable-gpl --enable-libfdk-aac --enable-mmal --enable-libx264 --enable-decoder=h264 --enable-network --enable-protocol=tcp --enable-demuxer=rtsp
-    make -j4
-    sudo make install
-    ```
 
 ### Tested with:
 
 - Raspberry Pi 3B with Node 11.15.0 as Homebridge host
+- Raspberry Pi 4 4GB with Node 12.14.0 as Homebridge host
 - Macbook Pro with Node 10.16.2 as Homebridge host
 - Ubiquiti UniFi CloudKey Gen2 Plus - Cloud Key with Unifi Protect functionality
   <br/><br/>![CloudKey Gen2 Plus](resources/images/cloudkey-gen2plus.jpg?raw=true "CloudKey Gen2 Plus")
 - 2x Ubiquiti UniFi Video UVC-G3-AF - PoE Camera
   <br/><br/>![Camera UVC-G3-AF](resources/images/camera.jpeg?raw=true "Camera UVC-G3-AF")
+- 1x Ubiquiti Unifi Video UVC-G3-Flex - PoE Camera
+  <br/><br/>![Camera UVC-G3-Flex](resources/images/camera2.jpeg?raw=true "Camera UVC-G3-Flex")
 
 ### Limitations, known issues & TODOs:
 
