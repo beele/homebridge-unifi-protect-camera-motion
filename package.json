@@ -1,6 +1,6 @@
 {
   "name": "homebridge-unifi-protect-camera-motion",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Unifi Protect cameras & motion sensors for Homekit with Homebridge",
   "main": "src/index.js",
   "scripts": {
@@ -31,7 +31,7 @@
     "debug": "^2.6.9",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.7",
-    "@tensorflow/tfjs-node": "^1.2.11",
+    "@tensorflow/tfjs-node": "1.2.11",
     "canvas": "^2.6.0",
     "typescript": "^3.6.4"
   },
