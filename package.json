@@ -1,11 +1,12 @@
 {
   "name": "homebridge-unifi-protect-camera-motion",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "description": "Unifi Protect cameras & motion sensors for Homekit with Homebridge",
   "main": "src/index.js",
   "scripts": {
     "postinstall": "tsc",
-    "install-debs-raspberry": "sudo apt-get update && sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev",
+    "install-canvas-debs-raspberry": "sudo apt-get update && sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev",
+    "install-ffmpeg-aac-audio-raspberry": "sh ./resources/scripts/compile-ffmpeg.sh",
     "compile": "tsc",
     "homebridge": "homebridge -P . -U ./resources/test-config/"
   },
@@ -29,10 +30,10 @@
     "ip": "^1.1.5",
     "debug": "^2.6.9",
     "request": "^2.88.0",
-    "request-promise-native": "^1.0.8",
-    "@tensorflow/tfjs-node": "^1.5.1",
-    "canvas": "^2.6.1",
-    "typescript": "^3.7.5"
+    "request-promise-native": "^1.0.7",
+    "@tensorflow/tfjs-node": "^1.2.11",
+    "canvas": "^2.6.0",
+    "typescript": "^3.6.4"
   },
   "devDependencies": {
     "jest": "^24.9.0"
