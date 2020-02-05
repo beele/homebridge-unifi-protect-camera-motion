@@ -15,5 +15,6 @@ module.exports = {
         "json",
         "node"
     ],
-    "transformIgnorePatterns": []
+    "transformIgnorePatterns": [],
+    "globals": {"ts-jest": {"isolatedModules": true},},
 };
