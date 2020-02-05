@@ -6,7 +6,8 @@
         "removeComments": true,
         "preserveConstEnums": true,
         "sourceMap": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "preserveSymlinks": true
     },
     "include": [
         "src/**/*"
