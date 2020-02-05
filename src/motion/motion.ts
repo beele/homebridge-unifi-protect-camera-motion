@@ -101,7 +101,7 @@ export class MotionDetector {
                                 configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 1);
 
                                 if(this.config.save_snapshot) {
-                                    Loader.saveAnnotatedImage(snapshot, [detection]);
+                                    await Loader.saveAnnotatedImage(snapshot, [detection]);
                                 }
 
                                 continue outer;
