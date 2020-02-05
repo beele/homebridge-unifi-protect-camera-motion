@@ -121,7 +121,7 @@ Config fields:
 ### Tested with:
 
 - Raspberry Pi 3B with Node 11.15.0 as Homebridge host
-- Raspberry Pi 4 4GB with Node 12.14.0 as Homebridge host
+- Raspberry Pi 4B 4GB with Node 12.14.0 as Homebridge host
 - Macbook Pro with Node 10.16.2 as Homebridge host
 - Ubiquiti UniFi CloudKey Gen2 Plus - Cloud Key with Unifi Protect functionality
   <br/><br/>![CloudKey Gen2 Plus](resources/images/cloudkey-gen2plus.jpg?raw=true "CloudKey Gen2 Plus")
@@ -142,6 +142,8 @@ Limitations:
 TODOs:
 
 - Get the livestreams to use a higher quality as right now it will not stream at 720p or higher.
+- Add some tests
+- Automate builds on github
 
 ## Disclaimer
 

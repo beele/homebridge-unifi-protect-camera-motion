@@ -39,14 +39,14 @@ export class Loader {
         return canvas;
     }
 
-    public static saveAnnotatedImage(image: Image, detections: Detection[]) {
+    public static async saveAnnotatedImage(image: Image, detections: Detection[]): Promise<string> {
         const canvas: Canvas = Loader.createCanvasFromImage(image);
         const ctx = canvas.getContext('2d');
         for (const detection of detections) {
             Loader.drawRect(ctx, detection.bbox);
             Loader.drawText(ctx, detection);
         }
-        Loader.saveImage(canvas);
+        return await Loader.saveImage(canvas);
     }
 
     private static drawRect(ctx: any, bbox: number[]): void {
@@ -62,15 +62,21 @@ export class Loader {
         ctx.fillText(detection.class + ': ' + Math.round(detection.score * 100) + '%', detection.bbox[0] + 5, detection.bbox[1] + 15);
     }
 
-    private static  saveImage(canvas: Canvas) {
-        const snapshotName: string = 'snapshot-' + new Date().toISOString() + '.jpg';
-        const out = fs.createWriteStream(homedir + '/' + snapshotName);
-        const stream = canvas.createJPEGStream({
-            quality: 0.95,
-            chromaSubsampling: false
+    private static saveImage(canvas: Canvas): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const snapshotName: string = 'snapshot-' + new Date().toISOString() + '.jpg';
+            const out = fs.createWriteStream(homedir + '/' + snapshotName);
+            const stream = canvas.createJPEGStream({
+                quality: 0.95,
+                chromaSubsampling: false
+            });
+            stream.pipe(out);
+            out.on('finish', () => {
+                const fileName: string =  homedir + '/' + snapshotName;
+                console.log('The snapshot has been saved to: ' + fileName);
+                resolve(fileName);
+            });
         });
-        stream.pipe(out);
-        out.on('finish', () =>  console.log('The snapshot has been saved to: ' + homedir + '/' + snapshotName));
     }
 
     private static printProcessDuration(name: string, start: number): void {
