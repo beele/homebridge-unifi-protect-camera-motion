@@ -101,6 +101,11 @@ export class Unifi {
                 }
             }
 
+            //Sort streams on highest res!
+            streams.sort((a: UnifiCameraStream, b: UnifiCameraStream): number => {
+                return (a.height * a.width) - (b.height * b.width);
+            });
+
             return {
                 id: cam.id,
                 name: cam.name,
@@ -181,16 +186,16 @@ export interface UnifiMotionEvent {
 }
 
 export interface UnifiConfig {
-    "controller": string;
-    "controller_rtsp": string;
-    "username": string;
-    "password": string;
-    "motion_interval": number;
-    "motion_repeat_interval": number;
-    "motion_score": number;
-    "enhanced_motion": boolean;
-    "enhanced_motion_score": number;
-    "enhanced_classes": string[];
-    "debug": boolean;
-    "save_snapshot": boolean;
+    controller: string;
+    controller_rtsp: string;
+    username: string;
+    password: string;
+    motion_interval: number;
+    motion_repeat_interval: number;
+    motion_score: number;
+    enhanced_motion: boolean;
+    enhanced_motion_score: number;
+    enhanced_classes: string[];
+    debug: boolean;
+    save_snapshot: boolean;
 }

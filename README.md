@@ -42,6 +42,7 @@ Next open the config.json that contains your Homebridge configuration and add a 
         "debug": false,
         "save_snapshot": true
     },
+    driveUpload: false,
     "videoConfig": {
         "vcodec": "h264_omx",
         "audio": true,

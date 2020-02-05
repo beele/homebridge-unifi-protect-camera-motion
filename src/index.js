@@ -1,4 +1,4 @@
-const FFMPEG = require("./ffmpeg/ffmpeg").FFMPEG;
+const FFMPEG = require('homebridge-camera-ffmpeg/ffmpeg.js').FFMPEG;
 
 const Unifi = require("./unifi/unifi").Unifi;
 const UnifiFlows = require("./unifi/unifi-flows").UnifiFlows;
@@ -67,13 +67,15 @@ UnifiProtectCameraMotion.prototype.didFinishLaunching = function () {
                     cameraAccessory.context.lastMotionIdRepeatCount = 0;
                     cameraAccessory.addService(new Service.MotionSensor(camera.name));
 
+                    //Make a copy of the config so we can set each one to have its own camera sources!
                     const videoConfigCopy = JSON.parse(JSON.stringify(self.config.videoConfig));
                     videoConfigCopy.stillImageSource = '-i http://' + camera.ip + '/snap.jpeg';
-                    //TODO: Pick the correct stream!
+                    //TODO: Pick the best (highest res?) stream!
                     videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + self.config.unifi.controller_rtsp + '/' + camera.streams[0].alias;
 
                     const cameraConfig = {
                         name: camera.name,
+                        uploader: self.config.driveUpload !== undefined ? self.config.driveUpload : false,
                         videoConfig: videoConfigCopy
                     };
 
