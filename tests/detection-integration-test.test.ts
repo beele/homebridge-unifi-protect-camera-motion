@@ -6,15 +6,15 @@ const fs = require('fs');
 
 test('Loader-detect-image-full-model-IT', async () => {
     const detector: Detector = await Loader.loadCoco(false, path.dirname(path.resolve('resources')));
-    await verifyDections(detector);
+    await verifyDetections(detector);
 });
 
 test('Loader-detect-image-lite-model-IT', async () => {
     const detector: Detector = await Loader.loadCoco(true, path.dirname(path.resolve('resources')));
-    await verifyDections(detector);
+    await verifyDetections(detector);
 });
 
-const verifyDections = async (detector: Detector) => {
+const verifyDetections = async (detector: Detector) => {
     expect(detector).not.toBeNull();
 
     let image: Image = await Loader.createImage(path.resolve('resources/images/test.jpg'));
