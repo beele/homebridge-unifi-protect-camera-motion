@@ -32,7 +32,7 @@ Next open the config.json that contains your Homebridge configuration and add a 
         "motion_score": 50, 
         "enhanced_motion": true, 
         "enhanced_motion_score": 50, 
-        "enhanced_classes": [ "Person - or any other COCO classes, look in src/coco/classes.ts" ], 
+        "enhanced_classes": ["Person"], 
         "debug": false, 
         "save_snapshot": true 
     }, 
@@ -72,11 +72,11 @@ Next open the config.json that contains your Homebridge configuration and add a 
 |username|string|yes|/|Contains the username that is used to login in the web UI|
 |password|string|yes|/|Contains the password that is used to login in the web UI|
 |motion_interval|number|yes|/|Contains the interval in milliseconds used to check for motion, a good default is 5000 milliseconds|
-|motion_repeat_interval|number|no|/|Contains the repeat interval in milliseconds during which new motion events will not be triggered if they belong to the same ongoing motion, a good default is 30000 to 60000 milliseconds. This will prevent a bunch of notifications for events which are longer than the motion_interval! Omit this field to disable this functionality.|
+|motion_repeat_interval|number|no|/|Contains the repeat interval in milliseconds during which new motion events will not be triggered if they belong to the same ongoing motion, a good default is 30000 to 60000 milliseconds. This will prevent a bunch of notifications for events which are longer than the motion_interval! Omit this field to disable this functionality|
 |motion_score|number|yes|/|Contains the minimum score in % that a motion event has to have to be processed, a good default is 50%|
 |enhanced_motion|boolean|yes|/|Enables or disables the enhanced motion & object detection detection with Tensorflow|
 |enhanced_motion_score|number|sometimes|/|This field is required if the `enhanced_motion` field is set to true and contains the minimum score/certainty in % the enhanced detection should reach before allowing an motion event to be triggered |
-|enhanced_classes|string[]|sometimes|[]|This field is required if the `enhanced_motion` field is set to true and Contains an array of classes of objects to dispatch motion events for. The array should not be empty when using the enhanced detection!|
+|enhanced_classes|string[]|sometimes|[]|This field is required if the `enhanced_motion` field is set to true and contains an array of classes of objects to dispatch motion events for. The array should not be empty when using the enhanced detection! Look in look in src/coco/classes.ts for all available classes|
 |debug|boolean|no|false|Contains a boolean indicating whether or not to enable debug logging|
 |save_snapshot|boolean|no|false|Contains a boolean indicating whether or not to save each detection to a jpg file in the user's home directory. When using enhanced mode the image is annotated with the class/score that was detected.|
 
