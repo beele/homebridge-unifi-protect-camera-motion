@@ -59,9 +59,9 @@ Next open the config.json that contains your Homebridge configuration and add a 
 |-----|----|--------|-------------|-----------|
 |platform|string|yes|/|Unifi-Protect-Camera-Motion|
 |name|string|yes|/|Name of the plugin that shows up in the Homebridge logs|
-|unifi|object|yes|/|Wrapper object containing the unifi configuration|
+|[unifi](https://github.com/beele/homebridge-unifi-protect-camera-motion#unifi-config-fields)|object|yes|/|Wrapper object containing the unifi configuration|
 |driveUpload|boolean|no|false|Indicates whether or not to upload the motion snapshots to Google Drive. This requires the [drive integration]()https://github.com/KhaosT/homebridge-camera-ffmpeg/wiki/Uploading-Snapshots-to-Google to be set up!  |
-|videoConfig|object|yes|/|Wrapper object containing the video configuration for FFmpeg|
+|[videoConfig](https://github.com/beele/homebridge-unifi-protect-camera-motion#unifi-config-fields)|object|yes|/|Wrapper object containing the video configuration for FFmpeg|
 
 
 ### Unifi config fields:
