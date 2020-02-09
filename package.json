@@ -5,8 +5,6 @@
   "main": "src/index.js",
   "scripts": {
     "postinstall": "tsc",
-    "install-canvas-debs-raspberry": "sudo apt-get update && sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev",
-    "install-ffmpeg-aac-audio-raspberry": "sh ./resources/scripts/compile-ffmpeg.sh",
     "compile": "tsc",
     "homebridge": "homebridge -P . -U ./resources/test-config/",
     "test": "jest --config jest.config.js --collect-coverage"
