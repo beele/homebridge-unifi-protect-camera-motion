@@ -23,11 +23,13 @@ export class Unifi {
         const opts = {
             uri: baseControllerUrl,
             resolveWithFullResponse: true,
+            strictSSL: false,
             timeout: 1000
         };
 
         const response: any = await request.get(opts);
         if (response.headers['x-csrf-token']) {
+            console.log('Endpoint Style: UnifiOS');
             return {
                 authURL: baseControllerUrl + '/api/auth/login',
                 apiURL: baseControllerUrl + '/proxy/protect/api',
@@ -35,9 +37,10 @@ export class Unifi {
                 csrfToken: response.headers['x-csrf-token']
             }
         } else {
+            console.log('Endpoint Style: Unifi Protect (Legacy)');
             return {
                 authURL: baseControllerUrl + '/api/auth',
-                apiURL: baseControllerUrl,
+                apiURL: baseControllerUrl + '/api',
                 isUnifiOS: false
             }
         }

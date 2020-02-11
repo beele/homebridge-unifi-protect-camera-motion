@@ -12,6 +12,7 @@ export class UnifiFlows {
     constructor(unifi: Unifi, config: UnifiConfig, endPointStyle: UnifiEndPointStyle, logger: Function) {
         this.unifi = unifi;
         this.config = config;
+        this.endpointStyle = endPointStyle;
         this.log = logger;
     }
 
