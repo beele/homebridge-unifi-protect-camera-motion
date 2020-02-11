@@ -108,6 +108,8 @@ export class MotionDetector {
                             } else {
                                 this.log('!!!! Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.config.enhanced_motion_score + '% or higher) !!!!');
                             }
+                        } else {
+                            console.log('None of the required classes found by enhanced motion detection, discarding!');
                         }
                     }
                 }
