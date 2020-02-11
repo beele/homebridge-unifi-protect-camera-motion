@@ -56,7 +56,7 @@ export class MotionDetector {
     }
 
     private async checkMotion(): Promise<any> {
-        const motionEvents: UnifiMotionEvent[] = await this.flows.getMotionEvents(this.cameras);
+        const motionEvents: UnifiMotionEvent[] = await this.flows.getLatestMotionEventPerCamera(this.cameras);
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
             configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 0);
@@ -77,7 +77,7 @@ export class MotionDetector {
     }
 
     private async checkMotionEnhanced(): Promise<any> {
-        const motionEvents: UnifiMotionEvent[] = await this.flows.getMotionEvents(this.cameras);
+        const motionEvents: UnifiMotionEvent[] = await this.flows.getLatestMotionEventPerCamera(this.cameras);
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
             configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 0);
@@ -96,11 +96,11 @@ export class MotionDetector {
                             }
 
                             const score: number = Math.round(detection.score * 100);
-                            if(score >= this.config.enhanced_motion_score) {
+                            if (score >= this.config.enhanced_motion_score) {
                                 this.log('!!!! ' + classToDetect +' detected (' + score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
                                 configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 1);
 
-                                if(this.config.save_snapshot) {
+                                if (this.config.save_snapshot) {
                                     await Loader.saveAnnotatedImage(snapshot, [detection]);
                                 }
 

@@ -23,7 +23,7 @@ export class UnifiFlows {
         }
     }
 
-    public async getMotionEvents(cameras: UnifiCamera[]): Promise<UnifiMotionEvent[]> {
+    public async getLatestMotionEventPerCamera(cameras: UnifiCamera[]): Promise<UnifiMotionEvent[]> {
         try {
             await this.ensureSessionIsValid();
             const motionEvents: UnifiMotionEvent[] = await this.unifi.getMotionEvents(this.session);
