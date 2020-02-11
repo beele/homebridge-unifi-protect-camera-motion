@@ -37,68 +37,72 @@ UnifiProtectCameraMotion.prototype.configureAccessory = function (accessory) {
 
 UnifiProtectCameraMotion.prototype.didFinishLaunching = function () {
     const self = this;
-    const videoProcessor = self.config.videoProcessor || 'ffmpeg';
-    const interfaceName = self.config.interfaceName || '';
 
-    if (self.config.videoConfig) {
-        const configuredAccessories = [];
+    //Hack to get async functions!
+    setTimeout(async () => {
+        const videoProcessor = self.config.videoProcessor || 'ffmpeg';
+        const interfaceName = self.config.interfaceName || '';
 
-        const unifi = new Unifi(self.config.unifi, 500, 2, self.log);
-        const uFlows = new UnifiFlows(unifi, self.config.unifi, self.log);
+        if (self.config.videoConfig) {
+            const configuredAccessories = [];
 
-        uFlows
-            .enumerateCameras()
-            .then((cameras) => {
-                cameras.forEach((camera) => {
-                    if (camera.streams.length === 0) {
-                        return;
-                    }
+            const unifi = new Unifi(self.config.unifi, 500, 2, self.log);
+            const uFlows = new UnifiFlows(unifi, self.config.unifi, await Unifi.determineEndpointStyle(self.config.unifi.controller), self.log);
 
-                    const uuid = UUIDGen.generate(camera.id);
-                    const cameraAccessory = new Accessory(camera.name, uuid, hap.Accessory.Categories.CAMERA);
-                    const cameraAccessoryInfo = cameraAccessory.getService(Service.AccessoryInformation);
-                    cameraAccessoryInfo.setCharacteristic(Characteristic.Manufacturer, 'Ubiquiti');
-                    cameraAccessoryInfo.setCharacteristic(Characteristic.Model, camera.type);
-                    cameraAccessoryInfo.setCharacteristic(Characteristic.SerialNumber, camera.id);
-                    cameraAccessoryInfo.setCharacteristic(Characteristic.FirmwareRevision, camera.firmware);
-
-                    cameraAccessory.context.id = camera.id;
-                    cameraAccessory.context.lastMotionId = null;
-                    cameraAccessory.context.lastMotionIdRepeatCount = 0;
-                    cameraAccessory.addService(new Service.MotionSensor(camera.name));
-
-                    //Make a copy of the config so we can set each one to have its own camera sources!
-                    const videoConfigCopy = JSON.parse(JSON.stringify(self.config.videoConfig));
-                    videoConfigCopy.stillImageSource = '-i http://' + camera.ip + '/snap.jpeg';
-                    //TODO: Pick the best (highest res?) stream!
-                    videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + self.config.unifi.controller_rtsp + '/' + camera.streams[0].alias;
-
-                    const cameraConfig = {
-                        name: camera.name,
-                        uploader: self.config.driveUpload !== undefined ? self.config.driveUpload : false,
-                        videoConfig: videoConfigCopy
-                    };
-
-                    const cameraSource = new FFMPEG(hap, cameraConfig, self.log, videoProcessor, interfaceName);
-                    cameraAccessory.configureCameraSource(cameraSource);
-                    configuredAccessories.push(cameraAccessory);
-                });
-                self.log('Cameras: ' + configuredAccessories.length);
-
-                const motionDetector = new MotionDetector(Homebridge, self.config.unifi, uFlows, cameras, self.log);
-                motionDetector.setupMotionChecking(configuredAccessories)
-                    .then(() => {
-                        self.log('Motion checking setup done!');
-                    })
-                    .catch((error) => {
-                        self.log('Error during motion checking setup: ' + error);
-                    });
-
-                self.api.publishCameraAccessories('Unifi-Protect-Camera-Motion', configuredAccessories);
-                self.log('Setup done');
-            })
-            .catch((error) => {
+            let cameras = [];
+            try {
+                 cameras = await uflows.enumerateCameras();
+            } catch (error) {
                 self.log('Cannot get cameras: ' + error);
+                return;
+            }
+
+            cameras.forEach((camera) => {
+                if (camera.streams.length === 0) {
+                    return;
+                }
+
+                const uuid = UUIDGen.generate(camera.id);
+                const cameraAccessory = new Accessory(camera.name, uuid, hap.Accessory.Categories.CAMERA);
+                const cameraAccessoryInfo = cameraAccessory.getService(Service.AccessoryInformation);
+                cameraAccessoryInfo.setCharacteristic(Characteristic.Manufacturer, 'Ubiquiti');
+                cameraAccessoryInfo.setCharacteristic(Characteristic.Model, camera.type);
+                cameraAccessoryInfo.setCharacteristic(Characteristic.SerialNumber, camera.id);
+                cameraAccessoryInfo.setCharacteristic(Characteristic.FirmwareRevision, camera.firmware);
+
+                cameraAccessory.context.id = camera.id;
+                cameraAccessory.context.lastMotionId = null;
+                cameraAccessory.context.lastMotionIdRepeatCount = 0;
+                cameraAccessory.addService(new Service.MotionSensor(camera.name));
+
+                //Make a copy of the config so we can set each one to have its own camera sources!
+                const videoConfigCopy = JSON.parse(JSON.stringify(self.config.videoConfig));
+                videoConfigCopy.stillImageSource = '-i http://' + camera.ip + '/snap.jpeg';
+                //TODO: Pick the best (highest res?) stream!
+                videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + self.config.unifi.controller_rtsp + '/' + camera.streams[0].alias;
+
+                const cameraConfig = {
+                    name: camera.name,
+                    uploader: self.config.driveUpload !== undefined ? self.config.driveUpload : false,
+                    videoConfig: videoConfigCopy
+                };
+
+                const cameraSource = new FFMPEG(hap, cameraConfig, self.log, videoProcessor, interfaceName);
+                cameraAccessory.configureCameraSource(cameraSource);
+                configuredAccessories.push(cameraAccessory);
             });
-    }
+            self.log('Cameras: ' + configuredAccessories.length);
+
+            try {
+                const motionDetector = new MotionDetector(Homebridge, self.config.unifi, uFlows, cameras, self.log);
+                await motionDetector.setupMotionChecking(configuredAccessories);
+                self.log('Motion checking setup done!');
+            } catch (error) {
+                self.log('Error during motion checking setup: ' + error);
+            }
+
+            self.api.publishCameraAccessories('Unifi-Protect-Camera-Motion', configuredAccessories);
+            self.log('Setup done');
+        }
+    });
 };

@@ -1,14 +1,15 @@
-import {Unifi, UnifiMotionEvent, UnifiCamera, UnifiSession, UnifiConfig} from "./unifi";
+import {Unifi, UnifiMotionEvent, UnifiCamera, UnifiSession, UnifiConfig, UnifiEndPointStyle} from "./unifi";
 
 export class UnifiFlows {
 
     private readonly unifi: Unifi;
     private readonly config: UnifiConfig;
+    private readonly endpointStyle: UnifiEndPointStyle;
     private readonly log: any;
 
     private session: UnifiSession;
 
-    constructor(unifi: Unifi, config: UnifiConfig, logger: Function) {
+    constructor(unifi: Unifi, config: UnifiConfig, endPointStyle: UnifiEndPointStyle, logger: Function) {
         this.unifi = unifi;
         this.config = config;
         this.log = logger;
@@ -17,7 +18,7 @@ export class UnifiFlows {
     public async enumerateCameras(): Promise<UnifiCamera[]> {
         try {
             await this.ensureSessionIsValid();
-            return await this.unifi.enumerateMotionCameras(this.session);
+            return await this.unifi.enumerateMotionCameras(this.session, this.endpointStyle);
         } catch (error) {
             throw new Error('ERROR: Could not enumerate motion sensors: ' + error);
         }
@@ -26,7 +27,7 @@ export class UnifiFlows {
     public async getLatestMotionEventPerCamera(cameras: UnifiCamera[]): Promise<UnifiMotionEvent[]> {
         try {
             await this.ensureSessionIsValid();
-            const motionEvents: UnifiMotionEvent[] = await this.unifi.getMotionEvents(this.session);
+            const motionEvents: UnifiMotionEvent[] = await this.unifi.getMotionEvents(this.session, this.endpointStyle);
             const filteredMotionEvents: UnifiMotionEvent[] = [];
 
             //We only want one event per camera!
@@ -54,7 +55,7 @@ export class UnifiFlows {
     private async ensureSessionIsValid(): Promise<UnifiSession> {
         try {
             if (!await this.unifi.isSessionStillValid(this.session)) {
-                this.session = await this.unifi.authenticate(this.config.username, this.config.password);
+                this.session = await this.unifi.authenticate(this.config.username, this.config.password, this.endpointStyle);
             }
             return this.session;
         } catch (error) {
