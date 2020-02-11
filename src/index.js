@@ -51,7 +51,7 @@ UnifiProtectCameraMotion.prototype.didFinishLaunching = function () {
 
             let cameras = [];
             try {
-                 cameras = await uflows.enumerateCameras();
+                 cameras = await uFlows.enumerateCameras();
             } catch (error) {
                 self.log('Cannot get cameras: ' + error);
                 return;

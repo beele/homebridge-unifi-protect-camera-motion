@@ -145,6 +145,7 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
 - Checkout the git repo  
 - Install Homebridge (you can use `npm run install-homebridge`)  
 - Adjust the dummy config under `resources/test-config/config.json`  
+- Swap the line in motion.ts:42 `this.detector = await Loader.loadCoco(false, '../');` with the one above it.
 - use `npm run homebridge` to start a Homebridge instance that points to the local config  
   
 # Disclaimer  
