@@ -30,13 +30,13 @@ export class Unifi {
         if (response.headers['x-csrf-token']) {
             return {
                 authURL: baseControllerUrl + '/api/auth/login',
-                apiURL: baseControllerUrl + '/proxy/protect/api/bootstrap',
+                apiURL: baseControllerUrl + '/proxy/protect/api',
                 isUnifiOS: true,
                 csrfToken: response.headers['x-csrf-token']
             }
         } else {
             return {
-                authURL: baseControllerUrl,
+                authURL: baseControllerUrl + '/api/auth',
                 apiURL: baseControllerUrl,
                 isUnifiOS: false
             }
@@ -49,7 +49,7 @@ export class Unifi {
         }
 
         const opts = {
-            uri: endpointStyle.authURL + '/api/auth',
+            uri: endpointStyle.authURL,
             headers: endpointStyle.isUnifiOS ?
                 {
                     'Content-Type': 'application/json',
@@ -95,7 +95,7 @@ export class Unifi {
 
     public async enumerateMotionCameras(session: UnifiSession, endPointStyle: UnifiEndPointStyle): Promise<UnifiCamera[]> {
         const opts = {
-            uri: endPointStyle.apiURL + '/api/bootstrap',
+            uri: endPointStyle.apiURL + '/bootstrap',
             headers: endPointStyle.isUnifiOS ?
                 {
                     'Content-Type': 'application/json',
@@ -156,7 +156,7 @@ export class Unifi {
         const startEpoch = endEpoch - (this.config.motion_interval * 2);
 
         const opts = {
-            uri: endPointStyle.apiURL + '/api/events?end=' + endEpoch + '&start=' + startEpoch + '&type=motion',
+            uri: endPointStyle.apiURL + '/events?end=' + endEpoch + '&start=' + startEpoch + '&type=motion',
             headers: endPointStyle.isUnifiOS ?
                 {
                     'Content-Type': 'application/json',
