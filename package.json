@@ -4,7 +4,7 @@
   "description": "Unifi Protect cameras & motion sensors for Homekit with Homebridge",
   "main": "src/index.js",
   "scripts": {
-    "postinstall": "tsc",
+    "postinstall": "npm rebuild @tensorflow/tfjs-node --build-from-source && tsc",
     "compile": "tsc",
     "homebridge": "homebridge -P . -U ./resources/test-config/",
     "test": "jest --config jest.config.js --collect-coverage"
@@ -29,16 +29,17 @@
     "googleapis": ">=39.1.0",
     "ip": "^1.1.5",
     "debug": "^2.6.9",
-    "request": "^2.88.0",
-    "request-promise-native": "^1.0.7",
-    "@tensorflow/tfjs-node": "1.2.11",
-    "canvas": "^2.6.0",
-    "typescript": "^3.6.4"
+    "request": "^2.88.2",
+    "request-promise-native": "^1.0.8",
+    "@tensorflow/tfjs-node": "1.5.2",
+    "canvas": "^2.6.1",
+    "typescript": "^3.7.5"
   },
   "devDependencies": {
     "jest": "^24.9.0",
     "ts-jest": "^24.3.0",
-    "@types/jest": "^25.1.1",
-    "@types/node": "^13.7.0"
+    "@types/jest": "^25.1.2",
+    "@types/node": "^13.7.1",
+    "homebridge": "^0.4.50"
   }
 }
