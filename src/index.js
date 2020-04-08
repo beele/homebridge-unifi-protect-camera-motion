@@ -1,7 +1,6 @@
-import {Utils} from "./utils/utils";
-
 const FFMPEG = require('homebridge-camera-ffmpeg/ffmpeg.js').FFMPEG;
 
+const Utils = require('./utils/utils').Utils;
 const Unifi = require("./unifi/unifi").Unifi;
 const UnifiFlows = require("./unifi/unifi-flows").UnifiFlows;
 const MotionDetector = require("./motion/motion").MotionDetector;

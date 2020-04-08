@@ -38,8 +38,11 @@ export class MotionDetector {
 
         let intervalFunction: Function;
         if (this.config.enhanced_motion) {
-            this.detector = await Loader.loadCoco(false, path.dirname(require.resolve('homebridge-unifi-protect-camera-motion/package.json')));
-            //this.detector = await Loader.loadCoco(false, '../');
+            try {
+                this.detector = await Loader.loadCoco(false, path.dirname(require.resolve('homebridge-unifi-protect-camera-motion/package.json')));
+            } catch (error) {
+                this.detector = await Loader.loadCoco(false, './');
+            }
             intervalFunction = this.checkMotionEnhanced.bind(this);
         } else {
             intervalFunction = this.checkMotion.bind(this);
