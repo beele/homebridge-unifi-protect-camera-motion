@@ -19,16 +19,47 @@ export class Unifi {
         this.log = logger;
     }
 
-    public async authenticate(username: string, password: string): Promise<UnifiSession> {
+    public static async determineEndpointStyle(baseControllerUrl: string): Promise<UnifiEndPointStyle> {
+        const opts = {
+            uri: baseControllerUrl,
+            resolveWithFullResponse: true,
+            strictSSL: false,
+            timeout: 1000
+        };
+
+        const response: any = await request.get(opts);
+        if (response.headers['x-csrf-token']) {
+            console.log('Endpoint Style: UnifiOS');
+            return {
+                authURL: baseControllerUrl + '/api/auth/login',
+                apiURL: baseControllerUrl + '/proxy/protect/api',
+                isUnifiOS: true,
+                csrfToken: response.headers['x-csrf-token']
+            }
+        } else {
+            console.log('Endpoint Style: Unifi Protect (Legacy)');
+            return {
+                authURL: baseControllerUrl + '/api/auth',
+                apiURL: baseControllerUrl + '/api',
+                isUnifiOS: false
+            }
+        }
+    }
+
+    public async authenticate(username: string, password: string, endpointStyle: UnifiEndPointStyle): Promise<UnifiSession> {
         if (!username || !password) {
             throw new Error('Username and password should be filled in!');
         }
 
         const opts = {
-            uri: this.config.controller + '/api/auth',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            uri: endpointStyle.authURL,
+            headers: endpointStyle.isUnifiOS ?
+                {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': endpointStyle.csrfToken
+                } : {
+                    'Content-Type': 'application/json'
+                },
             body: {
                 "username": username,
                 "password": password
@@ -50,6 +81,7 @@ export class Unifi {
         };
     }
 
+    //TODO: Is checking for expired session still needed with unifiOS?
     public isSessionStillValid(session: UnifiSession): boolean {
         //Validity duration for now set at 12 hours!
         if (session) {
@@ -64,13 +96,17 @@ export class Unifi {
         return false;
     }
 
-    public async enumerateMotionCameras(session: UnifiSession): Promise<UnifiCamera[]> {
+    public async enumerateMotionCameras(session: UnifiSession, endPointStyle: UnifiEndPointStyle): Promise<UnifiCamera[]> {
         const opts = {
-            uri: this.config.controller + '/api/bootstrap',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + session.authorization
-            },
+            uri: endPointStyle.apiURL + '/bootstrap',
+            headers: endPointStyle.isUnifiOS ?
+                {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': endPointStyle.csrfToken
+                } : {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + session.authorization
+                },
             json: true,
             strictSSL: false,
             resolveWithFullResponse: true,
@@ -118,16 +154,20 @@ export class Unifi {
         });
     }
 
-    public async getMotionEvents(session: UnifiSession): Promise<UnifiMotionEvent[]> {
+    public async getMotionEvents(session: UnifiSession, endPointStyle: UnifiEndPointStyle): Promise<UnifiMotionEvent[]> {
         const endEpoch = Date.now();
         const startEpoch = endEpoch - (this.config.motion_interval * 2);
 
         const opts = {
-            uri: this.config.controller + '/api/events?end=' + endEpoch + '&start=' + startEpoch + '&type=motion',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + session.authorization
-            },
+            uri: endPointStyle.apiURL + '/events?end=' + endEpoch + '&start=' + startEpoch + '&type=motion',
+            headers: endPointStyle.isUnifiOS ?
+                {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': endPointStyle.csrfToken
+                } : {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + session.authorization
+                },
             json: true,
             strictSSL: false,
             resolveWithFullResponse: true,
@@ -198,4 +238,11 @@ export interface UnifiConfig {
     enhanced_classes: string[];
     debug: boolean;
     save_snapshot: boolean;
+}
+
+export interface UnifiEndPointStyle {
+    authURL: string;
+    apiURL: string;
+    isUnifiOS: boolean;
+    csrfToken?: string;
 }
