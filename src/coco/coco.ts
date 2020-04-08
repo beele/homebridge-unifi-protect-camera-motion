@@ -44,7 +44,7 @@ export class ObjectDetection {
         this.model = await tf.loadGraphModel('file://' + resolve(this.modelPath) + '/model.json');
 
         // Warmup the model.
-        const result = await this.model.executeAsync(tf.zeros([1, 300, 300, 3])) as
+        const result = await this.model.executeAsync(tf.zeros([1, 300, 300, 3], 'int32')) as
             tf.Tensor[];
         result.map(async (t) => await t.data());
         result.map(async (t) => t.dispose());
@@ -52,7 +52,7 @@ export class ObjectDetection {
 
     /**
      * Detect objects for an image returning a list of bounding boxes with
-     * assocated class and score.
+     * associated class and score.
      *
      * @param img The image to detect objects from. Can be a tensor or a DOM
      *     element image, video, or canvas.
