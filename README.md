@@ -67,8 +67,8 @@ Next open the config.json that contains your Homebridge configuration and add a 
 ### Unifi config fields:
 |Field|Type|Required|Default value|Description|
 |-----|----|--------|-------------|-----------|
-|controller|string|yes|/|Contains the url to the Unifi protect web interface  |
-|controller_rtsp|string|yes|/|Contains the base url to be used for playing back the RTSP streams|
+|controller|string|yes|/|Contains the URL to the CloudKey or UDM with UnifiOS, or as legacy the URL to the Unifi Protect web UI, including port|
+|controller_rtsp|string|yes|/|Contains the base URL to be used for playing back the RTSP streams, as seen in the RTSP configuration|
 |username|string|yes|/|Contains the username that is used to login in the web UI|
 |password|string|yes|/|Contains the password that is used to login in the web UI|
 |motion_interval|number|yes|/|Contains the interval in milliseconds used to check for motion, a good default is 5000 milliseconds|
@@ -145,6 +145,7 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
 - Checkout the git repo  
 - Install Homebridge (you can use `npm run install-homebridge`)  
 - Adjust the dummy config under `resources/test-config/config.json`  
+- Swap the line in motion.ts:42 `this.detector = await Loader.loadCoco(false, '../');` with the one above it.
 - use `npm run homebridge` to start a Homebridge instance that points to the local config  
   
 # Disclaimer  
