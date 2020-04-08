@@ -62,7 +62,7 @@ UnifiProtectCameraMotion.prototype.didFinishLaunching = function () {
             const uFlows = new UnifiFlows(
                 unifi,
                 self.config.unifi,
-                await Unifi.determineEndpointStyle(self.config.unifi.controller),
+                await Unifi.determineEndpointStyle(self.config.unifi.controller, self.log),
                 debugLogger
             );
 
