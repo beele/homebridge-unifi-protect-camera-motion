@@ -40,7 +40,7 @@ export class Utils {
     public static createLogger(wrappedLogger: Function, debug: boolean): Function {
         return (message: any) => {
             if(debug) {
-                wrappedLogger(JSON.stringify(message, null, 4));
+                wrappedLogger(message);
             }
         }
     }
