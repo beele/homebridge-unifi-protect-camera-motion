@@ -1,3 +1,5 @@
+import {Utils} from "./utils/utils";
+
 const FFMPEG = require('homebridge-camera-ffmpeg/ffmpeg.js').FFMPEG;
 
 const Unifi = require("./unifi/unifi").Unifi;
@@ -14,7 +16,12 @@ module.exports = function (homebridge) {
     Characteristic = homebridge.hap.Characteristic;
     UUIDGen = homebridge.hap.uuid;
 
-    homebridge.registerPlatform('homebridge-unifi-protect-camera-motion', 'Unifi-Protect-Camera-Motion', UnifiProtectCameraMotion, true);
+    homebridge.registerPlatform(
+        'homebridge-unifi-protect-camera-motion',
+        'Unifi-Protect-Camera-Motion',
+        UnifiProtectCameraMotion,
+        true
+    );
 };
 
 function UnifiProtectCameraMotion(log, config, api) {
@@ -45,9 +52,20 @@ UnifiProtectCameraMotion.prototype.didFinishLaunching = function () {
 
         if (self.config.videoConfig) {
             const configuredAccessories = [];
+            const debugLogger = Utils.createLogger(self.log, self.config.unifi.debug);
 
-            const unifi = new Unifi(self.config.unifi, 500, 2, self.log);
-            const uFlows = new UnifiFlows(unifi, self.config.unifi, await Unifi.determineEndpointStyle(self.config.unifi.controller), self.log);
+            const unifi = new Unifi(
+                self.config.unifi,
+                500,
+                2,
+                self.log
+            );
+            const uFlows = new UnifiFlows(
+                unifi,
+                self.config.unifi,
+                await Unifi.determineEndpointStyle(self.config.unifi.controller),
+                debugLogger
+            );
 
             let cameras = [];
             try {
@@ -94,7 +112,7 @@ UnifiProtectCameraMotion.prototype.didFinishLaunching = function () {
             self.log('Cameras: ' + configuredAccessories.length);
 
             try {
-                const motionDetector = new MotionDetector(Homebridge, self.config.unifi, uFlows, cameras, self.log);
+                const motionDetector = new MotionDetector(Homebridge, self.config.unifi, uFlows, cameras, debugLogger);
                 await motionDetector.setupMotionChecking(configuredAccessories);
                 self.log('Motion checking setup done!');
             } catch (error) {

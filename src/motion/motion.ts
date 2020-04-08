@@ -84,7 +84,12 @@ export class MotionDetector {
 
             for (const motionEvent of motionEvents) {
                 if (motionEvent.camera.id === configuredAccessory.context.id) {
-                    const snapshot: Image = await Loader.createImage('http://' + motionEvent.camera.ip + '/snap.jpeg');
+                    let snapshot: Image;
+                    try {
+                        snapshot = await Loader.createImage('http://' + motionEvent.camera.ip + '/snap.jpeg');
+                    } catch (error) {
+                        continue;
+                    }
                     const detections: Detection[] = await this.detector.detect(snapshot, this.config.debug);
 
                     for (const classToDetect of this.config.enhanced_classes) {
