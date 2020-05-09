@@ -39,7 +39,7 @@
     "jest": "^24.9.0",
     "ts-jest": "^24.3.0",
     "@types/jest": "^25.2.1",
-    "@types/node": "^13.11.0",
-    "homebridge": "^0.4.53"
+    "@types/node": "^13.13.5",
+    "homebridge": "^1.0.4"
   }
 }

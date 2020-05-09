@@ -36,17 +36,8 @@ jspm_packages
 # Optional REPL history
 .node_repl_history
 
-src/experimental
-src/coco/*.js
-src/coco/*.js.map
-src/unifi/*.js
-src/unifi/*.js.map
-src/utils/*.js
-src/utils/*.js.map
-src/motion/*.js
-src/motion/*.js.map
-tests/*.js
-tests/*.js.map
+*.js
+*.js.map
 
 resources/test-config/accessories/
 resources/test-config/persist/
