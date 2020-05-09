@@ -1,6 +1,6 @@
 import {Utils} from "../utils/utils";
 
-const request = require('request-promise-native');
+const request = require('request-promise-native').defaults({jar: true});
 
 export class Unifi {
 
