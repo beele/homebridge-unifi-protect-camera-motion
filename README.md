@@ -84,7 +84,7 @@ Next open the config.json that contains your Homebridge configuration and add a 
 
 To upload all snapshots (annotated when using enhanced motion) set the `driveUpload` config field to true.
 To enable access to Google Drive please read [this guide!](https://github.com/KhaosT/homebridge-camera-ffmpeg/wiki/Uploading-Snapshots-to-Google)
-TODO: Implement logic! 
+***TODO: Implement logic!***
 
 ### Video config:
 
@@ -122,12 +122,12 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
   
 - Raspberry Pi 3B with Node 11.15.0 as Homebridge host  
 - Raspberry Pi 4B 4GB with Node 12.14.0 as Homebridge host  
-- Macbook Pro with Node 10.16.2 as Homebridge host  
+- Macbook Pro with Node 12.13.1 as Homebridge host  
 - Ubiquiti UniFi CloudKey Gen2 Plus - Cloud Key with Unifi Protect functionality  
   <br/><br/>![CloudKey Gen2 Plus](resources/images/cloudkey-gen2plus.jpg?raw=true "CloudKey Gen2 Plus")  
 - 2x Ubiquiti UniFi Video UVC-G3-AF - PoE Camera  
   <br/><br/>![Camera UVC-G3-AF](resources/images/camera.jpeg?raw=true "Camera UVC-G3-AF")  
-- 1x Ubiquiti Unifi Video UVC-G3-Flex - PoE Camera  
+- 2x Ubiquiti Unifi Video UVC-G3-Flex - PoE Camera  
   <br/><br/>![Camera UVC-G3-Flex](resources/images/camera2.jpeg?raw=true "Camera UVC-G3-Flex")  
   
 ## Limitations, known issues & TODOs:  
@@ -142,7 +142,7 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
   
 ### TODOs:  
 
-- Implement required changes to make this work with the UDM Pro (In progress)  
+- Implement required changes to make this work with Unifi OS (In progress)  
 - Add more unit and integration tests 
 - Upgrade tfjs-node, now held back because newer versions [will not install correctly on RBPI](https://github.com/tensorflow/tfjs/issues/3052) 
 - ~~Figure out how to get higher res streams on iPhone (only iPad seems to request 720p streams)~~ (Not possible) 

@@ -11,18 +11,12 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
     public readonly Service = this.api.hap.Service;
     public readonly Characteristic = this.api.hap.Characteristic;
 
-    // this is used to track restored cached accessories
-    public readonly accessories: PlatformAccessory[] = [];
-
     constructor(
         public readonly logger: Logger,
         public readonly config: PlatformConfig,
         public readonly api: API,
     ) {
-        this.logger.debug('Finished initializing platform:', this.config.name);
         this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
-            logger.debug('Executed didFinishLaunching callback');
-
             //Hack to get async functions!
             setTimeout(async () => {
                this.discoverDevices();
@@ -30,19 +24,10 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         });
     }
 
-    /**
-     * This function is invoked when homebridge restores cached accessories from disk at startup.
-     * It should be used to setup event handlers for characteristics and update respective values.
-     */
     public configureAccessory(accessory: PlatformAccessory): void {
         //Not used for now!
     }
 
-    /**
-     * This is an example method showing how to register discovered accessories.
-     * Accessories must only be registered once, previously created accessories
-     * must not be registered again to prevent "duplicate UUID" errors.
-     */
     private async discoverDevices(): Promise<void> {
 
         const videoProcessor = this.config.videoProcessor || 'ffmpeg';
