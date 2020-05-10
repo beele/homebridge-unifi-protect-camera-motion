@@ -1,10 +1,11 @@
 import {IncomingMessage, ServerResponse} from "http";
+import {google} from "googleapis";
+import { OAuth2Client } from 'google-auth-library';
 
 const http = require('http');
 const fs = require('fs');
 const {promisify} = require('util');
 
-const {google} = require('googleapis');
 const Photos = require('googlephotos');
 
 const readFileAsync = promisify(fs.readFile);
@@ -15,7 +16,7 @@ const homebridgeDir: string = (process.env.HOME || process.env.HOMEPATH || proce
 export class GooglePhotos {
 
     private readonly log: Function;
-    private oauth2Client: any;
+    private oauth2Client: OAuth2Client;
 
     private gPhotosConfig: gPhotosConfig = {
         auth_clientId: null,
