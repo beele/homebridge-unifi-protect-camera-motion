@@ -91,7 +91,7 @@ export class GooglePhotos {
                 access_type: 'offline',
                 scope: [Photos.Scopes.READ_AND_APPEND]
             });
-            this.log(url);
+            console.log('Please log in on Google Photos to allow for uploading: ' + url);
         } else {
             this.oauth2Client.setCredentials({
                 refresh_token: this.gPhotosConfig.auth_refresh_token
@@ -127,12 +127,14 @@ export class GooglePhotos {
             const requestHandler = (request: IncomingMessage, response: ServerResponse) => {
                 response.statusCode = 200;
                 response.setHeader('Content-Type', 'text/plain');
-                response.end('oauth2 callback handler running!');
 
                 const url = new URL('http://localhost' + request.url);
                 if (url.pathname === '/oauth2-callback') {
+                    response.end('OAuth2 callback handled!');
                     server.close();
                     resolve(url.searchParams.get('code'));
+                } else {
+                    response.end('OAuth2 callback handler running...');
                 }
             };
 
