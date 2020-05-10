@@ -156,11 +156,16 @@ export class MotionDetector {
         if (this.config.upload_gphotos) {
             let imagePath: string = localImagePath ? localImagePath : await ImageUtils.saveAnnotatedImage(snapshot, detections);
             const fileName: string = imagePath.split('/').pop();
-            await this.gPhotos.uploadImage(imagePath, fileName, description);
+            //No await because the upload should not block!
+            this.gPhotos
+                .uploadImage(imagePath, fileName, description)
+                .then((url: string) => {
+                    this.log('Photo uploaded: ' + url);
 
-            if (!localImagePath) {
-                await ImageUtils.remove(imagePath);
-            }
+                    if (!localImagePath) {
+                        ImageUtils.remove(imagePath);
+                    }
+                });
         }
     }
 
