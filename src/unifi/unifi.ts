@@ -34,10 +34,13 @@ export class Unifi {
             })
         });
 
+        //For debugging only
+        /*
         this.axiosInstance.interceptors.request.use((request: AxiosRequestConfig) => {
             console.log(request);
             return request;
         });
+        */
     }
 
     public static async determineEndpointStyle(baseControllerUrl: string, log: Function): Promise<UnifiEndPointStyle> {
@@ -97,7 +100,7 @@ export class Unifi {
         this.log('Authenticated, returning session');
         if (endpointStyle.isUnifiOS) {
             return {
-                cookie: response.headers['set-cookie'],
+                cookie: response.headers['set-cookie']['0'],
                 timestamp: Date.now()
             }
         } else {
