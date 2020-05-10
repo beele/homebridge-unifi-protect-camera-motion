@@ -60,7 +60,13 @@ export class MotionDetector {
     }
 
     private async checkMotion(): Promise<any> {
-        const motionEvents: UnifiMotionEvent[] = await this.flows.getLatestMotionEventPerCamera(this.cameras);
+        let motionEvents: UnifiMotionEvent[];
+        try {
+            motionEvents = await this.flows.getLatestMotionEventPerCamera(this.cameras);
+        } catch (error) {
+            this.log('Cannot get latest motion info: ' + error);
+            motionEvents = [];
+        }
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
             configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 0);
@@ -92,7 +98,13 @@ export class MotionDetector {
     }
 
     private async checkMotionEnhanced(): Promise<any> {
-        const motionEvents: UnifiMotionEvent[] = await this.flows.getLatestMotionEventPerCamera(this.cameras);
+        let motionEvents: UnifiMotionEvent[];
+        try {
+            motionEvents = await this.flows.getLatestMotionEventPerCamera(this.cameras);
+        } catch (error) {
+            this.log('Cannot get latest motion info: ' + error);
+            motionEvents = [];
+        }
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
             configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 0);
