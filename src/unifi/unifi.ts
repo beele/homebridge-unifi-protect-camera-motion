@@ -238,6 +238,7 @@ export interface UnifiConfig {
     enhanced_classes: string[];
     debug: boolean;
     save_snapshot: boolean;
+    upload_gphotos: boolean;
 }
 
 export interface UnifiEndPointStyle {

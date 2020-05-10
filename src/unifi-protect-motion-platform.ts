@@ -75,7 +75,18 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 cameraAccessory.context.id = camera.id;
                 cameraAccessory.context.lastMotionId = null;
                 cameraAccessory.context.lastMotionIdRepeatCount = 0;
-                cameraAccessory.addService(new this.Service.MotionSensor(camera.name));
+                cameraAccessory.addService(new this.Service.MotionSensor(camera.name + ' Motion sensor'));
+                cameraAccessory.addService(new this.Service.Switch(camera.name + ' Motion enabled'));
+                cameraAccessory
+                    .getService(this.Service.Switch)
+                    .getCharacteristic(this.Characteristic.On)
+                    .on(this.api.hap.CharacteristicEventTypes.GET, (callback: Function) => {
+                        callback(null, cameraAccessory.context.motionEnabled);
+                    })
+                    .on(this.api.hap.CharacteristicEventTypes.SET, (value: boolean, callback: Function) => {
+                        cameraAccessory.context.motionEnabled = value;
+                        callback();
+                    });
 
                 //Make a copy of the config so we can set each one to have its own camera sources!
                 const videoConfigCopy = JSON.parse(JSON.stringify(this.config.videoConfig));
