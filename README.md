@@ -34,9 +34,9 @@ Next open the config.json that contains your Homebridge configuration and add a 
         "enhanced_motion_score": 50, 
         "enhanced_classes": ["Person"], 
         "debug": false, 
-        "save_snapshot": true 
-    }, 
-    "driveUpload": false, 
+        "save_snapshot": true,
+        "upload_gphotos": false 
+    },
     "videoConfig": { 
         "vcodec": "h264_omx", 
         "audio": true, 
@@ -60,7 +60,6 @@ Next open the config.json that contains your Homebridge configuration and add a 
 |platform|string|yes|/|UnifiProtectMotion|
 |name|string|yes|/|Name of the plugin that shows up in the Homebridge logs|
 |[unifi](https://github.com/beele/homebridge-unifi-protect-camera-motion#unifi-config-fields)|object|yes|/|Wrapper object containing the unifi configuration|
-|driveUpload|boolean|no|false|Indicates whether or not to upload the motion snapshots to Google Drive. This requires the [drive integration](https://github.com/KhaosT/homebridge-camera-ffmpeg/wiki/Uploading-Snapshots-to-Google) to be set up!  |
 |[videoConfig](https://github.com/beele/homebridge-unifi-protect-camera-motion#unifi-config-fields)|object|yes|/|Wrapper object containing the video configuration for FFmpeg|
 
 
@@ -79,12 +78,11 @@ Next open the config.json that contains your Homebridge configuration and add a 
 |enhanced_classes|string[]|sometimes|[]|This field is required if the `enhanced_motion` field is set to true and contains an array of classes of objects to dispatch motion events for. The array should not be empty when using the enhanced detection! Look in look in src/coco/classes.ts for all available classes|
 |debug|boolean|no|false|Contains a boolean indicating whether or not to enable debug logging|
 |save_snapshot|boolean|no|false|Contains a boolean indicating whether or not to save each detection to a jpg file in the user's home directory. When using enhanced mode the image is annotated with the class/score that was detected.|
+|upload_gphotos|boolean|no|false|Contains a boolean indicating whether or not to upload each detection to a google photos album. When using enhanced mode the image is annotated with the class/score that was detected.|
 
-### Google Drive config:
+### Google Photos config:
 
-To upload all snapshots (annotated when using enhanced motion) set the `driveUpload` config field to true.
-To enable access to Google Drive please read [this guide!](https://github.com/KhaosT/homebridge-camera-ffmpeg/wiki/Uploading-Snapshots-to-Google)
-***TODO: Implement logic!***
+***TODO: This is being implemented!***
 
 ### Video config:
 

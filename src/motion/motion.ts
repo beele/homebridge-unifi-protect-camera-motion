@@ -2,14 +2,15 @@ import {UnifiCamera, UnifiConfig, UnifiMotionEvent} from "../unifi/unifi";
 import {Detection, Detector, Loader} from "../coco/loader";
 import {UnifiFlows} from "../unifi/unifi-flows";
 import {Image} from "canvas";
+import {ImageUtils} from "../utils/image-utils";
+import {GooglePhotos} from "../utils/google-photos";
+import {API} from "homebridge";
 
 const path = require('path');
 
 export class MotionDetector {
 
-    private readonly homebridge: any;
-    private readonly Service: any;
-    private readonly Characteristic: any;
+    private readonly homebridge: API;
 
     private readonly config: UnifiConfig;
     private readonly flows: UnifiFlows;
@@ -17,12 +18,11 @@ export class MotionDetector {
     private readonly log: Function;
 
     private detector: Detector;
+    private gPhotos: GooglePhotos;
     private configuredAccessories: any[];
 
-    constructor(homebridge: any, unifiConfig: UnifiConfig, unifiFlows: UnifiFlows, cameras: UnifiCamera[], logger: Function) {
+    constructor(homebridge: API, unifiConfig: UnifiConfig, unifiFlows: UnifiFlows, cameras: UnifiCamera[], logger: Function) {
         this.homebridge = homebridge;
-        this.Service = homebridge.hap.Service;
-        this.Characteristic = homebridge.hap.Characteristic;
 
         this.config = unifiConfig;
         this.flows = unifiFlows;
@@ -31,6 +31,7 @@ export class MotionDetector {
         this.log = logger;
 
         this.detector = null;
+        this.gPhotos = new GooglePhotos(logger);
     }
 
     public async setupMotionChecking(configuredAccessories: any[]): Promise<any> {
@@ -62,7 +63,10 @@ export class MotionDetector {
         const motionEvents: UnifiMotionEvent[] = await this.flows.getLatestMotionEventPerCamera(this.cameras);
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
-            configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 0);
+            configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 0);
+            if (!configuredAccessory.context.motionEnabled) {
+                continue;
+            }
 
             for (const motionEvent of motionEvents) {
                 if (motionEvent.camera.id === configuredAccessory.context.id) {
@@ -71,7 +75,15 @@ export class MotionDetector {
                     }
 
                     this.log('!!!! Motion detected (' + motionEvent.score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
-                    configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 1);
+                    configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 1);
+
+                    let snapshot: Image;
+                    try {
+                        snapshot = await ImageUtils.createImage('http://' + motionEvent.camera.ip + '/snap.jpeg');
+                        this.persistSnapshot(snapshot, 'Motion detected (' + motionEvent.score + '%) by camera ' + motionEvent.camera.name, []);
+                    } catch (error) {
+                        this.log('Cannot save snapshot: ' + error);
+                    }
 
                     continue outer;
                 }
@@ -83,13 +95,16 @@ export class MotionDetector {
         const motionEvents: UnifiMotionEvent[] = await this.flows.getLatestMotionEventPerCamera(this.cameras);
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
-            configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 0);
+            configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 0);
+            if (!configuredAccessory.context.motionEnabled) {
+                continue;
+            }
 
             for (const motionEvent of motionEvents) {
                 if (motionEvent.camera.id === configuredAccessory.context.id) {
                     let snapshot: Image;
                     try {
-                        snapshot = await Loader.createImage('http://' + motionEvent.camera.ip + '/snap.jpeg');
+                        snapshot = await ImageUtils.createImage('http://' + motionEvent.camera.ip + '/snap.jpeg');
                     } catch (error) {
                         continue;
                     }
@@ -105,13 +120,9 @@ export class MotionDetector {
 
                             const score: number = Math.round(detection.score * 100);
                             if (score >= this.config.enhanced_motion_score) {
-                                this.log('!!!! ' + classToDetect +' detected (' + score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
-                                configuredAccessory.getService(this.Service.MotionSensor).setCharacteristic(this.Characteristic.MotionDetected, 1);
-
-                                if (this.config.save_snapshot) {
-                                    await Loader.saveAnnotatedImage(snapshot, [detection]);
-                                }
-
+                                this.log('!!!! ' + classToDetect + ' detected (' + score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
+                                configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 1);
+                                await this.persistSnapshot(snapshot, classToDetect + ' detected (' + score + '%) by camera ' + motionEvent.camera.name, [detection]);
                                 continue outer;
                             } else {
                                 this.log('!!!! Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.config.enhanced_motion_score + '% or higher) !!!!');
@@ -121,6 +132,22 @@ export class MotionDetector {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private async persistSnapshot(snapshot: Image, description: string, detections: Detection[]): Promise<void> {
+        let localImagePath: string = null;
+        if (this.config.save_snapshot) {
+            localImagePath = await ImageUtils.saveAnnotatedImage(snapshot, detections);
+        }
+        if (this.config.upload_gphotos) {
+            let imagePath: string = localImagePath ? localImagePath : await ImageUtils.saveAnnotatedImage(snapshot, detections);
+            const fileName: string = imagePath.split('/').pop();
+            await this.gPhotos.uploadImage(imagePath, fileName, description);
+
+            if (!localImagePath) {
+                await ImageUtils.remove(imagePath);
             }
         }
     }
@@ -147,7 +174,7 @@ export class MotionDetector {
 
     private getDetectionForClassName(className: string, detections: Detection[]) {
         for (const detection of detections) {
-            if(detection.class.toLowerCase() === className.toLowerCase()) {
+            if (detection.class.toLowerCase() === className.toLowerCase()) {
                 return detection;
             }
         }

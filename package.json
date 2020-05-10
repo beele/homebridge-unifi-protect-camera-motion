@@ -25,14 +25,15 @@
     "homebridge": ">=1.0.0"
   },
   "dependencies": {
-    "homebridge-camera-ffmpeg": "0.1.15",
-    "googleapis": ">=39.1.0",
-    "ip": "^1.1.5",
-    "debug": "^2.6.9",
-    "request": "^2.88.2",
-    "request-promise-native": "^1.0.8",
     "@tensorflow/tfjs-node": "1.2.11",
     "canvas": "^2.6.1",
+    "debug": "^2.6.9",
+    "googleapis": ">=39.1.0",
+    "googlephotos": "^0.2.5",
+    "homebridge-camera-ffmpeg": "0.1.15",
+    "ip": "^1.1.5",
+    "request": "^2.88.2",
+    "request-promise-native": "^1.0.8",
     "typescript": "^3.8.3"
   },
   "devDependencies": {
