@@ -6,7 +6,7 @@
   "scripts": {
     "postinstall": "npm rebuild @tensorflow/tfjs-node --build-from-source && tsc",
     "compile": "tsc",
-    "homebridge": "homebridge -P . -U ./resources/test-config/",
+    "homebridge": "tsc && homebridge -P . -U ./resources/test-config/",
     "test": "jest --config jest.config.js --collect-coverage"
   },
   "license": "ISC",
@@ -26,14 +26,13 @@
   },
   "dependencies": {
     "@tensorflow/tfjs-node": "1.2.11",
+    "axios": "^0.19.2",
     "canvas": "^2.6.1",
     "debug": "^2.6.9",
     "googleapis": ">=39.1.0",
     "googlephotos": "^0.2.5",
     "homebridge-camera-ffmpeg": "0.1.15",
     "ip": "^1.1.5",
-    "request": "^2.88.2",
-    "request-promise-native": "^1.0.8",
     "typescript": "^3.8.3"
   },
   "devDependencies": {

@@ -31,7 +31,7 @@ export class MotionDetector {
         this.log = logger;
 
         this.detector = null;
-        this.gPhotos = new GooglePhotos(logger);
+        this.gPhotos = this.config.upload_gphotos ? new GooglePhotos(logger) : null;
     }
 
     public async setupMotionChecking(configuredAccessories: any[]): Promise<any> {
