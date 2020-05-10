@@ -3,6 +3,7 @@ import {Utils} from "./utils/utils";
 import {Unifi} from "./unifi/unifi";
 import {UnifiFlows} from "./unifi/unifi-flows";
 import {MotionDetector} from "./motion/motion";
+import {PLUGIN_NAME} from "./settings";
 
 const FFMPEG = require('homebridge-camera-ffmpeg/ffmpeg.js').FFMPEG;
 
@@ -19,7 +20,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
             //Hack to get async functions!
             setTimeout(async () => {
-               this.discoverDevices();
+                this.discoverDevices();
             });
         });
     }
@@ -114,7 +115,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 infoLogger('Error during motion checking setup: ' + error);
             }
 
-            this.api.publishCameraAccessories('Unifi-Protect-Camera-Motion', configuredAccessories);
+            this.api.publishCameraAccessories(PLUGIN_NAME, configuredAccessories);
             infoLogger('Setup done');
         }
     }
