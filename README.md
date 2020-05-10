@@ -2,7 +2,8 @@
   
 This Homebridge plugin extends the standard [FFmpeg Homebridge plugin](https://github.com/KhaosT/homebridge-camera-ffmpeg#readme) and provides your cameras and motion sensors for use in Homekit.  
   
-This plugin will enumerate all the cameras in your protect account and provide both a camera and a motion sensor in Homekit for each camera in protect.  
+This plugin will enumerate all the cameras in your protect account and provide a camera, a motion sensor and switch in Homekit for each camera in protect.
+The switch allows you to disable the motion detection (off by default).  
   
 Motion events are queried from the Unifi Protect API and used to generate motion events in Homekit.  
 There are two methods this plugin can use to generate these events in Homekit:  
