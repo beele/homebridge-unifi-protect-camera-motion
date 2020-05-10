@@ -33,6 +33,11 @@ export class Unifi {
                 rejectUnauthorized: false
             })
         });
+
+        this.axiosInstance.interceptors.request.use((request: AxiosRequestConfig) => {
+            console.log(request);
+            return request;
+        });
     }
 
     public static async determineEndpointStyle(baseControllerUrl: string, log: Function): Promise<UnifiEndPointStyle> {
@@ -90,11 +95,17 @@ export class Unifi {
         Utils.checkResponseForErrors(response, 'headers', [endpointStyle.isUnifiOS ? 'set-cookie' : 'authorization']);
 
         this.log('Authenticated, returning session');
-        const authorization = response.headers[endpointStyle.isUnifiOS ? 'set-cookie' : 'authorization'];
-        return {
-            authorization,
-            timestamp: Date.now()
-        };
+        if (endpointStyle.isUnifiOS) {
+            return {
+                cookie: response.headers['set-cookie'],
+                timestamp: Date.now()
+            }
+        } else {
+            return {
+                authorization: response.headers['authorization'],
+                timestamp: Date.now()
+            }
+        }
     }
 
     //TODO: Is checking for expired session still needed with unifiOS?
@@ -119,7 +130,8 @@ export class Unifi {
             headers: endPointStyle.isUnifiOS ?
                 {
                     'Content-Type': 'application/json',
-                    'X-CSRF-Token': endPointStyle.csrfToken
+                    'X-CSRF-Token': endPointStyle.csrfToken,
+                    'Cookie': session.cookie
                 } : {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + session.authorization
@@ -179,7 +191,8 @@ export class Unifi {
             headers: endPointStyle.isUnifiOS ?
                 {
                     'Content-Type': 'application/json',
-                    'X-CSRF-Token': endPointStyle.csrfToken
+                    'X-CSRF-Token': endPointStyle.csrfToken,
+                    'Cookie': session.cookie
                 } : {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + session.authorization
@@ -209,7 +222,8 @@ export class Unifi {
 }
 
 export interface UnifiSession {
-    authorization: any;
+    authorization?: string;
+    cookie?: string
     timestamp: number;
 }
 
