@@ -82,7 +82,30 @@ Next open the config.json that contains your Homebridge configuration and add a 
 
 ### Google Photos config:
 
-***TODO: This is being implemented!***
+***Experimental, this is a work in progress and might not work correctly yet!***
+
+To enable the upload to Google Photos functionality:
+- Go to the [Google Cloud Platform developer console](https://console.cloud.google.com/apis/credentials)
+- [Create a new project](https://console.cloud.google.com/projectcreate?previousPage=%2Fapis%2Fcredentials)
+- You will be redirected to the first page, here select the newly created project from the dropdown on the top left
+- Select the 'OAuth consent screen' from the left sidebar menu
+- Select 'External' and continue
+- On the next screen only fill in a name for the application and click 'save'
+- Select the 'Credentials' from the left sidebar menu
+- Click 'Create credentials' from the top and select 'OAuth Client ID' from the dropdown options
+- Select 'web application', give it a name and fill in the callback URLs with: `http://localhost:8080` for the first and `http://localhost:8080/oauth2-callback` for the second entry (make sure the press return/enter to submit the values, as multiple ones are possible), then click 'create' at the bottom of the page
+- Copy your Client ID and Client secret and store them safely
+- Open a terminal and go to your `.homebridge` folder
+- Create a file named: `unifi-protect-google-settings.json` and open it for editing
+- Copy the contents of the `unifi-protect-google-settings.json` under in the 'resources' folder of this project
+- Fill in your Client ID and Client secret, leave the other fields as they are
+- Start your homebridge instance, it will print out an url, open it in a browser an follow the login instructions
+- The page where you will be redirected will display an error unless you are running Homebridge on the same machine as you are running the browser
+- Copy the full url, replace the localhost in the address bar with the ip-address of your raspberry pi, visit the page, you should get the following message: 'OAuth2 callback handled!'
+- You are now authenticated, and the refresh token has been saved to the previously created config file.
+- The plugin will then create an album named 'Homebridge-Unifi-Protect-Motion-Captures', it will also store the ID of this album so the next time it is not created again (you can rename this album to anything you want)
+- Any detected motions (both normal and enhanced) will now be uploaded to the previously created album
+
 
 ### Video config:
 
