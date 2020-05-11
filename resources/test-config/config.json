@@ -25,8 +25,8 @@
                 "enhanced_classes": [
                     "Person"
                 ],
-                "debug": false,
-                "save_snapshot": false
+                "save_snapshot": false,
+                "debug": true
             },
             "googlePhotos": {
                 "upload_gphotos": false,
