@@ -61,7 +61,7 @@ Next open the config.json that contains your Homebridge configuration and add a 
 |platform|string|yes|/|UnifiProtectMotion|
 |name|string|yes|/|Name of the plugin that shows up in the Homebridge logs|
 |[unifi](https://github.com/beele/homebridge-unifi-protect-camera-motion#unifi-config-fields)|object|yes|/|Wrapper object containing the unifi configuration|
-|[videoConfig](https://github.com/beele/homebridge-unifi-protect-camera-motion#unifi-config-fields)|object|yes|/|Wrapper object containing the video configuration for FFmpeg|
+|[videoConfig](https://github.com/beele/homebridge-unifi-protect-camera-motion#video-config)|object|yes|/|Wrapper object containing the video configuration for FFmpeg|
 
 
 ### Unifi config fields:
