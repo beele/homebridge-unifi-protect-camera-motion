@@ -1,7 +1,0 @@
-{
-  "auth_clientId": "CLIENT_ID",
-  "auth_clientSecret": "CLIENT_SECRET",
-  "auth_redirectUrl": "http://localhost:8080/oauth2-callback",
-  "auth_refresh_token": null,
-  "albumId": null
-}
