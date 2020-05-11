@@ -1,4 +1,5 @@
-import {API, APIEvent, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Categories} from "homebridge";
+import type { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig} from 'homebridge';
+import {APIEvent, Categories} from 'homebridge';
 import {Utils} from "./utils/utils";
 import {Unifi} from "./unifi/unifi";
 import {UnifiFlows} from "./unifi/unifi-flows";
@@ -12,6 +13,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
     public readonly Service = this.api.hap.Service;
     public readonly Characteristic = this.api.hap.Characteristic;
+    public readonly PlatformAccessory = this.api.platformAccessory;
 
     constructor(
         public readonly logger: Logger,
@@ -26,7 +28,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         });
     }
 
-    public configureAccessory(accessory: PlatformAccessory): void {
+    public configureAccessory(accessory: any): void {
         //Not used for now!
     }
 
@@ -36,7 +38,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         const interfaceName = this.config.interfaceName || '';
 
         if (this.config.videoConfig) {
-            const configuredAccessories: PlatformAccessory[] = [];
+            const configuredAccessories: any[] = [];
             const infoLogger = Utils.createLogger(this.logger, true, false);
             const debugLogger = Utils.createLogger(this.logger, false, this.config.unifi.debug);
 
@@ -67,7 +69,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 }
 
                 const uuid = this.api.hap.uuid.generate(camera.id);
-                const cameraAccessory = new PlatformAccessory(camera.name, uuid, Categories.CAMERA);
+                const cameraAccessory = new this.PlatformAccessory(camera.name, uuid, Categories.CAMERA);
                 const cameraAccessoryInfo = cameraAccessory.getService(this.Service.AccessoryInformation);
                 cameraAccessoryInfo.setCharacteristic(this.Characteristic.Manufacturer, 'Ubiquiti');
                 cameraAccessoryInfo.setCharacteristic(this.Characteristic.Model, camera.type);
@@ -117,7 +119,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 infoLogger('Error during motion checking setup: ' + error);
             }
 
-            this.api.publishCameraAccessories(PLUGIN_NAME, configuredAccessories);
+            this.api.publishExternalAccessories(PLUGIN_NAME, configuredAccessories);
             infoLogger('Setup done');
         }
     }
