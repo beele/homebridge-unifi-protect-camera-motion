@@ -1,13 +1,15 @@
 {
     "compilerOptions": {
         "module": "commonjs",
-        "target": "es6",
+        "target": "ES2018",
         "noImplicitAny": true,
         "removeComments": true,
         "preserveConstEnums": true,
         "sourceMap": true,
         "skipLibCheck": true,
-        "preserveSymlinks": true
+        "preserveSymlinks": true,
+        "strictFunctionTypes": false,
+        "esModuleInterop": true
     },
     "include": [
         "src/**/*"
