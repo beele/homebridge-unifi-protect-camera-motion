@@ -4,14 +4,13 @@ import { OAuth2Client } from 'google-auth-library';
 
 const http = require('http');
 const fs = require('fs');
+const homebridgeDir = require('os').homedir() + '/.homebridge/';
 const {promisify} = require('util');
 
 const Photos = require('googlephotos');
 
 const readFileAsync = promisify(fs.readFile);
 const writeFileAsync = promisify(fs.writeFile);
-
-const homebridgeDir: string = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.homebridge/';
 
 export class GooglePhotos {
 

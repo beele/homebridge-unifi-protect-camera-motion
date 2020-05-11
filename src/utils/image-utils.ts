@@ -1,5 +1,5 @@
 const fs = require('fs');
-const homedir = require('os').homedir();
+const homebridgeDir = require('os').homedir() + '/.homebridge/';
 
 import {Canvas, createCanvas, Image, loadImage} from "canvas";
 import {Detection} from "../coco/loader";
@@ -54,7 +54,7 @@ export class ImageUtils {
     private static saveImage(canvas: Canvas): Promise<string> {
         return new Promise((resolve, reject) => {
             const snapshotName: string = 'snapshot-' + new Date().toISOString() + '.jpg';
-            const out = fs.createWriteStream(homedir + '/' + snapshotName);
+            const out = fs.createWriteStream(homebridgeDir + snapshotName);
             const stream = canvas.createJPEGStream({
                 quality: 0.95,
                 chromaSubsampling: false
@@ -64,7 +64,7 @@ export class ImageUtils {
                 reject('Cannot save image to disk: ' + error.message);
             });
             out.on('finish', () => {
-                const fileName: string = homedir + '/' + snapshotName;
+                const fileName: string = homebridgeDir + snapshotName;
                 console.log('The snapshot has been saved to: ' + fileName);
                 resolve(fileName);
             });

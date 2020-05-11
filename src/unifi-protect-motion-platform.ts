@@ -4,6 +4,7 @@ import {Unifi} from "./unifi/unifi";
 import {UnifiFlows} from "./unifi/unifi-flows";
 import {MotionDetector} from "./motion/motion";
 import {PLUGIN_NAME} from "./settings";
+import {VideoConfig} from "./ffmpeg/video-config";
 
 const FFMPEG = require('homebridge-camera-ffmpeg/ffmpeg.js').FFMPEG;
 
@@ -74,6 +75,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 cameraAccessoryInfo.setCharacteristic(this.Characteristic.FirmwareRevision, camera.firmware);
 
                 cameraAccessory.context.id = camera.id;
+                cameraAccessory.context.motionEnabled = true;
                 cameraAccessory.context.lastMotionId = null;
                 cameraAccessory.context.lastMotionIdRepeatCount = 0;
                 cameraAccessory.addService(new this.Service.MotionSensor(camera.name + ' Motion sensor'));
@@ -90,14 +92,14 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                     });
 
                 //Make a copy of the config so we can set each one to have its own camera sources!
-                const videoConfigCopy = JSON.parse(JSON.stringify(this.config.videoConfig));
+                const videoConfigCopy: VideoConfig = JSON.parse(JSON.stringify(this.config.videoConfig));
                 videoConfigCopy.stillImageSource = '-i http://' + camera.ip + '/snap.jpeg';
                 //TODO: Pick the best (highest res?) stream!
                 videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + this.config.unifi.controller_rtsp + '/' + camera.streams[0].alias;
+                videoConfigCopy.debug = this.config.unifi.debug;
 
                 const cameraConfig = {
                     name: camera.name,
-                    uploader: this.config.driveUpload !== undefined ? this.config.driveUpload : false,
                     videoConfig: videoConfigCopy
                 };
 

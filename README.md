@@ -3,7 +3,7 @@
 This Homebridge plugin extends the standard [FFmpeg Homebridge plugin](https://github.com/KhaosT/homebridge-camera-ffmpeg#readme) and provides your cameras and motion sensors for use in Homekit.  
   
 This plugin will enumerate all the cameras in your protect account and provide a camera, a motion sensor and switch in Homekit for each camera in protect.
-The switch allows you to disable the motion detection (off by default).  
+The switch allows you to disable the motion detection (on by default).  
   
 Motion events are queried from the Unifi Protect API and used to generate motion events in Homekit.  
 There are two methods this plugin can use to generate these events in Homekit:  
@@ -77,7 +77,7 @@ Next open the config.json that contains your Homebridge configuration and add a 
 |enhanced_motion|boolean|yes|/|Enables or disables the enhanced motion & object detection detection with Tensorflow|
 |enhanced_motion_score|number|sometimes|/|This field is required if the `enhanced_motion` field is set to true and contains the minimum score/certainty in % the enhanced detection should reach before allowing an motion event to be triggered |
 |enhanced_classes|string[]|sometimes|[]|This field is required if the `enhanced_motion` field is set to true and contains an array of classes of objects to dispatch motion events for. The array should not be empty when using the enhanced detection! Look in look in src/coco/classes.ts for all available classes|
-|debug|boolean|no|false|Contains a boolean indicating whether or not to enable debug logging|
+|debug|boolean|no|false|Contains a boolean indicating whether or not to enable debug logging for the plugin and FFmpeg|
 |save_snapshot|boolean|no|false|Contains a boolean indicating whether or not to save each detection to a jpg file in the user's home directory. When using enhanced mode the image is annotated with the class/score that was detected.|
 |upload_gphotos|boolean|no|false|Contains a boolean indicating whether or not to upload each detection to a google photos album. When using enhanced mode the image is annotated with the class/score that was detected.|
 

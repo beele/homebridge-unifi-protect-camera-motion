@@ -10,7 +10,7 @@
     ],
     "platforms": [
         {
-            "platform": "Unifi-Protect-Camera-Motion",
+            "platform": "UnifiProtectMotion",
             "name": "Unifi protect cameras & motion sensors",
             "unifi": {
                 "controller": "https://controller-ip:web-ui-port",
@@ -25,8 +25,9 @@
                 "enhanced_classes": [
                     "Person"
                 ],
-                "debug": true,
-                "save_snapshot": true
+                "debug": false,
+                "save_snapshot": false,
+                "upload_gphotos": false
             },
             "videoConfig": {
                 "vcodec": "h264",
