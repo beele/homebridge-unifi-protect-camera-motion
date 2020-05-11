@@ -83,7 +83,7 @@ Next open the config.json that contains your Homebridge configuration and add a 
 
 ### Google Photos config:
 
-***Experimental, this is a work in progress and might not work correctly yet!***
+***This is a newly added feature and might still have some issues!***
 
 To enable the upload to Google Photos functionality:
 - Go to the [Google Cloud Platform developer console](https://console.cloud.google.com/apis/credentials)
@@ -155,7 +155,9 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
 ## Limitations, known issues & TODOs:  
   
 ### Limitations:  
-  
+ 
+- Running this plugin on CPUs that do not support AVX (celerons in NAS, ...) is not supported because there are no prebuilt Tensorflow binaries. Compiling Tensorflow from scratch is out of scope for this project!
+  - Run it on a RBPI or MacOS/Windows/Linux (Debian based)
 - Previews in notifications are requested by the Home app, and can thus be "after the fact" and show an image with nothing of interest on it.  
   - The actual motion detection is done with the snapshot that is requested internally.  
 - Unifi Protect has a snapshot saved for every event, and there is an API to get these (with Width & Height) but the actual saved image is pretty low res and is upscaled to 1080p. Using the Anonymous snapshot actually get a full res snapshot (better for object detection).  
