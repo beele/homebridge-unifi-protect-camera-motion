@@ -78,7 +78,7 @@ Next open the config.json that contains your Homebridge configuration and add a 
 |enhanced_motion_score|number|sometimes|/|This field is required if the `enhanced_motion` field is set to true and contains the minimum score/certainty in % the enhanced detection should reach before allowing an motion event to be triggered |
 |enhanced_classes|string[]|sometimes|[]|This field is required if the `enhanced_motion` field is set to true and contains an array of classes of objects to dispatch motion events for. The array should not be empty when using the enhanced detection! Look in look in src/coco/classes.ts for all available classes|
 |debug|boolean|no|false|Contains a boolean indicating whether or not to enable debug logging for the plugin and FFmpeg|
-|save_snapshot|boolean|no|false|Contains a boolean indicating whether or not to save each detection to a jpg file in the user's home directory. When using enhanced mode the image is annotated with the class/score that was detected.|
+|save_snapshot|boolean|no|false|Contains a boolean indicating whether or not to save each detection to a jpg file in the `.homebridge` directory. When using enhanced mode the image is annotated with the class/score that was detected.|
 |upload_gphotos|boolean|no|false|Contains a boolean indicating whether or not to upload each detection to a google photos album. When using enhanced mode the image is annotated with the class/score that was detected.|
 
 ### Google Photos config:
@@ -89,22 +89,22 @@ To enable the upload to Google Photos functionality:
 - Go to the [Google Cloud Platform developer console](https://console.cloud.google.com/apis/credentials)
 - [Create a new project](https://console.cloud.google.com/projectcreate?previousPage=%2Fapis%2Fcredentials)
 - You will be redirected to the first page, here select the newly created project from the dropdown on the top left
-- Select the 'OAuth consent screen' from the left sidebar menu
-- Select 'External' and continue
-- On the next screen only fill in a name for the application and click 'save'
-- Select the 'Credentials' from the left sidebar menu
-- Click 'Create credentials' from the top and select 'OAuth Client ID' from the dropdown options
-- Select 'web application', give it a name and fill in the callback URLs with: `http://localhost:8080` for the first and `http://localhost:8080/oauth2-callback` for the second entry (make sure the press return/enter to submit the values, as multiple ones are possible), then click 'create' at the bottom of the page
+- Select the `OAuth consent screen` from the left sidebar menu
+- Select `External` and continue
+- On the next screen only fill in a name for the application and click `save`
+- Select the `Credentials` from the left sidebar menu
+- Click `Create credentials` from the top and select `OAuth Client ID` from the dropdown options
+- Select `web application`, give it a name and fill in the callback URLs with: `http://localhost:8080` for the first and `http://localhost:8080/oauth2-callback` for the second entry (make sure the press return/enter to submit the values, as multiple ones are possible), then click `create` at the bottom of the page
 - Copy your Client ID and Client secret and store them safely
 - Open a terminal and go to your `.homebridge` folder
 - Create a file named: `unifi-protect-google-settings.json` and open it for editing
-- Copy the contents of the `unifi-protect-google-settings.json` under in the 'resources' folder of this project
+- Copy the contents of the `unifi-protect-google-settings.json` under in the `resources` folder of this project
 - Fill in your Client ID and Client secret, leave the other fields as they are
 - Start your homebridge instance, it will print out an url, open it in a browser an follow the login instructions
 - The page where you will be redirected will display an error unless you are running Homebridge on the same machine as you are running the browser
-- Copy the full url, replace the localhost in the address bar with the ip-address of your raspberry pi, visit the page, you should get the following message: 'OAuth2 callback handled!'
+- Copy the full url, replace the localhost in the address bar with the ip-address of your raspberry pi, visit the page, you should get the following message: `OAuth2 callback handled!`
 - You are now authenticated, and the refresh token has been saved to the previously created config file.
-- The plugin will then create an album named 'Homebridge-Unifi-Protect-Motion-Captures', it will also store the ID of this album so the next time it is not created again (you can rename this album to anything you want)
+- The plugin will then create an album named `Homebridge-Unifi-Protect-Motion-Captures`, it will also store the ID of this album so the next time it is not created again (you can rename this album to anything you want)
 - Any detected motions (both normal and enhanced) will now be uploaded to the previously created album
 
 
@@ -127,8 +127,8 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
 
 - Open the Home app  
 - Click the (+) icon on the top  
-- Select 'Add Accessory'  
-- In the next screen select 'I Don't Have a Code or Cannot Scan'  
+- Select `Add Accessory`  
+- In the next screen select `I Don't Have a Code or Cannot Scan`
 - Your cameras should show up in the next screen, select one  
 - Enter the code for your Homebridge in the prompt, the camera will be added  
 - Repeat for all the cameras you want to add  
@@ -156,7 +156,7 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
   
 ### Limitations:  
   
-- Previews in notifications are requested by the Home app, and can thus be 'after the fact' and show an image with nothing of interest on it.  
+- Previews in notifications are requested by the Home app, and can thus be "after the fact" and show an image with nothing of interest on it.  
   - The actual motion detection is done with the snapshot that is requested internally.  
 - Unifi Protect has a snapshot saved for every event, and there is an API to get these (with Width & Height) but the actual saved image is pretty low res and is upscaled to 1080p. Using the Anonymous snapshot actually get a full res snapshot (better for object detection).  
 - There is no way to know what motion zone (from Unifi) a motion has occurred in. This information is not present is the response from their API.  
@@ -164,9 +164,9 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
   
 ### TODOs:  
 
-- Implement required changes to make this work with Unifi OS (In progress)  
 - Add more unit and integration tests 
 - Upgrade tfjs-node, now held back because newer versions [will not install correctly on RBPI](https://github.com/tensorflow/tfjs/issues/3052) 
+- ~~Implement required changes to make this work with Unifi OS (In progress)~~
 - ~~Figure out how to get higher res streams on iPhone (only iPad seems to request 720p streams)~~ (Not possible) 
 - ~~Extend documentation & wiki~~ (Done)
   
