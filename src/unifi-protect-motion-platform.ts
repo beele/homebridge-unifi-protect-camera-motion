@@ -112,7 +112,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             infoLogger('Cameras: ' + configuredAccessories.length);
 
             try {
-                const motionDetector = new MotionDetector(this.api, this.config.unifi, uFlows, cameras, debugLogger);
+                const motionDetector = new MotionDetector(this.api, this.config, uFlows, cameras, debugLogger);
                 await motionDetector.setupMotionChecking(configuredAccessories);
                 infoLogger('Motion checking setup done!');
             } catch (error) {

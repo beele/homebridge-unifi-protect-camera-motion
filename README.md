@@ -85,6 +85,13 @@ Next open the config.json that contains your Homebridge configuration and add a 
 
 ***This is a newly added feature and might still have some issues!***
 
+|Field|Type|Required|Default value|Description|
+|-----|----|--------|-------------|-----------|
+|upload_gphotos|boolean|no|false|Set this to true to enable uploading of snapshots to Google Photos|
+|auth_clientId|string|sometimes|/|This field is required when the `upload_gphotos` is set to true. Fill in the Client ID you generated for OAuth2 authentication|
+|auth_clientSecret|string|sometimes|/|This field is required when the `upload_gphotos` is set to true. Fill in the Client Secret you generated for OAuth2 authentication|
+|auth_redirectUrl|string|sometimes|/|Fill in 'http://localhost:8080/oauth2-callback' as a default, if you change this value to something else, also change it when creating the OAuth2 credentials!|
+
 To enable the upload to Google Photos functionality:
 - Go to the [Google Cloud Platform developer console](https://console.cloud.google.com/apis/credentials)
 - [Create a new project](https://console.cloud.google.com/projectcreate?previousPage=%2Fapis%2Fcredentials)
@@ -96,10 +103,7 @@ To enable the upload to Google Photos functionality:
 - Click `Create credentials` from the top and select `OAuth Client ID` from the dropdown options
 - Select `web application`, give it a name and fill in the callback URLs with: `http://localhost:8080` for the first and `http://localhost:8080/oauth2-callback` for the second entry (make sure the press return/enter to submit the values, as multiple ones are possible), then click `create` at the bottom of the page
 - Copy your Client ID and Client secret and store them safely
-- Open a terminal and go to your `.homebridge` folder
-- Create a file named: `unifi-protect-google-settings.json` and open it for editing
-- Copy the contents of the `unifi-protect-google-settings.json` under in the `resources` folder of this project
-- Fill in your Client ID and Client secret, leave the other fields as they are
+- Open your config.json, and add a `googlePhotos` and as described in the table above
 - Start your homebridge instance, it will print out an url, open it in a browser an follow the login instructions
 - The page where you will be redirected will display an error unless you are running Homebridge on the same machine as you are running the browser
 - Copy the full url, replace the localhost in the address bar with the ip-address of your raspberry pi, visit the page, you should get the following message: `OAuth2 callback handled!`
