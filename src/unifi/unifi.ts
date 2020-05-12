@@ -1,6 +1,8 @@
 import {Utils} from "../utils/utils";
+import {AxiosInstance, AxiosRequestConfig, AxiosResponse} from "axios";
+import * as https from "https";
 
-const request = require('request-promise-native');
+const axios = require('axios').default;
 
 export class Unifi {
 
@@ -9,25 +11,46 @@ export class Unifi {
     private readonly initialBackoffDelay: number;
     private readonly maxRetries: number;
 
-    private readonly log: any;
+    private readonly logDebug: any;
 
-    constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, logger: Function) {
+    private static readonly axiosInstance: AxiosInstance = axios.create({
+        httpsAgent: new https.Agent({
+            rejectUnauthorized: false
+        })
+    });
+    private readonly axiosInstance: AxiosInstance;
+
+    constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, debugLogger: Function) {
         this.config = config;
         this.initialBackoffDelay = initialBackoffDelay;
         this.maxRetries = maxRetries;
 
-        this.log = logger;
+        this.logDebug = debugLogger;
+
+        this.axiosInstance = axios.create({
+            withCredentials: true,
+            httpsAgent: new https.Agent({
+                rejectUnauthorized: false
+            })
+        });
+
+        if (this.config.debug) {
+            this.axiosInstance.interceptors.request.use((request: AxiosRequestConfig) => {
+                this.logDebug(request);
+                return request;
+            });
+        }
     }
 
     public static async determineEndpointStyle(baseControllerUrl: string, log: Function): Promise<UnifiEndPointStyle> {
-        const opts = {
-            uri: baseControllerUrl,
-            resolveWithFullResponse: true,
-            strictSSL: false,
+        const opts: AxiosRequestConfig = {
+            url: baseControllerUrl,
+            method: 'get',
+            responseType: 'json',
             timeout: 1000
         };
 
-        const response: any = await request.get(opts);
+        const response: AxiosResponse = await Unifi.axiosInstance.request(opts);
         if (response.headers['x-csrf-token']) {
             log('Endpoint Style: UnifiOS');
             return {
@@ -51,8 +74,9 @@ export class Unifi {
             throw new Error('Username and password should be filled in!');
         }
 
-        const opts = {
-            uri: endpointStyle.authURL,
+        const opts: AxiosRequestConfig = {
+            url: endpointStyle.authURL,
+            method: 'post',
             headers: endpointStyle.isUnifiOS ?
                 {
                     'Content-Type': 'application/json',
@@ -60,25 +84,30 @@ export class Unifi {
                 } : {
                     'Content-Type': 'application/json'
                 },
-            body: {
+            data: {
                 "username": username,
                 "password": password
             },
-            json: true,
-            strictSSL: false,
-            resolveWithFullResponse: true,
+            responseType: 'json',
+            withCredentials: true,
             timeout: 1000
         };
 
-        const response: any = await Utils.backoff(this.maxRetries, request.post(opts), this.initialBackoffDelay);
-        Utils.checkResponseForErrors(response, 'headers', ['authorization']);
+        const response: AxiosResponse = await Utils.backOff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
+        Utils.checkResponseForErrors(response, 'headers', [endpointStyle.isUnifiOS ? 'set-cookie' : 'authorization']);
 
-        this.log('Authenticated, returning session');
-        const authorization = response.headers['authorization'];
-        return {
-            authorization,
-            timestamp: Date.now()
-        };
+        this.logDebug('Authenticated, returning session');
+        if (endpointStyle.isUnifiOS) {
+            return {
+                cookie: response.headers['set-cookie']['0'],
+                timestamp: Date.now()
+            }
+        } else {
+            return {
+                authorization: response.headers['authorization'],
+                timestamp: Date.now()
+            }
+        }
     }
 
     //TODO: Is checking for expired session still needed with unifiOS?
@@ -88,40 +117,40 @@ export class Unifi {
             if ((session.timestamp + (12 * 3600 * 1000)) >= Date.now()) {
                 return true;
             } else {
-                this.log('WARNING: Session expired, a new session must be created!');
+                this.logDebug('WARNING: Session expired, a new session must be created!');
             }
         } else {
-            this.log('WARNING: No previous session found, a new session must be created!');
+            this.logDebug('WARNING: No previous session found, a new session must be created!');
         }
         return false;
     }
 
     public async enumerateMotionCameras(session: UnifiSession, endPointStyle: UnifiEndPointStyle): Promise<UnifiCamera[]> {
-        const opts = {
-            uri: endPointStyle.apiURL + '/bootstrap',
+        const opts: AxiosRequestConfig = {
+            url: endPointStyle.apiURL + '/bootstrap',
+            method: 'get',
             headers: endPointStyle.isUnifiOS ?
                 {
                     'Content-Type': 'application/json',
-                    'X-CSRF-Token': endPointStyle.csrfToken
+                    'X-CSRF-Token': endPointStyle.csrfToken,
+                    'Cookie': session.cookie
                 } : {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + session.authorization
                 },
-            json: true,
-            strictSSL: false,
-            resolveWithFullResponse: true,
+            responseType: 'json',
             timeout: 1000
         };
 
-        const response: any = await Utils.backoff(this.maxRetries, request.get(opts), this.initialBackoffDelay);
-        Utils.checkResponseForErrors(response, 'body', ['cameras']);
+        const response: AxiosResponse = await Utils.backOff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
+        Utils.checkResponseForErrors(response, 'data', ['cameras']);
 
-        this.log('Cameras retrieved, enumerating motion sensors');
-        const cams = response.body.cameras;
+        this.logDebug('Cameras retrieved, enumerating motion sensors');
+        const cams = response.data.cameras;
 
         return cams.map((cam: any) => {
             if (this.config.debug) {
-                this.log(cam);
+                this.logDebug(cam);
             }
 
             const streams: UnifiCameraStream[] = [];
@@ -158,29 +187,29 @@ export class Unifi {
         const endEpoch = Date.now();
         const startEpoch = endEpoch - (this.config.motion_interval * 2);
 
-        const opts = {
-            uri: endPointStyle.apiURL + '/events?end=' + endEpoch + '&start=' + startEpoch + '&type=motion',
+        const opts: AxiosRequestConfig = {
+            url: endPointStyle.apiURL + '/events?end=' + endEpoch + '&start=' + startEpoch + '&type=motion',
+            method: 'get',
             headers: endPointStyle.isUnifiOS ?
                 {
                     'Content-Type': 'application/json',
-                    'X-CSRF-Token': endPointStyle.csrfToken
+                    'X-CSRF-Token': endPointStyle.csrfToken,
+                    'Cookie': session.cookie
                 } : {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + session.authorization
                 },
-            json: true,
-            strictSSL: false,
-            resolveWithFullResponse: true,
+            responseType: 'json',
             timeout: 1000
         };
 
-        const response: any = await Utils.backoff(this.maxRetries, request.get(opts), this.initialBackoffDelay);
-        Utils.checkResponseForErrors(response, 'body');
+        const response: AxiosResponse = await Utils.backOff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
+        Utils.checkResponseForErrors(response, 'data');
 
-        const events: any[] = response.body;
+        const events: any[] = response.data;
         return events.map((event: any) => {
             if (this.config.debug) {
-                this.log(event);
+                this.logDebug(event);
             }
 
             return {
@@ -192,10 +221,25 @@ export class Unifi {
             }
         });
     }
+
+    public static pickHighestQualityAlias(streams: UnifiCameraStream[]): string {
+        return streams
+            .map(((stream: UnifiCameraStream) => {
+                return {
+                    resolution: stream.width * stream.height,
+                    alias: stream.alias
+                };
+            }))
+            .sort((a, b) => {
+                return a.resolution - b.resolution;
+            })
+            .shift().alias;
+    }
 }
 
 export interface UnifiSession {
-    authorization: any;
+    authorization?: string;
+    cookie?: string
     timestamp: number;
 }
 
