@@ -15,8 +15,15 @@ There are two methods this plugin can use to generate these events in Homekit:
 Before installing this plugin make sure the prerequisites are met!   
 Please consult this readme and [the wiki](https://github.com/beele/homebridge-unifi-protect-camera-motion/wiki) before continuing! 
 
-Make sure you have the [node canvas prerequisites](https://github.com/beele/homebridge-unifi-protect-camera-motion/wiki/node-canvas-prerequisites) installed, or the plugin installation will fail!   
-After that, to install this plugin simple type `sudo npm install homebridge-unifi-protect-camera-motion -g --unsafe-perm=true`.  
+This plugin requires node-canvas to work, before installing this plugin make sure you have the required dependencies:
+- Raspberry Pi / Ubuntu / Debian Linux:
+  - install: `sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev`
+- Mac OS: 
+  - install via homebrew: `brew install pkg-config cairo pango libpng jpeg giflib librsvg`   
+- Other OSes:
+  - [See the node-canvas documentation](https://github.com/Automattic/node-canvas#compiling)
+  
+Then to install this plugin simple type `sudo npm install homebridge-unifi-protect-camera-motion -g --unsafe-perm=true`.  
   
 Next open the config.json that contains your Homebridge configuration and add a block like the following one to the platforms array:  
   
