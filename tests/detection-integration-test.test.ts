@@ -6,12 +6,14 @@ const path = require('path');
 const fs = require('fs');
 
 test('Loader-detect-image-full-model-IT', async () => {
-    const detector: Detector = await Loader.loadCoco(false, path.dirname(path.resolve('resources')));
+    const modelLoader: Loader = new Loader(console.log);
+    const detector: Detector = await modelLoader.loadCoco(false, path.dirname(path.resolve('resources')));
     await verifyDetections(detector);
 });
 
 test('Loader-detect-image-lite-model-IT', async () => {
-    const detector: Detector = await Loader.loadCoco(true, path.dirname(path.resolve('resources')));
+    const modelLoader: Loader = new Loader(console.log);
+    const detector: Detector = await modelLoader.loadCoco(true, path.dirname(path.resolve('resources')));
     await verifyDetections(detector);
 });
 
