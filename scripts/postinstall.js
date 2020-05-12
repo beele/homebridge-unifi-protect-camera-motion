@@ -16,7 +16,7 @@ switch (process.arch) {
 
 function fixTensorFlowForArm() {
     const content = {
-        "tf-lib": "https://github.com/beele/homebridge-unifi-protect-camera-motion/blob/feature/tfjs-node-upgrade/resources/tfjs-arm/libtensorflow-cpu-linux-arm-1.15.0.tar.gz?raw=true"
+        "tf-lib": "https://github.com/beele/homebridge-unifi-protect-camera-motion/blob/master/resources/tfjs-arm/libtensorflow-cpu-linux-arm-1.15.0.tar.gz?raw=true"
     };
 
     if (fs.existsSync(process.cwd() + '/node_modules/@tensorflow/tfjs-node/scripts/')) {
