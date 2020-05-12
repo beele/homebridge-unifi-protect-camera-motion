@@ -33,7 +33,6 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
     }
 
     private async discoverDevices(): Promise<void> {
-
         const videoProcessor = this.config.videoProcessor || 'ffmpeg';
         const interfaceName = this.config.interfaceName || '';
 
@@ -90,6 +89,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                     })
                     .on(this.api.hap.CharacteristicEventTypes.SET, (value: boolean, callback: Function) => {
                         cameraAccessory.context.motionEnabled = value;
+                        infoLogger('Motion detection for ' + camera.name + ' has been turned ' + (cameraAccessory.context.motionEnabled ? 'ON': 'OFF'));
                         callback();
                     });
 
