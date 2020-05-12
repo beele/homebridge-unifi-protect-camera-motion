@@ -12,8 +12,12 @@ There are two methods this plugin can use to generate these events in Homekit:
   The Tensorflow logic/model runs on the device itself and no data is ever sent to any online source, it is based on [this](https://github.com/tensorflow/tfjs-models/tree/master/coco-ssd) project.  
   
 # Installation:  
-Before installing this plugin make sure are prerequisites are met!   
-Consult [the wiki](https://github.com/beele/homebridge-unifi-protect-camera-motion/wiki) before continuing!  
+Before installing this plugin make sure the prerequisites are met!   
+At the very make sure you have the [node canvas prerequisites](https://github.com/beele/homebridge-unifi-protect-camera-motion/wiki/node-canvas-prerequisites) installed, or the plugin installation will fail!   
+Please consult this readme and [the wiki](https://github.com/beele/homebridge-unifi-protect-camera-motion/wiki) before continuing! 
+You can verify the correctness of your config file by using [jsonlint](https://jsonlint.com/).   
+The config must be valid or it will not work!  
+
   
 To install this plugin simple type `sudo npm install homebridge-unifi-protect-camera-motion -g --unsafe-perm=true`.  
   
@@ -162,7 +166,7 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
   - Run it on a RBPI or MacOS/Windows/Linux (Debian based)
 - Previews in notifications are requested by the Home app, and can thus be "after the fact" and show an image with nothing of interest on it.  
   - The actual motion detection is done with the snapshot that is requested internally.  
-- Unifi Protect has a snapshot saved for every event, and there is an API to get these (with Width & Height) but the actual saved image is pretty low res and is upscaled to 1080p. Using the Anonymous snapshot actually get a full res snapshot (better for object detection).  
+- Unifi Protect has a snapshot saved for every event, and there is an API to get these (with Width & Height) but the actual saved image is pretty low res and is upscaled to 1080p. Using the Anonymous snapshot actually gets a full res snapshot (better for object detection).  
 - There is no way to know what motion zone (from Unifi) a motion has occurred in. This information is not present is the response from their API.  
 - The enhanced object detection using CoCo is far from perfect and might not catch all the thing you want it to.  
   
