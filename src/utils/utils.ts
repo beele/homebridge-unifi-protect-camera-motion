@@ -1,17 +1,18 @@
+import {Logger, LogLevel} from "homebridge";
+
 export class Utils {
 
     public static pause(duration: number): Promise<any> {
         return new Promise(res => setTimeout(res, duration));
     }
 
-    public static async backoff(retries: number, promise: Promise<any>, delay: number): Promise<any> {
+    public static async backOff(retries: number, promise: Promise<any>, delay: number): Promise<any> {
         delay = delay / 2;
         for (let i = 0; i <= retries; i++) {
             try {
                 return await promise;
             } catch (err) {
                 delay = delay * 2;
-                console.log('Retrying, Waiting', delay, 'ms...');
                 await this.pause(delay);
             }
         }
@@ -37,10 +38,18 @@ export class Utils {
         }
     }
 
-    public static createLogger(wrappedLogger: Function, debug: boolean): Function {
-        return (message: any) => {
-            if(debug) {
-                wrappedLogger(message);
+    public static createLogger(wrappedLogger: Logger, createInfoLogger: boolean, createDebugLogger: boolean): Function {
+        if (createInfoLogger) {
+            return (message: any) => {
+                wrappedLogger.log(LogLevel.INFO, message);
+            }
+        } else if(createDebugLogger) {
+            return (message: any) => {
+                wrappedLogger.log(LogLevel.DEBUG, message);
+            }
+        } else {
+            return () => {
+                //Do nothing when logging!
             }
         }
     }
