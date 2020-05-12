@@ -86,7 +86,7 @@ export class MotionDetector {
                         return;
                     }
 
-                    this.logInfo('!!!! Motion detected (' + motionEvent.score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
+                    this.logInfo('Motion detected (' + motionEvent.score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
                     configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 1);
 
                     let snapshot: Image;
@@ -138,12 +138,12 @@ export class MotionDetector {
 
                             const score: number = Math.round(detection.score * 100);
                             if (score >= this.unifiConfig.enhanced_motion_score) {
-                                this.logInfo('!!!! ' + classToDetect + ' detected (' + score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
+                                this.logInfo(classToDetect + ' detected (' + score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
                                 configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 1);
                                 await this.persistSnapshot(snapshot, classToDetect + ' detected (' + score + '%) by camera ' + motionEvent.camera.name, [detection]);
                                 continue outer;
                             } else {
-                                this.logDebug('!!!! Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.unifiConfig.enhanced_motion_score + '% or higher) !!!!');
+                                this.logDebug('Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.unifiConfig.enhanced_motion_score + '% or higher)');
                             }
                         } else {
                             this.logDebug('None of the required classes found by enhanced motion detection, discarding!');

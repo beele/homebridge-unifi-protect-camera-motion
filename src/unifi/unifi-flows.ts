@@ -36,11 +36,11 @@ export class UnifiFlows {
                 for (const motionEvent of motionEvents) {
                     if (camera.id === motionEvent.cameraId) {
                         if (motionEvent.score >= this.config.motion_score) {
-                            this.log('!!!! Unifi Motion event (' + motionEvent.id + ') accepted for camera: ' + camera.name + ' - Score: ' + motionEvent.score + ' !!!!');
+                            this.log('Unifi Motion event (' + motionEvent.id + ') accepted for camera: ' + camera.name + ' - Score: ' + motionEvent.score);
                             motionEvent.camera = camera;
                             filteredMotionEvents.push(motionEvent);
                         } else {
-                            this.log('!!!! Unifi Motion event (' + motionEvent.id + ') rejected for camera: ' + camera.name + ' - Score: ' + motionEvent.score + ' !!!!');
+                            this.log('Unifi Motion event (' + motionEvent.id + ') rejected for camera: ' + camera.name + ' - Score: ' + motionEvent.score);
                         }
                         continue outer;
                     }
