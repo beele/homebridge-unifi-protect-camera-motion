@@ -34,13 +34,12 @@ export class Unifi {
             })
         });
 
-        //For debugging only
-        /*
-        this.axiosInstance.interceptors.request.use((request: AxiosRequestConfig) => {
-            console.log(request);
-            return request;
-        });
-        */
+        if (this.config.debug) {
+            this.axiosInstance.interceptors.request.use((request: AxiosRequestConfig) => {
+                console.log(request);
+                return request;
+            });
+        }
     }
 
     public static async determineEndpointStyle(baseControllerUrl: string, log: Function): Promise<UnifiEndPointStyle> {
