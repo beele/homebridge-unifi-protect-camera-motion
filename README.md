@@ -1,21 +1,26 @@
 # Unifi-Protect-Camera-Motion [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins) [![Build Status](https://travis-ci.com/beele/homebridge-unifi-protect-camera-motion.svg?branch=master)](https://travis-ci.com/beele/homebridge-unifi-protect-camera-motion)  
   
-This Homebridge plugin extends the standard [FFmpeg Homebridge plugin](https://github.com/KhaosT/homebridge-camera-ffmpeg#readme) and provides your cameras and motion sensors for use in Homekit.  
-  
-This plugin will enumerate all the cameras in your protect account and provide a camera, a motion sensor and switch in Homekit for each camera in protect.
-The switch allows you to disable the motion detection (on by default).  
-  
-Motion events are queried from the Unifi Protect API and used to generate motion events in Homekit.  
-There are two methods this plugin can use to generate these events in Homekit:  
-- Based on the score of the Unifi Protect motion event  
-- Based on the above but with an additional object detection step by use of a Tensorflow model.  
-  The Tensorflow logic/model runs on the device itself and no data is ever sent to any online source, it is based on [this](https://github.com/tensorflow/tfjs-models/tree/master/coco-ssd) project.  
+This Homebridge plugin allows you to add your Unifi Protect Cameras (and their Motion Sensors) to Homekit.
+
+It is based on the very popular [FFmpeg Homebridge plugin](https://github.com/KhaosT/homebridge-camera-ffmpeg#readme) plugin, with Unifi-specific conveniences added to it. It is not necessary to have that plugin installed alongside this one, though they can be installed at the same time if you have non-Unifi Protect cameras as well.
+
+# How it Works
+This plugin will automatically discover all of the Unifi Protect cameras from your Protect installation, and provide the following sensors for each one that it finds:
+
+* Camera, for viewing live RTSP streams
+* Motion sensor, for sending push-notifications when there is movement
+* A Switch, for easily enabling and disabling motion detection (on by default)
+
+# Motion Events
+Motion is detected by the Unifi Protect API and is used to generate a Motion Event in Homekit. This plugin can use one of two methods to generate these events:  
+- The "score" of the Unifi Protect motion event  
+- The "score" plus additional object detection step by use of a Tensorflow model. This logic/model runs on-device, and no data is ever sent to any online/external/cloud source or service. It is based on [this](https://github.com/tensorflow/tfjs-models/tree/master/coco-ssd) project.
   
 # Installation:  
-Before installing this plugin make sure the prerequisites are met!   
-Please consult this readme and [the wiki](https://github.com/beele/homebridge-unifi-protect-camera-motion/wiki) before continuing! 
+Before installing this plugin, please make sure all of the prerequisites are completely first.
+Consult the readme and [the wiki](https://github.com/beele/homebridge-unifi-protect-camera-motion/wiki) before proceeding.
 
-This plugin requires node-canvas to work, before installing this plugin make sure you have the required dependencies:
+First, this plugin requires node-canvas:
 - Raspberry Pi / Ubuntu / Debian Linux:
   - install: `sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev`
 - Mac OS: 
@@ -23,9 +28,13 @@ This plugin requires node-canvas to work, before installing this plugin make sur
 - Other OSes:
   - [See the node-canvas documentation](https://github.com/Automattic/node-canvas#compiling)
   
-Then to install this plugin simple type `sudo npm install homebridge-unifi-protect-camera-motion -g --unsafe-perm=true`.  
+Next, to install this plugin simply type:
+
+```
+sudo npm install homebridge-unifi-protect-camera-motion -g --unsafe-perm=true
+```
   
-Next open the config.json that contains your Homebridge configuration and add a block like the following one to the platforms array:  
+Next, open the `config.json` that contains your Homebridge configuration, and add a block like the following one to the `platforms` array:
   
 ```javascript  
 {  
@@ -61,8 +70,12 @@ Next open the config.json that contains your Homebridge configuration and add a 
     }
 }  
 ```  
+
 You can verify the correctness of your config file by using [jsonlint](https://jsonlint.com/).   
-The config must be valid or it will not work!  
+
+The config must be valid or Homebridge will fail to restart correctly.
+
+If you are using Homebridge Config X, it will do its best to alert you to any syntax errors it finds.
 
 
 ## Config fields:  
@@ -121,7 +134,7 @@ To enable the upload to Google Photos functionality:
 - Any detected motions (both normal and enhanced) will now be uploaded to the previously created album
 
 
-### Video config:
+### Video Config:
 
 This config object is the same as used in the Homebridge-FFmpeg plugin.
 Consult the documentation for more details: [FFmpeg configuration](https://github.com/KhaosT/homebridge-camera-ffmpeg#readme). 
