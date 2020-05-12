@@ -1,11 +1,11 @@
 .DS_Store
 .idea
-.travis.yml
 *.iml
 .git/
+.travis.yml
 
+dist/
 coverage/
 resources/test-config
+resources/images/readme/*
 src/experimental
-*.js
-*.js.map
