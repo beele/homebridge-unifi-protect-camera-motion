@@ -39,6 +39,11 @@ export class Unifi {
                 this.logDebug(request);
                 return request;
             });
+
+            this.axiosInstance.interceptors.response.use((response: AxiosResponse) => {
+                this.logDebug(response);
+                return response;
+            });
         }
     }
 
