@@ -65,7 +65,6 @@ export class ImageUtils {
             });
             out.on('finish', () => {
                 const fileName: string = homebridgeDir + snapshotName;
-                console.log('The snapshot has been saved to: ' + fileName);
                 resolve(fileName);
             });
         });

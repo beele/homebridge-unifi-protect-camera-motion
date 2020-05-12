@@ -302,12 +302,6 @@
             "default": "-protocol_whitelist https,crypto,srtp,rtp,udp",
             "description": "Any additional commandline parameters to pass to FFmpeg",
             "required": true
-          },
-          "debug": {
-            "title": "Enable Debug Mode?",
-            "type": "boolean",
-            "default": false,
-            "required": true
           }
         }
       }

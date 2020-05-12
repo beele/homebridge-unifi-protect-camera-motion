@@ -1,4 +1,4 @@
-import type { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig} from 'homebridge';
+import type { API, DynamicPlatformPlugin, Logger, PlatformConfig} from 'homebridge';
 import {APIEvent, Categories} from 'homebridge';
 import {Utils} from "./utils/utils";
 import {Unifi} from "./unifi/unifi";
@@ -95,9 +95,9 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
                 //Make a copy of the config so we can set each one to have its own camera sources!
                 const videoConfigCopy: VideoConfig = JSON.parse(JSON.stringify(this.config.videoConfig));
+                //Assign stillImageSource, source and debug (overwrite if they are present from the videoConfig, which they should not be!)
                 videoConfigCopy.stillImageSource = '-i http://' + camera.ip + '/snap.jpeg';
-                //TODO: Pick the best (highest res?) stream!
-                videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + this.config.unifi.controller_rtsp + '/' + camera.streams[0].alias;
+                videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + this.config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(camera.streams);
                 videoConfigCopy.debug = this.config.unifi.debug;
 
                 const cameraConfig = {
@@ -112,7 +112,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             infoLogger('Cameras: ' + configuredAccessories.length);
 
             try {
-                const motionDetector = new MotionDetector(this.api, this.config, uFlows, cameras, debugLogger);
+                const motionDetector = new MotionDetector(this.api, this.config, uFlows, cameras, infoLogger, debugLogger);
                 await motionDetector.setupMotionChecking(configuredAccessories);
                 infoLogger('Motion checking setup done!');
             } catch (error) {
