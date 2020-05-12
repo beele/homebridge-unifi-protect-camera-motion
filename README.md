@@ -13,13 +13,10 @@ There are two methods this plugin can use to generate these events in Homekit:
   
 # Installation:  
 Before installing this plugin make sure the prerequisites are met!   
-At the very make sure you have the [node canvas prerequisites](https://github.com/beele/homebridge-unifi-protect-camera-motion/wiki/node-canvas-prerequisites) installed, or the plugin installation will fail!   
 Please consult this readme and [the wiki](https://github.com/beele/homebridge-unifi-protect-camera-motion/wiki) before continuing! 
-You can verify the correctness of your config file by using [jsonlint](https://jsonlint.com/).   
-The config must be valid or it will not work!  
 
-  
-To install this plugin simple type `sudo npm install homebridge-unifi-protect-camera-motion -g --unsafe-perm=true`.  
+Make sure you have the [node canvas prerequisites](https://github.com/beele/homebridge-unifi-protect-camera-motion/wiki/node-canvas-prerequisites) installed, or the plugin installation will fail!   
+After that, to install this plugin simple type `sudo npm install homebridge-unifi-protect-camera-motion -g --unsafe-perm=true`.  
   
 Next open the config.json that contains your Homebridge configuration and add a block like the following one to the platforms array:  
   
@@ -57,6 +54,9 @@ Next open the config.json that contains your Homebridge configuration and add a 
     }
 }  
 ```  
+You can verify the correctness of your config file by using [jsonlint](https://jsonlint.com/).   
+The config must be valid or it will not work!  
+
 
 ## Config fields:  
 
