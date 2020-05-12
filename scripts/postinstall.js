@@ -4,6 +4,7 @@ const exec = require('child_process').exec;
 switch (process.arch) {
     case 'arm':
     case 'arm64':
+        console.log('ARM/ARM64 architecture, tfjs-lib not precompiled, downloading external precompiled lib!');
         fixTensorFlowForArm();
         break;
     case 'x32':
@@ -11,7 +12,7 @@ switch (process.arch) {
         console.log('Supported architecture, no actions required!');
         break;
     default:
-        console.error('Unsupported processor architecture!');
+        console.error('Unsupported processor architecture: ' + process.arch);
 }
 
 function fixTensorFlowForArm() {
