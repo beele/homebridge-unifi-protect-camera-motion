@@ -9,7 +9,6 @@ switch (process.arch) {
     case 'x32':
     case 'x64':
         console.log('Supported architecture, no actions required!');
-        fixTensorFlowForArm();
         break;
     default:
         console.error('Unsupported processor architecture!');
