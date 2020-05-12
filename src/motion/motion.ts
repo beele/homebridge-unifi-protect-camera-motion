@@ -138,7 +138,7 @@ export class MotionDetector {
 
                             const score: number = Math.round(detection.score * 100);
                             if (score >= this.unifiConfig.enhanced_motion_score) {
-                                this.logInfo(classToDetect + ' detected (' + score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
+                                this.logInfo('Detected: ' + classToDetect + ' (' + score + '%) by camera ' + motionEvent.camera.name);
                                 configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 1);
                                 await this.persistSnapshot(snapshot, classToDetect + ' detected (' + score + '%) by camera ' + motionEvent.camera.name, [detection]);
                                 continue outer;

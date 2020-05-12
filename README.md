@@ -171,6 +171,7 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
 - Raspberry Pi 3B with Node 11.15.0 as Homebridge host  
 - Raspberry Pi 4B 4GB with Node 12.14.0 as Homebridge host  
 - Macbook Pro with Node 12.13.1 as Homebridge host  
+- Windows 10 with Node 12.13.0 as Homebridge host
 - Ubiquiti UniFi CloudKey Gen2 Plus - Cloud Key with Unifi Protect functionality  
   <br/><br/>![CloudKey Gen2 Plus](resources/images/readme/cloudkey-gen2plus.jpg?raw=true "CloudKey Gen2 Plus")  
 - 2x Ubiquiti UniFi Video UVC-G3-AF - PoE Camera  
