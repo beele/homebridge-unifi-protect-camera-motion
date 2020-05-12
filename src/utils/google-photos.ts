@@ -14,17 +14,19 @@ const writeFileAsync = promisify(fs.writeFile);
 
 export class GooglePhotos {
 
-    private readonly log: Function;
-    private config: GooglePhotosConfig;
+    private readonly logInfo: Function;
+    private readonly logDebug: Function;
+    private readonly config: GooglePhotosConfig;
     private oauth2Client: OAuth2Client;
 
     private gPhotosPersistData: GooglePhotosPersistData;
 
     private configIsInvalid = false;
 
-    constructor(config: GooglePhotosConfig, logger: Function) {
+    constructor(config: GooglePhotosConfig, infoLogger: Function, debugLogger: Function) {
         this.config = config;
-        this.log = logger;
+        this.logInfo = infoLogger;
+        this.logDebug = debugLogger;
 
         setTimeout(async () => {
             await this.init();
@@ -40,14 +42,14 @@ export class GooglePhotos {
                 albumId: null
             };
 
-            this.log('Google photos persisted data cannot be read/parsed, initial setup!');
-            this.log(error);
+            this.logDebug('Google photos persisted data cannot be read/parsed, initial setup!');
+            this.logDebug(error);
         }
-        this.log(this.gPhotosPersistData);
+        this.logDebug(this.gPhotosPersistData);
 
         if (!this.config || !this.config.auth_clientId || !this.config.auth_clientSecret || !this.config.auth_redirectUrl) {
             this.configIsInvalid = true;
-            this.log('Google photos config not correct/incomplete! Disabling functionality!');
+            this.logDebug('Google photos config not correct/incomplete! Disabling functionality!');
             return;
         }
 
@@ -60,16 +62,16 @@ export class GooglePhotos {
         const photos = new Photos(await this.authenticate());
         try {
             if (!this.gPhotosPersistData.albumId) {
-                this.log('Creating album');
+                this.logDebug('Creating Google Photos album');
                 const response = await photos.albums.create('Homebridge-Unifi-Protect-Motion-Captures');
                 this.gPhotosPersistData.albumId = response.id;
             } else {
-                this.log('Album already created');
+                this.logDebug('Google Photos album already created');
             }
             await GooglePhotos.writeConfig(this.gPhotosPersistData);
         } catch (error) {
-            this.log('Could not create album');
-            this.log(error);
+            this.logDebug('Could not create album');
+            this.logDebug(error);
         }
     }
 
@@ -84,9 +86,9 @@ export class GooglePhotos {
             return response.newMediaItemResults[0].mediaItem.productUrl;
 
         } catch (error) {
-            this.log('Uploading failed');
-            this.log(error);
-            throw new Error('Cannot upload image!');
+            this.logDebug('Uploading to Google Photos failed');
+            this.logDebug(error);
+            throw new Error('Cannot upload image to Google Photos!');
         }
     }
 
@@ -97,7 +99,7 @@ export class GooglePhotos {
                 access_type: 'offline',
                 scope: [Photos.Scopes.READ_AND_APPEND]
             });
-            console.log('Please log in on Google Photos to allow for uploading: ' + url);
+            this.logInfo('Please log in on Google Photos to allow for uploading: ' + url);
         } else {
             this.oauth2Client.setCredentials({
                 refresh_token: this.gPhotosPersistData.auth_refresh_token
@@ -108,23 +110,23 @@ export class GooglePhotos {
         try {
             //TODO: only refresh if token is about to expire!
             if (this.gPhotosPersistData.auth_refresh_token) {
-                this.log('Refreshing access token');
+                this.logDebug('Refreshing access token');
                 accessToken = (await this.oauth2Client.getAccessToken()).token;
             } else {
-                this.log('Fetching new access token');
+                this.logDebug('Fetching new access token');
                 const {tokens} = await this.oauth2Client.getToken(await this.getAuthCodeFromOauth2callback());
                 this.oauth2Client.setCredentials(tokens);
                 if (tokens.refresh_token) {
                     this.gPhotosPersistData.auth_refresh_token = tokens.refresh_token;
                 }
-                this.log(tokens);
+                this.logDebug(tokens);
                 accessToken = tokens.access_token;
             }
 
             return accessToken;
         } catch (error) {
-            this.log('Failed to get auth!');
-            this.log(error);
+            this.logDebug('Failed to get auth!');
+            this.logDebug(error);
         }
     }
 

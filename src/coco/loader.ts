@@ -4,7 +4,13 @@ import {ImageUtils} from "../utils/image-utils";
 
 export class Loader {
 
-    public static async loadCoco(useLiteModel: boolean, basePath?: string): Promise<Detector> {
+    private readonly logInfo: Function;
+
+    constructor(infoLogger: Function) {
+        this.logInfo = infoLogger;
+    }
+
+    public async loadCoco(useLiteModel: boolean, basePath?: string): Promise<Detector> {
         const model: ObjectDetection = await createCocoModel(useLiteModel, basePath);
         return {
             async detect(image: Image, logResults: boolean = false): Promise<Detection[]> {
@@ -14,21 +20,21 @@ export class Loader {
                 const results = await model.detect(canvas as unknown as HTMLCanvasElement);
 
                 if (logResults) {
-                    Loader.printProcessDuration('COCO', start);
-                    Loader.printResults(results);
+                    this.printProcessDuration('COCO', start);
+                    this.printResults(results);
                 }
                 return results;
             }
         };
     }
 
-    private static printProcessDuration(name: string, start: number): void {
-        console.log(name + ' processing took: ' + (Date.now() - start) + 'ms');
+    private printProcessDuration(name: string, start: number): void {
+        this.logInfo(name + ' processing took: ' + (Date.now() - start) + 'ms');
     }
 
-    private static printResults(results: any[]): void {
+    private printResults(results: any[]): void {
         for (const result of results) {
-            console.log('==> Detected: ' + result.class + ' [' + Math.round(result.score * 100) + '%]');
+            this.logInfo('==> Detected: ' + result.class + ' [' + Math.round(result.score * 100) + '%]');
         }
     }
 }

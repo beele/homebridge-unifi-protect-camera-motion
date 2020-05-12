@@ -83,8 +83,6 @@ Next open the config.json that contains your Homebridge configuration and add a 
 
 ### Google Photos config:
 
-***This is a newly added feature and might still have some issues!***
-
 |Field|Type|Required|Default value|Description|
 |-----|----|--------|-------------|-----------|
 |upload_gphotos|boolean|no|false|Set this to true to enable uploading of snapshots to Google Photos|

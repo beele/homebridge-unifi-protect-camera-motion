@@ -6,14 +6,13 @@ export class Utils {
         return new Promise(res => setTimeout(res, duration));
     }
 
-    public static async backoff(retries: number, promise: Promise<any>, delay: number): Promise<any> {
+    public static async backOff(retries: number, promise: Promise<any>, delay: number): Promise<any> {
         delay = delay / 2;
         for (let i = 0; i <= retries; i++) {
             try {
                 return await promise;
             } catch (err) {
                 delay = delay * 2;
-                console.log('Retrying, Waiting', delay, 'ms...');
                 await this.pause(delay);
             }
         }

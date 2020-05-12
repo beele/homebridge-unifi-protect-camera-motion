@@ -11,7 +11,7 @@ export class Unifi {
     private readonly initialBackoffDelay: number;
     private readonly maxRetries: number;
 
-    private readonly log: any;
+    private readonly logDebug: any;
 
     private static readonly axiosInstance: AxiosInstance = axios.create({
         httpsAgent: new https.Agent({
@@ -20,12 +20,12 @@ export class Unifi {
     });
     private readonly axiosInstance: AxiosInstance;
 
-    constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, logger: Function) {
+    constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, debugLogger: Function) {
         this.config = config;
         this.initialBackoffDelay = initialBackoffDelay;
         this.maxRetries = maxRetries;
 
-        this.log = logger;
+        this.logDebug = debugLogger;
 
         this.axiosInstance = axios.create({
             withCredentials: true,
@@ -36,7 +36,7 @@ export class Unifi {
 
         if (this.config.debug) {
             this.axiosInstance.interceptors.request.use((request: AxiosRequestConfig) => {
-                console.log(request);
+                this.logDebug(request);
                 return request;
             });
         }
@@ -93,10 +93,10 @@ export class Unifi {
             timeout: 1000
         };
 
-        const response: AxiosResponse = await Utils.backoff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
+        const response: AxiosResponse = await Utils.backOff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
         Utils.checkResponseForErrors(response, 'headers', [endpointStyle.isUnifiOS ? 'set-cookie' : 'authorization']);
 
-        this.log('Authenticated, returning session');
+        this.logDebug('Authenticated, returning session');
         if (endpointStyle.isUnifiOS) {
             return {
                 cookie: response.headers['set-cookie']['0'],
@@ -117,10 +117,10 @@ export class Unifi {
             if ((session.timestamp + (12 * 3600 * 1000)) >= Date.now()) {
                 return true;
             } else {
-                this.log('WARNING: Session expired, a new session must be created!');
+                this.logDebug('WARNING: Session expired, a new session must be created!');
             }
         } else {
-            this.log('WARNING: No previous session found, a new session must be created!');
+            this.logDebug('WARNING: No previous session found, a new session must be created!');
         }
         return false;
     }
@@ -142,15 +142,15 @@ export class Unifi {
             timeout: 1000
         };
 
-        const response: AxiosResponse = await Utils.backoff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
+        const response: AxiosResponse = await Utils.backOff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
         Utils.checkResponseForErrors(response, 'data', ['cameras']);
 
-        this.log('Cameras retrieved, enumerating motion sensors');
+        this.logDebug('Cameras retrieved, enumerating motion sensors');
         const cams = response.data.cameras;
 
         return cams.map((cam: any) => {
             if (this.config.debug) {
-                this.log(cam);
+                this.logDebug(cam);
             }
 
             const streams: UnifiCameraStream[] = [];
@@ -203,13 +203,13 @@ export class Unifi {
             timeout: 1000
         };
 
-        const response: AxiosResponse = await Utils.backoff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
+        const response: AxiosResponse = await Utils.backOff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
         Utils.checkResponseForErrors(response, 'data');
 
         const events: any[] = response.data;
         return events.map((event: any) => {
             if (this.config.debug) {
-                this.log(event);
+                this.logDebug(event);
             }
 
             return {
@@ -220,6 +220,20 @@ export class Unifi {
                 timestamp: event.start //event.end is null when the motion is still ongoing!
             }
         });
+    }
+
+    public static pickHighestQualityAlias(streams: UnifiCameraStream[]): string {
+        return streams
+            .map(((stream: UnifiCameraStream) => {
+                return {
+                    resolution: stream.width * stream.height,
+                    alias: stream.alias
+                };
+            }))
+            .sort((a, b) => {
+                return a.resolution - b.resolution;
+            })
+            .shift().alias;
     }
 }
 
