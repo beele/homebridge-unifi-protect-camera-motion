@@ -41,5 +41,6 @@ jspm_packages
 
 resources/test-config/accessories/
 resources/test-config/persist/
+resources/test-config/unifi-protect-google-settings.json
 
 .idea/

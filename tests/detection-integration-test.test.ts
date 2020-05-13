@@ -4,7 +4,6 @@ import {ImageUtils} from "../src/utils/image-utils";
 
 const path = require('path');
 const fs = require('fs');
-const homebridgeDir = require('os').homedir() + '/.homebridge/';
 
 test('Loader-detect-image-full-model-IT', async () => {
     const modelLoader: Loader = new Loader(console.log);
@@ -22,6 +21,8 @@ const verifyDetections = async (detector: Detector) => {
     expect(detector).not.toBeNull();
 
     //This is needed to run on a machine which does not have a .homebridge folder!
+    const homebridgeDir = require('os').homedir() + '/.homebridge';
+    ImageUtils.userStoragePath = homebridgeDir;
     if(!fs.existsSync(homebridgeDir)) {
         fs.mkdirSync(homebridgeDir);
     }

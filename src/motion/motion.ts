@@ -10,7 +10,7 @@ const path = require('path');
 
 export class MotionDetector {
 
-    private readonly homebridge: API;
+    private readonly api: API;
 
     private readonly unifiConfig: UnifiConfig;
     private readonly googlePhotosConfig: GooglePhotosConfig;
@@ -24,8 +24,8 @@ export class MotionDetector {
     private gPhotos: GooglePhotos;
     private configuredAccessories: any[];
 
-    constructor(homebridge: API, config: PlatformConfig, unifiFlows: UnifiFlows, cameras: UnifiCamera[], infoLogger: Function, debugLogger: Function) {
-        this.homebridge = homebridge;
+    constructor(api: API, config: PlatformConfig, unifiFlows: UnifiFlows, cameras: UnifiCamera[], infoLogger: Function, debugLogger: Function) {
+        this.api = api;
 
         this.unifiConfig = config.unifi;
         this.googlePhotosConfig = config.googlePhotos;
@@ -37,7 +37,10 @@ export class MotionDetector {
 
         this.modelLoader = new Loader(infoLogger);
         this.detector = null;
-        this.gPhotos = this.googlePhotosConfig && this.googlePhotosConfig.upload_gphotos ? new GooglePhotos(config.googlePhotos, infoLogger, debugLogger) : null;
+
+        const userStoragePath: string = this.api.user.storagePath();
+        ImageUtils.userStoragePath = userStoragePath;
+        this.gPhotos = this.googlePhotosConfig && this.googlePhotosConfig.upload_gphotos ? new GooglePhotos(config.googlePhotos, userStoragePath, infoLogger, debugLogger) : null;
     }
 
     public async setupMotionChecking(configuredAccessories: any[]): Promise<any> {
@@ -75,7 +78,7 @@ export class MotionDetector {
         }
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
-            configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 0);
+            configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 0);
             if (!configuredAccessory.context.motionEnabled) {
                 continue;
             }
@@ -87,7 +90,7 @@ export class MotionDetector {
                     }
 
                     this.logInfo('Motion detected (' + motionEvent.score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
-                    configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 1);
+                    configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
 
                     let snapshot: Image;
                     try {
@@ -113,7 +116,7 @@ export class MotionDetector {
         }
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
-            configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 0);
+            configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 0);
             if (!configuredAccessory.context.motionEnabled) {
                 continue;
             }
@@ -139,7 +142,7 @@ export class MotionDetector {
                             const score: number = Math.round(detection.score * 100);
                             if (score >= this.unifiConfig.enhanced_motion_score) {
                                 this.logInfo('Detected: ' + classToDetect + ' (' + score + '%) by camera ' + motionEvent.camera.name);
-                                configuredAccessory.getService(this.homebridge.hap.Service.MotionSensor).setCharacteristic(this.homebridge.hap.Characteristic.MotionDetected, 1);
+                                configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
                                 await this.persistSnapshot(snapshot, classToDetect + ' detected (' + score + '%) by camera ' + motionEvent.camera.name, [detection]);
                                 continue outer;
                             } else {
@@ -156,23 +159,36 @@ export class MotionDetector {
 
     private async persistSnapshot(snapshot: Image, description: string, detections: Detection[]): Promise<void> {
         let localImagePath: string = null;
-        if (this.unifiConfig.save_snapshot) {
-            localImagePath = await ImageUtils.saveAnnotatedImage(snapshot, detections);
-            this.logInfo('The snapshot has been saved to: ' + localImagePath);
+        try {
+            if (this.unifiConfig.save_snapshot) {
+                localImagePath = await ImageUtils.saveAnnotatedImage(snapshot, detections);
+                this.logDebug('The snapshot has been saved to: ' + localImagePath);
+            }
+        } catch (error) {
+            this.logDebug('Snapshot cannot be saved locally: ' + error);
         }
-        if (this.googlePhotosConfig.upload_gphotos) {
-            let imagePath: string = localImagePath ? localImagePath : await ImageUtils.saveAnnotatedImage(snapshot, detections);
-            const fileName: string = imagePath.split('/').pop();
-            //No await because the upload should not block!
-            this.gPhotos
-                .uploadImage(imagePath, fileName, description)
-                .then((url: string) => {
-                    this.logDebug('Photo uploaded: ' + url);
 
-                    if (!localImagePath) {
-                        ImageUtils.remove(imagePath);
-                    }
-                });
+        try {
+            if (this.googlePhotosConfig.upload_gphotos) {
+                let imagePath: string = localImagePath ? localImagePath : await ImageUtils.saveAnnotatedImage(snapshot, detections);
+                const fileName: string = imagePath.split('/').pop();
+                //No await because the upload should not block!
+                this.gPhotos
+                    .uploadImage(imagePath, fileName, description)
+                    .then((url: string) => {
+                        if (url) {
+                            this.logDebug('Photo uploaded: ' + url);
+                        } else {
+                           this.logDebug('Photo not uploaded!');
+                        }
+
+                        if (!localImagePath) {
+                            ImageUtils.remove(imagePath);
+                        }
+                    });
+            }
+        } catch (error) {
+            this.logDebug('Snapshot cannot be uploaded to Google Photos: ' + error);
         }
     }
 
