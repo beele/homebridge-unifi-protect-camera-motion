@@ -1,19 +1,21 @@
 const fs = require('fs');
 const exec = require('child_process').exec;
 
+console.error('homebridge-unifi-protect-camera-motion postinstall script running on: ' + process.arch);
 switch (process.arch) {
     case 'arm':
     case 'arm64':
-        console.log('ARM/ARM64 architecture, tfjs-lib not precompiled, downloading external precompiled lib!');
+        console.log('ARM/ARM64 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
         fixTensorFlowForArm();
         break;
     case 'x32':
     case 'x64':
-        console.log('Supported architecture, no actions required!');
+        console.log('Supported architecture, tfjs-lib should be available!');
         break;
     default:
         console.error('Unsupported processor architecture: ' + process.arch);
 }
+rebuildBindings();
 
 function fixTensorFlowForArm() {
     const content = {
@@ -28,4 +30,13 @@ function fixTensorFlowForArm() {
             console.error(stderr);
         });
     }
+}
+
+function rebuildBindings() {
+    console.log('Rebuilding node bindings...');
+
+    exec('npm rebuild @tensorflow/tfjs-node --build-from-source', {cwd: process.cwd()}, (error, stdout, stderr) => {
+        console.log(stdout);
+        console.error(stderr);
+    });
 }
