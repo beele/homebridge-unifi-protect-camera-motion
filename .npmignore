@@ -7,5 +7,6 @@
 dist/
 coverage/
 resources/test-config
+resources/tfjs-arm
 resources/images/readme/*
 src/experimental

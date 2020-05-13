@@ -1,10 +1,10 @@
 {
   "name": "homebridge-unifi-protect-camera-motion",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Unifi Protect cameras & motion sensors for Homekit with Homebridge",
   "main": "src/index.js",
   "scripts": {
-    "postinstall": "npm rebuild @tensorflow/tfjs-node --build-from-source",
+    "postinstall": "node ./scripts/postinstall.js",
     "compile": "node --max-old-space-size=1024 ./node_modules/typescript/lib/tsc.js",
     "homebridge": "tsc && homebridge -P . -U ./resources/test-config/",
     "test": "jest --config jest.config.js --collect-coverage"
@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "homebridge-camera-ffmpeg": "1.0.0",
-    "@tensorflow/tfjs-node": "1.2.11",
+    "@tensorflow/tfjs-node": "1.7.4",
     "axios": "^0.19.2",
     "canvas": "^2.6.1",
     "debug": "^2.6.9",
