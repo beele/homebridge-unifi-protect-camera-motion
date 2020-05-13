@@ -50,7 +50,7 @@ Next, open the `config.json` that contains your Homebridge configuration, and ad
         "motion_score": 50, 
         "enhanced_motion": true, 
         "enhanced_motion_score": 50, 
-        "enhanced_classes": ["Person"], 
+        "enhanced_classes": ["person"], 
         "debug": false, 
         "save_snapshot": true,
         "upload_gphotos": false 
@@ -100,7 +100,7 @@ If you are using Homebridge Config X, it will do its best to alert you to any sy
 |motion_score|number|yes|/|Contains the minimum score in % that a motion event has to have to be processed, a good default is 50%|
 |enhanced_motion|boolean|yes|/|Enables or disables the enhanced motion & object detection detection with Tensorflow|
 |enhanced_motion_score|number|sometimes|/|This field is required if the `enhanced_motion` field is set to true and contains the minimum score/certainty in % the enhanced detection should reach before allowing an motion event to be triggered |
-|enhanced_classes|string[]|sometimes|[]|This field is required if the `enhanced_motion` field is set to true and contains an array of classes of objects to dispatch motion events for. The array should not be empty when using the enhanced detection! Look in look in src/coco/classes.ts for all available classes|
+|enhanced_classes|string[]|sometimes|[]|This field is required if the `enhanced_motion` field is set to true and contains an array of classes (in lowercase) of objects to dispatch motion events for. The array should not be empty when using the enhanced detection! Look in look in src/coco/classes.ts for all available classes|
 |debug|boolean|no|false|Contains a boolean indicating whether or not to enable debug logging for the plugin and FFmpeg|
 |save_snapshot|boolean|no|false|Contains a boolean indicating whether or not to save each detection to a jpg file in the `.homebridge` directory. When using enhanced mode the image is annotated with the class/score that was detected.|
 |upload_gphotos|boolean|no|false|Contains a boolean indicating whether or not to upload each detection to a google photos album. When using enhanced mode the image is annotated with the class/score that was detected.|
