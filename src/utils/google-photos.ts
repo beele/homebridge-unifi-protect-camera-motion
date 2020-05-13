@@ -4,7 +4,6 @@ import {OAuth2Client} from 'google-auth-library';
 
 const http = require('http');
 const fs = require('fs');
-const homebridgeDir = require('os').homedir() + '/.homebridge/';
 const {promisify} = require('util');
 
 const Photos = require('googlephotos');
@@ -17,14 +16,16 @@ export class GooglePhotos {
     private readonly logInfo: Function;
     private readonly logDebug: Function;
     private readonly config: GooglePhotosConfig;
+    private readonly userStoragePath: string;
     private oauth2Client: OAuth2Client;
 
     private gPhotosPersistData: GooglePhotosPersistData;
 
-    private configIsInvalid = false;
+    private initPerformed = false;
 
-    constructor(config: GooglePhotosConfig, infoLogger: Function, debugLogger: Function) {
+    constructor(config: GooglePhotosConfig, userStoragePath: string, infoLogger: Function, debugLogger: Function) {
         this.config = config;
+        this.userStoragePath = userStoragePath;
         this.logInfo = infoLogger;
         this.logDebug = debugLogger;
 
@@ -35,7 +36,7 @@ export class GooglePhotos {
 
     private async init(): Promise<void> {
         try {
-            this.gPhotosPersistData = await GooglePhotos.readConfig();
+            this.gPhotosPersistData = await this.readConfig();
         } catch (error) {
             this.gPhotosPersistData = {
                 auth_refresh_token: null,
@@ -48,7 +49,6 @@ export class GooglePhotos {
         this.logDebug(this.gPhotosPersistData);
 
         if (!this.config || !this.config.auth_clientId || !this.config.auth_clientSecret || !this.config.auth_redirectUrl) {
-            this.configIsInvalid = true;
             this.logDebug('Google photos config not correct/incomplete! Disabling functionality!');
             return;
         }
@@ -68,7 +68,8 @@ export class GooglePhotos {
             } else {
                 this.logDebug('Google Photos album already created');
             }
-            await GooglePhotos.writeConfig(this.gPhotosPersistData);
+            await this.writeConfig(this.gPhotosPersistData);
+            this.initPerformed = true;
         } catch (error) {
             this.logDebug('Could not create album');
             this.logDebug(error);
@@ -76,7 +77,8 @@ export class GooglePhotos {
     }
 
     public async uploadImage(imagePath: string, imageName: string, description: string): Promise<string> {
-        if (this.configIsInvalid) {
+        if (!this.initPerformed) {
+            this.logDebug('Google Photos logic could not start or is still starting...');
             return null;
         }
 
@@ -150,12 +152,12 @@ export class GooglePhotos {
         });
     }
 
-    private static async readConfig(): Promise<GooglePhotosPersistData> {
-        return JSON.parse(await readFileAsync(homebridgeDir + 'unifi-protect-google-settings.json'));
+    private async readConfig(): Promise<GooglePhotosPersistData> {
+        return JSON.parse(await readFileAsync(this.userStoragePath + '/unifi-protect-google-settings.json'));
     }
 
-    private static async writeConfig(config: GooglePhotosPersistData): Promise<void> {
-        return writeFileAsync(homebridgeDir + 'unifi-protect-google-settings.json', JSON.stringify(config, null, 4));
+    private async writeConfig(config: GooglePhotosPersistData): Promise<void> {
+        return writeFileAsync(this.userStoragePath + '/unifi-protect-google-settings.json', JSON.stringify(config, null, 4));
     }
 }
 

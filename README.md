@@ -194,7 +194,7 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
 ### TODOs:  
 
 - Add more unit and integration tests 
-- ~~Upgrade tfjs-node, now held back because newer versions will not install correctly on RBPI: https://github.com/tensorflow/tfjs/issues/3052~~
+- Upgrade tfjs-node, now held back because newer versions [will not install correctly on RBPI](https://github.com/tensorflow/tfjs/issues/3052)
 - ~~Implement required changes to make this work with Unifi OS (In progress)~~
 - ~~Figure out how to get higher res streams on iPhone (only iPad seems to request 720p streams)~~ (Not possible) 
 - ~~Extend documentation & wiki~~ (Done)
