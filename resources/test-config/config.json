@@ -23,7 +23,7 @@
                 "enhanced_motion": true,
                 "enhanced_motion_score": 50,
                 "enhanced_classes": [
-                    "Person"
+                    "person"
                 ],
                 "save_snapshot": false,
                 "debug": true
