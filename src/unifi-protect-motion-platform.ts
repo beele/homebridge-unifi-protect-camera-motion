@@ -6,8 +6,10 @@ import {UnifiFlows} from "./unifi/unifi-flows";
 import {MotionDetector} from "./motion/motion";
 import {PLUGIN_NAME} from "./settings";
 import {VideoConfig} from "./ffmpeg/video-config";
+import {CameraConfig} from "./ffmpeg/camera-config";
 
 const FFMPEG = require('homebridge-camera-ffmpeg/ffmpeg.js').FFMPEG;
+const FFMPEG_PATH = require('ffmpeg-for-homebridge');
 
 export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
@@ -33,7 +35,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
     }
 
     private async discoverDevices(): Promise<void> {
-        const videoProcessor = this.config.videoProcessor || 'ffmpeg';
+        let videoProcessor = this.config.videoProcessor || 'ffmpeg';
         const interfaceName = this.config.interfaceName || '';
 
         if (this.config.videoConfig) {
@@ -100,10 +102,14 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + this.config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(camera.streams);
                 videoConfigCopy.debug = this.config.unifi.debug;
 
-                const cameraConfig = {
+                const cameraConfig: CameraConfig = {
                     name: camera.name,
                     videoConfig: videoConfigCopy
                 };
+
+                if (FFMPEG_PATH && FFMPEG_PATH.trim().length > 0) {
+                    videoProcessor = FFMPEG_PATH;
+                }
 
                 const cameraSource = new FFMPEG(this.api.hap, cameraConfig, this.logger, videoProcessor, interfaceName);
                 cameraAccessory.configureCameraSource(cameraSource);
