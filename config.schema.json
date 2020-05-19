@@ -304,6 +304,14 @@
             "required": true
           }
         }
+      },
+
+      "videoProcessor": {
+        "title": "Optional manual video processor path",
+        "type": "string",
+        "default": "",
+        "description": "Provide an absolute path to an FFmpeg binary to use that binary!",
+        "required": false
       }
     }
   }
