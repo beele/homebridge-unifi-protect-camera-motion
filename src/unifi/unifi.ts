@@ -250,6 +250,7 @@ export interface UnifiSession {
 
 export interface UnifiCamera {
     id: string;
+    uuid: string;
     name: string;
     ip: string;
     mac: string;

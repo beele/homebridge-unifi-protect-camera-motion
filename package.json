@@ -7,7 +7,7 @@
     "postinstall": "npm rebuild @tensorflow/tfjs-node --build-from-source",
     "prepublishOnly": "node --max-old-space-size=1024 ./node_modules/typescript/lib/tsc.js",
     "compile": "node --max-old-space-size=1024 ./node_modules/typescript/lib/tsc.js",
-    "homebridge": "tsc && homebridge -P . -U ./resources/test-config/",
+    "homebridge": "tsc && homebridge -D -P . -U ./resources/test-config/",
     "test": "jest --config jest.config.js --collect-coverage"
   },
   "license": "ISC",

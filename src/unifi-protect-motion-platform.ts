@@ -67,12 +67,35 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
         const cameraConfig = cameraAccessory.context.cameraConfig;
 
-        cameraAccessory.context.id = cameraConfig.id;
+        //Update the camera config!
+        const videoConfigCopy: VideoConfig = JSON.parse(JSON.stringify(this.config.videoConfig));
+        //Assign stillImageSource, source and debug (overwrite if they are present from the videoConfig, which they should not be!)
+        videoConfigCopy.stillImageSource = '-i http://' + cameraConfig.camera.ip + '/snap.jpeg';
+        videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + this.config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(cameraConfig.camera.streams);
+
+        //TODO: only for testing!
+        videoConfigCopy.debug = true;
+        //videoConfigCopy.debug = this.config.unifi.debug;
+        cameraConfig.videoConfig = videoConfigCopy;
+        console.debug(cameraConfig);
+
+        //TODO: Refactor
+        cameraAccessory.context.id = cameraConfig.camera.id;
         cameraAccessory.context.motionEnabled = true;
         cameraAccessory.context.lastMotionId = null;
         cameraAccessory.context.lastMotionIdRepeatCount = 0;
+
+        const motion = cameraAccessory.getService(this.hap.Service.MotionSensor);
+        const motionSwitch = cameraAccessory.getServiceById(this.hap.Service.Switch, 'MotionTrigger');
+        if (motion) {
+            cameraAccessory.removeService(motion);
+        }
+        if (motionSwitch) {
+            cameraAccessory.removeService(motionSwitch);
+        }
+
         cameraAccessory.addService(new this.Service.MotionSensor(cameraConfig.name + ' Motion sensor'));
-        cameraAccessory.addService(new this.Service.Switch(cameraConfig.name + ' Motion enabled'));
+        cameraAccessory.addService(new this.Service.Switch(cameraConfig.name + ' Motion enabled', 'MotionTrigger'));
         cameraAccessory
             .getService(this.Service.Switch)
             .getCharacteristic(this.Characteristic.On)
@@ -152,20 +175,13 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
                 // Camera names must be unique
                 const uuid = this.hap.uuid.generate(camera.name);
+                camera.uuid = uuid;
                 const cameraAccessory = new this.Accessory(camera.name, uuid);
-
-                //Make a copy of the config so we can set each one to have its own camera sources!
-                const videoConfigCopy: VideoConfig = JSON.parse(JSON.stringify(this.config.videoConfig));
-                //Assign stillImageSource, source and debug (overwrite if they are present from the videoConfig, which they should not be!)
-                videoConfigCopy.stillImageSource = '-i http://' + camera.ip + '/snap.jpeg';
-                videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + this.config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(camera.streams);
-                videoConfigCopy.debug = this.config.unifi.debug;
 
                 cameraAccessory.context.cameraConfig = {
                     uuid: uuid,
-                    id: camera.id,
                     name: camera.name,
-                    videoConfig: videoConfigCopy
+                    camera
                 };
 
                 const cameraAccessoryInfo = cameraAccessory.getService(this.hap.Service.AccessoryInformation);
@@ -194,7 +210,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             this.accessories.forEach((accessory: PlatformAccessory) => {
                 if (!cameras.find((x: UnifiCamera) => x.uuid === accessory.context.cameraConfig.uuid)) {
                     this.infoLogger('Removing ' + accessory.context.cameraConfig.uuid);
-                    //this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+                    this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
                 }
             });
 
