@@ -45,6 +45,10 @@ Next, open the `config.json` that contains your Homebridge configuration, and ad
         "controller_rtsp": "rtsp://protect-ip:controller-rtsp-port", 
         "username": "username", 
         "password": "password", 
+        "excluded_cameras": [
+            "id-of-camera-to-exclude-1",
+            "id-of-camera-to-exclude-2"
+        ],
         "motion_interval": 5000, 
         "motion_repeat_interval": 30000, 
         "motion_score": 50, 
