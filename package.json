@@ -26,8 +26,8 @@
     "homebridge": ">=1.0.0"
   },
   "dependencies": {
-    "ffmpeg-for-homebridge": "^0.0.4",
-    "homebridge-camera-ffmpeg": "1.0.0",
+    "ffmpeg-for-homebridge": "^0.0.6",
+    "homebridge-camera-ffmpeg": "2.0.0",
     "@tensorflow/tfjs-node": "1.2.11",
     "axios": "^0.19.2",
     "canvas": "^2.6.1",
@@ -37,11 +37,11 @@
     "ip": "^1.1.5"
   },
   "devDependencies": {
-    "typescript": "^3.8.3",
+    "typescript": "^3.9.5",
     "homebridge": "^1.0.4",
-    "jest": "^24.9.0",
-    "ts-jest": "^24.3.0",
-    "@types/jest": "^25.2.1",
-    "@types/node": "^13.13.5"
+    "jest": "^26.1.0",
+    "ts-jest": "^26.1.1",
+    "@types/jest": "^26.0.0",
+    "@types/node": "^14.0.13"
   }
 }
