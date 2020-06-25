@@ -60,17 +60,17 @@ Next, open the `config.json` that contains your Homebridge configuration, and ad
         "upload_gphotos": false 
     },
     "videoConfig": { 
-        "vcodec": "h264_omx", 
-        "audio": true, 
-        "maxStreams": 2, 
-        "maxWidth": 1024, 
-        "maxHeight": 576, 
-        "maxFPS": 15, 
-        "mapvideo": "0:1", 
-        "mapaudio": "0:0", 
-        "maxBitrate": 3000, 
-        "packetSize": 376, 
-        "additionalCommandline": "-protocol_whitelist https,crypto,srtp,rtp,udp" 
+        "vcodec": "h264",
+        "audio": true,
+        "maxStreams": 2,
+        "maxWidth": 1920,
+        "maxHeight": 1080,
+        "maxFPS": 15,
+        "mapvideo": "0:1",
+        "mapaudio": "0:0",
+        "maxBitrate": 3000,
+        "packetSize": 188,
+        "additionalCommandline": "-protocol_whitelist https,crypto,srtp,rtp,udp -loglevel verbose"
     }
 }  
 ```  

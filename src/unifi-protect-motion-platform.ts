@@ -20,8 +20,6 @@ import {MotionDetector} from "./motion/motion";
 
 const StreamingDelegate = require('homebridge-camera-ffmpeg/dist/streamingDelegate').StreamingDelegate;
 
-
-
 export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
     public readonly hap: HAP = this.api.hap;
@@ -73,11 +71,8 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         videoConfigCopy.stillImageSource = '-i http://' + cameraConfig.camera.ip + '/snap.jpeg';
         videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + this.config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(cameraConfig.camera.streams);
 
-        //TODO: only for testing!
-        videoConfigCopy.debug = true;
-        //videoConfigCopy.debug = this.config.unifi.debug;
+        videoConfigCopy.debug = this.config.unifi.debug;
         cameraConfig.videoConfig = videoConfigCopy;
-        console.debug(cameraConfig);
 
         //TODO: Refactor
         cameraAccessory.context.id = cameraConfig.camera.id;

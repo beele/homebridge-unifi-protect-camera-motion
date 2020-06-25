@@ -1,6 +1,8 @@
 import {Canvas, Image} from "canvas";
-import {createCocoModel, ObjectDetection} from "./coco";
 import {ImageUtils} from "../utils/image-utils";
+import {ObjectDetection} from "@tensorflow-models/coco-ssd";
+
+const cocoSsd = require('@tensorflow-models/coco-ssd');
 
 export class Loader {
 
@@ -10,7 +12,7 @@ export class Loader {
         this.logInfo = infoLogger;
     }
 
-    public async loadCoco(useLiteModel: boolean, basePath?: string): Promise<Detector> {
+    public async loadCoco(): Promise<Detector> {
         const printProcessDuration: Function = (name: string, start: number) => {
             this.logInfo(name + ' processing took: ' + (Date.now() - start) + 'ms');
         };
@@ -20,7 +22,7 @@ export class Loader {
             }
         };
 
-        const model: ObjectDetection = await createCocoModel(useLiteModel, basePath);
+        const model: ObjectDetection = await cocoSsd.load();
         return {
             async detect(image: Image, logResults: boolean = false): Promise<Detection[]> {
                 const start = Date.now();
