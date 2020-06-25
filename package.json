@@ -28,13 +28,14 @@
   "dependencies": {
     "ffmpeg-for-homebridge": "^0.0.6",
     "homebridge-camera-ffmpeg": "2.0.0",
-    "@tensorflow/tfjs-node": "1.2.11",
+    "@tensorflow/tfjs-core": "^2.0.1",
+    "@tensorflow/tfjs-converter": "^2.0.1",
+    "@tensorflow/tfjs-backend-cpu": "^2.0.1",
+    "@tensorflow-models/coco-ssd": "^2.0.3",
     "axios": "^0.19.2",
     "canvas": "^2.6.1",
-    "debug": "^2.6.9",
     "googleapis": ">=39.1.0",
-    "googlephotos": "^0.2.5",
-    "ip": "^1.1.5"
+    "googlephotos": "^0.2.5"
   },
   "devDependencies": {
     "typescript": "^3.9.5",
