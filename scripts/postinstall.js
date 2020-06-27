@@ -6,15 +6,15 @@ switch (process.arch) {
     case 'arm':
         if (process.config.variables.arm_version && process.config.variables.arm_version === '6') {
             console.log('ARM V6 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
-            downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/feature/rework-camera-and-tfjs/master/resources/tfjs-arm/libtensorflow-2.2.0.armv6l.tar.gz?raw=true');
+            downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.2.0.armv6l.tar.gz');
         } else {
             console.log('ARM V7 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
-            downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.2.0.armv7l.tar.gz?raw=true');
+            downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.2.0.armv7l.tar.gz');
         }
         break;
     case 'arm64':
         console.log('ARM64 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
-        downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.1.0.aarch64.tar.gz?raw=true');
+        downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.1.0.aarch64.tar.gz');
         break;
     case 'x32':
     case 'x64':
@@ -29,6 +29,8 @@ function downloadTensorFlowForArm(packageUrl) {
     const content = {
         "tf-lib": packageUrl
     };
+
+    console.log('Looking in: ' +  process.cwd() + '/node_modules/@tensorflow/tfjs-node/scripts/');
 
     if (fs.existsSync(process.cwd() + '/node_modules/@tensorflow/tfjs-node/scripts/')) {
         fs.writeFileSync(process.cwd() + '/node_modules/@tensorflow/tfjs-node/scripts/custom-binary.json', JSON.stringify(content, null, 4));
