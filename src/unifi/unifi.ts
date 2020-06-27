@@ -34,7 +34,7 @@ export class Unifi {
             })
         });
 
-        if (this.config.debug) {
+        if (this.config.debugNetworkTraffic) {
             this.axiosInstance.interceptors.request.use((request: AxiosRequestConfig) => {
                 this.logDebug(request);
                 return request;
@@ -287,6 +287,7 @@ export interface UnifiConfig {
     enhanced_motion_score: number;
     enhanced_classes: string[];
     debug: boolean;
+    debugNetworkTraffic: boolean;
     save_snapshot: boolean;
 }
 

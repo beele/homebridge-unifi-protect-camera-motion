@@ -5,17 +5,11 @@ console.error('homebridge-unifi-protect-camera-motion postinstall script running
 switch (process.arch) {
     case 'arm':
         console.log('Specific ARM version: ' + process.config.variables.arm_version);
-        if (process.config.variables.arm_version && process.config.variables.arm_version === '6') {
-            console.log('ARM V6 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
-            createCustomBinaryJson('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.2.0.armv6l.tar.gz');
-        } else {
-            console.log('ARM V7 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
-            createCustomBinaryJson('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.2.0.armv7l.tar.gz');
-        }
+        createCustomBinaryJson('https://s3.us.cloud-object-storage.appdomain.cloud/tfjs-cos/libtensorflow-cpu-linux-arm-1.15.0.tar.gz');
         break;
     case 'arm64':
         console.log('ARM64 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
-        createCustomBinaryJson('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.1.0.aarch64.tar.gz');
+        createCustomBinaryJson('https://s3.us.cloud-object-storage.appdomain.cloud/tfjs-cos/libtensorflow-gpu-linux-arm64-1.15.0.tar.gz');
         break;
     case 'x32':
     case 'x64':
@@ -24,19 +18,24 @@ switch (process.arch) {
     default:
         console.error('Unsupported processor architecture: ' + process.arch);
 }
-rebuildBindings();
+//TODO: Not needed?
+//rebuildBindings();
 
 function createCustomBinaryJson(packageUrl) {
     const content = {
         "tf-lib": packageUrl
     };
 
-    console.log('Looking in: ' +  process.cwd() + '/node_modules/@tensorflow/tfjs-node/scripts/');
+    console.log('Writing custom binary definition in: ' +  process.cwd() + '/node_modules/@tensorflow/tfjs-node/scripts/');
 
     if (fs.existsSync(process.cwd() + '/node_modules/@tensorflow/tfjs-node/scripts/')) {
         fs.writeFileSync(process.cwd() + '/node_modules/@tensorflow/tfjs-node/scripts/custom-binary.json', JSON.stringify(content, null, 4));
 
         exec('npm install', {cwd: process.cwd() + '/node_modules/@tensorflow/tfjs-node/'}, (error, stdout, stderr) => {
+            if (error) {
+                console.log(error);
+                return;
+            }
             console.log(stdout);
             console.error(stderr);
         });
@@ -44,7 +43,6 @@ function createCustomBinaryJson(packageUrl) {
 }
 
 function rebuildBindings() {
-    return;
     console.log('Rebuilding node bindings...');
 
     exec('npm rebuild @tensorflow/tfjs-node --build-from-source', {cwd: process.cwd()}, (error, stdout, stderr) => {
