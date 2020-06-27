@@ -1,6 +1,6 @@
 {
     "name": "homebridge-unifi-protect-camera-motion",
-    "version": "0.4.0-Beta.1",
+    "version": "0.4.0-Beta.2",
     "description": "Unifi Protect cameras & motion sensors for Homekit with Homebridge",
     "main": "src/index.js",
     "scripts": {
@@ -8,7 +8,7 @@
         "prepublishOnly": "node --max-old-space-size=1024 ./node_modules/typescript/lib/tsc.js",
         "compile": "node --max-old-space-size=1024 ./node_modules/typescript/lib/tsc.js",
         "homebridge": "tsc && homebridge -D -P . -U ./resources/test-config/",
-        "test": "tsc && jest --config jest.config.js --collect-coverage"
+        "test": "jest --config jest.config.js --collect-coverage"
     },
     "license": "ISC",
     "keywords": [
