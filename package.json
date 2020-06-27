@@ -28,6 +28,7 @@
     "dependencies": {
         "ffmpeg-for-homebridge": "^0.0.6",
         "homebridge-camera-ffmpeg": "2.0.0",
+        "@tensorflow/tfjs-converter": "^2.0.1",
         "@tensorflow/tfjs-node": "^2.0.1",
         "axios": "^0.19.2",
         "canvas": "^2.6.1",

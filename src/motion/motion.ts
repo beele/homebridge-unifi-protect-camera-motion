@@ -6,8 +6,6 @@ import {ImageUtils} from "../utils/image-utils";
 import {GooglePhotos, GooglePhotosConfig} from "../utils/google-photos";
 import type { API, PlatformConfig} from 'homebridge';
 
-const path = require('path');
-
 export class MotionDetector {
 
     private readonly api: API;
@@ -48,7 +46,7 @@ export class MotionDetector {
 
         let intervalFunction: Function;
         if (this.unifiConfig.enhanced_motion) {
-            this.detector = await this.modelLoader.loadCoco(true);
+            this.detector = await this.modelLoader.loadCoco();
             intervalFunction = this.checkMotionEnhanced.bind(this);
         } else {
             intervalFunction = this.checkMotion.bind(this);
