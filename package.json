@@ -28,7 +28,7 @@
     "dependencies": {
         "ffmpeg-for-homebridge": "^0.0.6",
         "homebridge-camera-ffmpeg": "2.0.0",
-        "@tensorflow/tfjs-node": "^1.7.4",
+        "@tensorflow/tfjs-node": "^2.0.1",
         "axios": "^0.19.2",
         "canvas": "^2.6.1",
         "googleapis": ">=39.1.0",
@@ -37,9 +37,9 @@
     "devDependencies": {
         "typescript": "^3.9.5",
         "homebridge": "^1.0.4",
-        "jest": "^26.1.0",
-        "ts-jest": "^26.1.1",
-        "@types/jest": "^26.0.0",
+        "jest": "^24.9.0",
+        "ts-jest": "^24.3.0",
+        "@types/jest": "^25.2.3",
         "@types/node": "^14.0.13"
     }
 }
