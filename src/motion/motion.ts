@@ -48,7 +48,7 @@ export class MotionDetector {
 
         let intervalFunction: Function;
         if (this.unifiConfig.enhanced_motion) {
-            this.detector = await this.modelLoader.loadCoco();
+            this.detector = await this.modelLoader.loadCoco(true);
             intervalFunction = this.checkMotionEnhanced.bind(this);
         } else {
             intervalFunction = this.checkMotion.bind(this);

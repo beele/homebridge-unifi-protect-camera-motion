@@ -1,48 +1,45 @@
 {
-  "name": "homebridge-unifi-protect-camera-motion",
-  "version": "0.3.4",
-  "description": "Unifi Protect cameras & motion sensors for Homekit with Homebridge",
-  "main": "src/index.js",
-  "scripts": {
-    "postinstall": "npm rebuild @tensorflow/tfjs-node --build-from-source",
-    "prepublishOnly": "node --max-old-space-size=1024 ./node_modules/typescript/lib/tsc.js",
-    "compile": "node --max-old-space-size=1024 ./node_modules/typescript/lib/tsc.js",
-    "homebridge": "tsc && homebridge -D -P . -U ./resources/test-config/",
-    "test": "jest --config jest.config.js --collect-coverage"
-  },
-  "license": "ISC",
-  "keywords": [
-    "homebridge-plugin"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/beele/homebridge-unifi-protect-camera-motion.git"
-  },
-  "bugs": {
-    "url": "http://github.com/beele/homebridge-unifi-protect-camera-motion/issues"
-  },
-  "engines": {
-    "node": ">=10.17.0",
-    "homebridge": ">=1.0.0"
-  },
-  "dependencies": {
-    "ffmpeg-for-homebridge": "^0.0.6",
-    "homebridge-camera-ffmpeg": "2.0.0",
-    "@tensorflow/tfjs-core": "^2.0.1",
-    "@tensorflow/tfjs-converter": "^2.0.1",
-    "@tensorflow/tfjs-backend-cpu": "^2.0.1",
-    "@tensorflow-models/coco-ssd": "^2.0.3",
-    "axios": "^0.19.2",
-    "canvas": "^2.6.1",
-    "googleapis": ">=39.1.0",
-    "googlephotos": "^0.2.5"
-  },
-  "devDependencies": {
-    "typescript": "^3.9.5",
-    "homebridge": "^1.0.4",
-    "jest": "^26.1.0",
-    "ts-jest": "^26.1.1",
-    "@types/jest": "^26.0.0",
-    "@types/node": "^14.0.13"
-  }
+    "name": "homebridge-unifi-protect-camera-motion",
+    "version": "0.3.4",
+    "description": "Unifi Protect cameras & motion sensors for Homekit with Homebridge",
+    "main": "src/index.js",
+    "scripts": {
+        "postinstall": "npm rebuild @tensorflow/tfjs-node --build-from-source",
+        "prepublishOnly": "node --max-old-space-size=1024 ./node_modules/typescript/lib/tsc.js",
+        "compile": "node --max-old-space-size=1024 ./node_modules/typescript/lib/tsc.js",
+        "homebridge": "tsc && homebridge -D -P . -U ./resources/test-config/",
+        "test": "tsc && jest --config jest.config.js --collect-coverage"
+    },
+    "license": "ISC",
+    "keywords": [
+        "homebridge-plugin"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/beele/homebridge-unifi-protect-camera-motion.git"
+    },
+    "bugs": {
+        "url": "http://github.com/beele/homebridge-unifi-protect-camera-motion/issues"
+    },
+    "engines": {
+        "node": ">=10.17.0",
+        "homebridge": ">=1.0.0"
+    },
+    "dependencies": {
+        "ffmpeg-for-homebridge": "^0.0.6",
+        "homebridge-camera-ffmpeg": "2.0.0",
+        "@tensorflow/tfjs-node": "^1.7.4",
+        "axios": "^0.19.2",
+        "canvas": "^2.6.1",
+        "googleapis": ">=39.1.0",
+        "googlephotos": "^0.2.5"
+    },
+    "devDependencies": {
+        "typescript": "^3.9.5",
+        "homebridge": "^1.0.4",
+        "jest": "^26.1.0",
+        "ts-jest": "^26.1.1",
+        "@types/jest": "^26.0.0",
+        "@types/node": "^14.0.13"
+    }
 }
