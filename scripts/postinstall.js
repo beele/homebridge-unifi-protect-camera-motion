@@ -4,17 +4,18 @@ const exec = require('child_process').exec;
 console.error('homebridge-unifi-protect-camera-motion postinstall script running on: ' + process.arch);
 switch (process.arch) {
     case 'arm':
+        console.log('Specific ARM version: ' + process.config.variables.arm_version);
         if (process.config.variables.arm_version && process.config.variables.arm_version === '6') {
             console.log('ARM V6 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
-            downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.2.0.armv6l.tar.gz');
+            createCustomBinaryJson('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.2.0.armv6l.tar.gz');
         } else {
             console.log('ARM V7 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
-            downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.2.0.armv7l.tar.gz');
+            createCustomBinaryJson('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.2.0.armv7l.tar.gz');
         }
         break;
     case 'arm64':
         console.log('ARM64 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
-        downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.1.0.aarch64.tar.gz');
+        createCustomBinaryJson('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.1.0.aarch64.tar.gz');
         break;
     case 'x32':
     case 'x64':
@@ -25,7 +26,7 @@ switch (process.arch) {
 }
 rebuildBindings();
 
-function downloadTensorFlowForArm(packageUrl) {
+function createCustomBinaryJson(packageUrl) {
     const content = {
         "tf-lib": packageUrl
     };
@@ -43,6 +44,7 @@ function downloadTensorFlowForArm(packageUrl) {
 }
 
 function rebuildBindings() {
+    return;
     console.log('Rebuilding node bindings...');
 
     exec('npm rebuild @tensorflow/tfjs-node --build-from-source', {cwd: process.cwd()}, (error, stdout, stderr) => {
