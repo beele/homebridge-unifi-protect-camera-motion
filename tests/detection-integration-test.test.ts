@@ -5,15 +5,17 @@ import {ImageUtils} from "../src/utils/image-utils";
 const path = require('path');
 const fs = require('fs');
 
+jest.setTimeout(20000);
+
 test('Loader-detect-image-full-model-IT', async () => {
     const modelLoader: Loader = new Loader(console.log);
-    const detector: Detector = await modelLoader.loadCoco(false, path.dirname(path.resolve('resources')));
+    const detector: Detector = await modelLoader.loadCoco();
     await verifyDetections(detector);
 });
 
 test('Loader-detect-image-lite-model-IT', async () => {
     const modelLoader: Loader = new Loader(console.log);
-    const detector: Detector = await modelLoader.loadCoco(true, path.dirname(path.resolve('resources')));
+    const detector: Detector = await modelLoader.loadCoco();
     await verifyDetections(detector);
 });
 
