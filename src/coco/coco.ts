@@ -15,8 +15,8 @@
  * =============================================================================
  */
 
-import * as tfconv from '@tensorflow/tfjs-converter';
 import * as tf from '@tensorflow/tfjs-node';
+import * as tfconv from '@tensorflow/tfjs-converter';
 
 import {CLASSES} from './classes';
 
