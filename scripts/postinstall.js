@@ -5,16 +5,16 @@ console.error('homebridge-unifi-protect-camera-motion postinstall script running
 switch (process.arch) {
     case 'arm':
         if (process.config.variables.arm_version && process.config.variables.arm_version === '6') {
-            console.log('ARM V7 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
-            downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/blob/master/resources/tfjs-arm/libtensorflow-2.2.0.armv6l.tar.gz?raw=true');
+            console.log('ARM V6 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
+            downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/feature/rework-camera-and-tfjs/master/resources/tfjs-arm/libtensorflow-2.2.0.armv6l.tar.gz?raw=true');
         } else {
             console.log('ARM V7 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
-            downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/blob/master/resources/tfjs-arm/libtensorflow-2.2.0.armv7l.tar.gz?raw=true');
+            downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.2.0.armv7l.tar.gz?raw=true');
         }
         break;
     case 'arm64':
         console.log('ARM64 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
-        downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/blob/master/resources/tfjs-arm/libtensorflow-2.1.0.aarch64.tar.gz?raw=true');
+        downloadTensorFlowForArm('https://github.com/beele/homebridge-unifi-protect-camera-motion/raw/feature/feature/rework-camera-and-tfjs/resources/tfjs-arm/libtensorflow-2.1.0.aarch64.tar.gz?raw=true');
         break;
     case 'x32':
     case 'x64':
