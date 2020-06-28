@@ -1,14 +1,17 @@
 const fs = require('fs');
 const exec = require('child_process').exec;
 
-console.error('homebridge-unifi-protect-camera-motion postinstall script running on: ' + process.arch);
+console.log('homebridge-unifi-protect-camera-motion postinstall script running on: ' + process.arch);
 switch (process.arch) {
     case 'arm':
+        console.log('ARM architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
         console.log('Specific ARM version: ' + process.config.variables.arm_version);
+
         createCustomBinaryJson('https://s3.us.cloud-object-storage.appdomain.cloud/tfjs-cos/libtensorflow-cpu-linux-arm-1.15.0.tar.gz');
         break;
     case 'arm64':
         console.log('ARM64 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
+
         createCustomBinaryJson('https://s3.us.cloud-object-storage.appdomain.cloud/tfjs-cos/libtensorflow-gpu-linux-arm64-1.15.0.tar.gz');
         break;
     case 'x32':
@@ -18,8 +21,6 @@ switch (process.arch) {
     default:
         console.error('Unsupported processor architecture: ' + process.arch);
 }
-//TODO: Not needed?
-//rebuildBindings();
 
 function createCustomBinaryJson(packageUrl) {
     const content = {
@@ -40,13 +41,4 @@ function createCustomBinaryJson(packageUrl) {
             console.error(stderr);
         });
     }
-}
-
-function rebuildBindings() {
-    console.log('Rebuilding node bindings...');
-
-    exec('npm rebuild @tensorflow/tfjs-node --build-from-source', {cwd: process.cwd()}, (error, stdout, stderr) => {
-        console.log(stdout);
-        console.error(stderr);
-    });
 }
