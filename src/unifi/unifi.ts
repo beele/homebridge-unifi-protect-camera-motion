@@ -1,6 +1,7 @@
 import {Utils} from "../utils/utils";
 import {AxiosInstance, AxiosRequestConfig, AxiosResponse} from "axios";
 import * as https from "https";
+import {Image} from "canvas";
 
 const axios = require('axios').default;
 
@@ -257,6 +258,8 @@ export interface UnifiCamera {
     type: string;
     firmware: string;
     streams: UnifiCameraStream[];
+    lastMotionEvent?: UnifiMotionEvent;
+    lastDetectionSnapshot?: Image;
 }
 
 export interface UnifiCameraStream {
@@ -270,9 +273,15 @@ export interface UnifiCameraStream {
 export interface UnifiMotionEvent {
     id: string;
     cameraId: string;
-    camera?: UnifiCamera;
     score: number;
     timestamp: number;
+}
+
+export interface UnifiEndPointStyle {
+    authURL: string;
+    apiURL: string;
+    isUnifiOS: boolean;
+    csrfToken?: string;
 }
 
 export interface UnifiConfig {
@@ -289,11 +298,4 @@ export interface UnifiConfig {
     debug: boolean;
     debugNetworkTraffic: boolean;
     save_snapshot: boolean;
-}
-
-export interface UnifiEndPointStyle {
-    authURL: string;
-    apiURL: string;
-    isUnifiOS: boolean;
-    csrfToken?: string;
 }

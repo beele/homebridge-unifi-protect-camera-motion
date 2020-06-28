@@ -63,12 +63,10 @@ export class MotionDetector {
     }
 
     private async checkMotion(): Promise<any> {
-        let motionEvents: UnifiMotionEvent[];
         try {
-            motionEvents = await this.flows.getLatestMotionEventPerCamera(this.cameras);
+            await this.flows.assignMotionEventsToCameras(this.cameras);
         } catch (error) {
             this.logDebug('Cannot get latest motion info: ' + error);
-            motionEvents = [];
         }
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
@@ -77,19 +75,20 @@ export class MotionDetector {
                 continue;
             }
 
-            for (const motionEvent of motionEvents) {
-                if (motionEvent.camera.id === configuredAccessory.context.id) {
-                    if (this.isSkippableLongRunningMotion(configuredAccessory, motionEvent)) {
+            for (const camera of this.cameras) {
+                if (configuredAccessory.context.id === camera.id) {
+                    if (this.isSkippableLongRunningMotion(configuredAccessory, camera.lastMotionEvent)) {
                         return;
                     }
 
-                    this.logInfo('Motion detected (' + motionEvent.score + '%) by camera ' + motionEvent.camera.name + ' !!!!');
+                    this.logInfo('Motion detected (' + camera.lastMotionEvent.score + '%) by camera ' + camera.name + ' !!!!');
                     configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
 
                     let snapshot: Image;
                     try {
-                        snapshot = await ImageUtils.createImage('http://' + motionEvent.camera.ip + '/snap.jpeg');
-                        this.persistSnapshot(snapshot, 'Motion detected (' + motionEvent.score + '%) by camera ' + motionEvent.camera.name, []);
+                        snapshot = await ImageUtils.createImage('http://' + camera.ip + '/snap.jpeg');
+                        camera.lastDetectionSnapshot = snapshot;
+                        this.persistSnapshot(snapshot, 'Motion detected (' + camera.lastMotionEvent.score + '%) by camera ' + camera.name, []);
                     } catch (error) {
                         this.logDebug('Cannot save snapshot: ' + error);
                     }
@@ -101,12 +100,10 @@ export class MotionDetector {
     }
 
     private async checkMotionEnhanced(): Promise<any> {
-        let motionEvents: UnifiMotionEvent[];
         try {
-            motionEvents = await this.flows.getLatestMotionEventPerCamera(this.cameras);
+            await this.flows.assignMotionEventsToCameras(this.cameras);
         } catch (error) {
             this.logDebug('Cannot get latest motion info: ' + error);
-            motionEvents = [];
         }
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
@@ -115,11 +112,11 @@ export class MotionDetector {
                 continue;
             }
 
-            for (const motionEvent of motionEvents) {
-                if (motionEvent.camera.id === configuredAccessory.context.id) {
+            for (const camera of this.cameras) {
+                if (configuredAccessory.context.id === camera.id) {
                     let snapshot: Image;
                     try {
-                        snapshot = await ImageUtils.createImage('http://' + motionEvent.camera.ip + '/snap.jpeg');
+                        snapshot = await ImageUtils.createImage('http://' + camera.ip + '/snap.jpeg');
                     } catch (error) {
                         continue;
                     }
@@ -129,15 +126,16 @@ export class MotionDetector {
                         const detection: Detection = this.getDetectionForClassName(classToDetect, detections);
 
                         if (detection) {
-                            if (this.isSkippableLongRunningMotion(configuredAccessory, motionEvent)) {
+                            if (this.isSkippableLongRunningMotion(configuredAccessory, camera.lastMotionEvent)) {
                                 return;
                             }
 
                             const score: number = Math.round(detection.score * 100);
                             if (score >= this.unifiConfig.enhanced_motion_score) {
-                                this.logInfo('Detected: ' + classToDetect + ' (' + score + '%) by camera ' + motionEvent.camera.name);
+                                this.logInfo('Detected: ' + classToDetect + ' (' + score + '%) by camera ' + camera.name);
                                 configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
-                                await this.persistSnapshot(snapshot, classToDetect + ' detected (' + score + '%) by camera ' + motionEvent.camera.name, [detection]);
+                                camera.lastDetectionSnapshot = snapshot;
+                                await this.persistSnapshot(snapshot, classToDetect + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
                                 continue outer;
                             } else {
                                 this.logDebug('Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.unifiConfig.enhanced_motion_score + '% or higher)');

@@ -74,12 +74,6 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         videoConfigCopy.debug = this.config.unifi.debug;
         cameraConfig.videoConfig = videoConfigCopy;
 
-        //TODO: Refactor
-        cameraAccessory.context.id = cameraConfig.camera.id;
-        cameraAccessory.context.motionEnabled = true;
-        cameraAccessory.context.lastMotionId = null;
-        cameraAccessory.context.lastMotionIdRepeatCount = 0;
-
         const motion = cameraAccessory.getService(this.hap.Service.MotionSensor);
         const motionSwitch = cameraAccessory.getServiceById(this.hap.Service.Switch, 'MotionTrigger');
         if (motion) {
@@ -140,6 +134,13 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 },
             },
         };
+
+        //TODO: Refactor
+        cameraAccessory.context.id = cameraConfig.camera.id;
+        cameraAccessory.context.motionEnabled = true;
+        cameraAccessory.context.lastMotionId = null;
+        cameraAccessory.context.lastMotionIdRepeatCount = 0;
+        cameraAccessory.context.streamingDelegate = streamingDelegate;
 
         const cameraController = new this.hap.CameraController(options);
         streamingDelegate.controller = cameraController;
