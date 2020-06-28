@@ -17,8 +17,8 @@ import {UnifiFlows} from "./unifi/unifi-flows";
 import {PLATFORM_NAME, PLUGIN_NAME} from "./settings";
 import {VideoConfig} from "./ffmpeg/video-config";
 import {MotionDetector} from "./motion/motion";
-
-const StreamingDelegate = require('homebridge-camera-ffmpeg/dist/streamingDelegate').StreamingDelegate;
+import {UnifiStreamingDelegate} from "./unifi/UnifiStreamingDelegate";
+import {CameraStreamingDelegate} from "hap-nodejs/dist/lib/controller/CameraController";
 
 export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
@@ -56,7 +56,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         });
     }
 
-    public configureAccessory(cameraAccessory: any): void {
+    public configureAccessory(cameraAccessory: PlatformAccessory): void {
         this.infoLogger('Configuring accessory ' + cameraAccessory.displayName);
 
         cameraAccessory.on(PlatformAccessoryEvent.IDENTIFY, () => {
@@ -103,11 +103,12 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 callback();
             });
 
-        const streamingDelegate = new StreamingDelegate(this.hap, cameraConfig, this.log, this.config.videoProcessor);
+        const streamingDelegate = new UnifiStreamingDelegate(this.hap, cameraConfig, this.log, this.config.videoProcessor);
+        //streamingDelegate.handleSnapshotRequest(null, null);
 
         const options: CameraControllerOptions = {
             cameraStreamCount: cameraConfig.videoConfig.maxStreams || 2, // HomeKit requires at least 2 streams, but 1 is also just fine
-            delegate: streamingDelegate,
+            delegate: streamingDelegate as CameraStreamingDelegate,
             streamingOptions: {
                 supportedCryptoSuites: [this.hap.SRTPCryptoSuites.AES_CM_128_HMAC_SHA1_80],
                 video: {
@@ -210,7 +211,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             });
 
             try {
-                const motionDetector = new MotionDetector(this.api, this.config, this.uFlows, cameras, this.infoLogger, this.debugLogger);
+                const motionDetector: MotionDetector = new MotionDetector(this.api, this.config, this.uFlows, cameras, this.infoLogger, this.debugLogger);
                 await motionDetector.setupMotionChecking(this.accessories);
                 this.infoLogger('Motion checking setup done!');
             } catch (error) {
