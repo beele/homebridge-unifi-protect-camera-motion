@@ -11,10 +11,15 @@ export class UnifiStreamingDelegate extends StreamingDelegate {
         super(hap, cameraConfig, logging, videoProcessor);
     }
 
+    //This will be called by Homekit!
     public handleSnapshotRequest(request: any, callback: Function): void {
-        //TODO: Implement custom logic!
         console.log('Handling snapshot request for Unifi!');
         console.log(request);
+
+        //TODO: Implement custom logic!
+        //request.width;
+        //request.height;
+        //callback(undefined, imageBuffer);
 
         super.handleSnapshotRequest(request, callback);
     }

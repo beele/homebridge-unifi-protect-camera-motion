@@ -25,20 +25,19 @@ export class UnifiFlows {
         }
     }
 
-    public async getLatestMotionEventPerCamera(cameras: UnifiCamera[]): Promise<UnifiMotionEvent[]> {
+    public async assignMotionEventsToCameras(cameras: UnifiCamera[]): Promise<UnifiCamera[]> {
         try {
             await this.ensureSessionIsValid();
             const motionEvents: UnifiMotionEvent[] = await this.unifi.getMotionEvents(this.session, this.endpointStyle);
-            const filteredMotionEvents: UnifiMotionEvent[] = [];
 
-            //We only want one event per camera!
             outer: for (const camera of cameras) {
+                camera.lastMotionEvent = null;
+
                 for (const motionEvent of motionEvents) {
                     if (camera.id === motionEvent.cameraId) {
                         if (motionEvent.score >= this.config.motion_score) {
                             this.log('Unifi Motion event (' + motionEvent.id + ') accepted for camera: ' + camera.name + ' - Score: ' + motionEvent.score);
-                            motionEvent.camera = camera;
-                            filteredMotionEvents.push(motionEvent);
+                            camera.lastMotionEvent = motionEvent;
                         } else {
                             this.log('Unifi Motion event (' + motionEvent.id + ') rejected for camera: ' + camera.name + ' - Score: ' + motionEvent.score);
                         }
@@ -47,7 +46,7 @@ export class UnifiFlows {
                 }
             }
 
-            return filteredMotionEvents;
+            return cameras;
         } catch (error) {
             throw new Error('Could not detect motion: ' + error);
         }
