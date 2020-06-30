@@ -102,7 +102,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
         const options: CameraControllerOptions = {
             cameraStreamCount: cameraConfig.videoConfig.maxStreams || 2, // HomeKit requires at least 2 streams, but 1 is also just fine
-            delegate: streamingDelegate as CameraStreamingDelegate,
+            delegate: streamingDelegate as unknown as CameraStreamingDelegate,
             streamingOptions: {
                 supportedCryptoSuites: [this.hap.SRTPCryptoSuites.AES_CM_128_HMAC_SHA1_80],
                 video: {
