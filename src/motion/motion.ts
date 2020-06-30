@@ -52,6 +52,15 @@ export class MotionDetector {
             intervalFunction = this.checkMotion.bind(this);
         }
 
+        outer: for (const camera of this.cameras) {
+            for (const configuredAccessory of this.configuredAccessories) {
+                if(configuredAccessory.context.id === camera.id) {
+                    configuredAccessory.context.streamingDelegate.setCamera(camera);
+                    continue outer;
+                }
+            }
+        }
+
         setInterval(() => {
             try {
                 intervalFunction();
@@ -77,8 +86,9 @@ export class MotionDetector {
 
             for (const camera of this.cameras) {
                 if (configuredAccessory.context.id === camera.id) {
-                    if (this.isSkippableLongRunningMotion(configuredAccessory, camera.lastMotionEvent)) {
-                        return;
+                    camera.lastDetectionSnapshot = null;
+                    if (!camera.lastMotionEvent || this.isSkippableLongRunningMotion(configuredAccessory, camera.lastMotionEvent)) {
+                        continue outer;
                     }
 
                     this.logInfo('Motion detected (' + camera.lastMotionEvent.score + '%) by camera ' + camera.name + ' !!!!');
@@ -114,11 +124,16 @@ export class MotionDetector {
 
             for (const camera of this.cameras) {
                 if (configuredAccessory.context.id === camera.id) {
+                    camera.lastDetectionSnapshot = null;
+                    if (!camera.lastMotionEvent) {
+                        continue outer;
+                    }
+
                     let snapshot: Image;
                     try {
                         snapshot = await ImageUtils.createImage('http://' + camera.ip + '/snap.jpeg');
                     } catch (error) {
-                        continue;
+                        continue outer;
                     }
                     const detections: Detection[] = await this.detector.detect(snapshot, this.unifiConfig.debug);
 
@@ -127,7 +142,7 @@ export class MotionDetector {
 
                         if (detection) {
                             if (this.isSkippableLongRunningMotion(configuredAccessory, camera.lastMotionEvent)) {
-                                return;
+                                continue outer;
                             }
 
                             const score: number = Math.round(detection.score * 100);

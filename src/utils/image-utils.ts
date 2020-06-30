@@ -22,6 +22,13 @@ export class ImageUtils {
         return canvas;
     }
 
+    public static createCanvasFromImageWithTargetWidthAndHeight(image: Image, targetWidth: number, targetHeight: number): Canvas {
+        const canvas: Canvas = createCanvas(image.width, image.height);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, targetWidth, targetHeight);
+        return canvas;
+    }
+
     public static async saveAnnotatedImage(image: Image, detections: Detection[]): Promise<string> {
         const canvas: Canvas = ImageUtils.createCanvasFromImage(image);
         const ctx = canvas.getContext('2d');
@@ -42,6 +49,7 @@ export class ImageUtils {
 
     private static drawRect(ctx: any, bbox: number[]): void {
         ctx.strokeStyle = 'rgba(255,0,0,1)';
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.rect(bbox[0], bbox[1], bbox[2], bbox[3]);
         ctx.stroke();
