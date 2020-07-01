@@ -170,7 +170,11 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 callback();
             });
 
-        const streamingDelegate = new UnifiStreamingDelegate(cameraConfig.camera.id, this.hap, cameraConfig, this.log, this.config.videoProcessor);
+        const streamingDelegate = new UnifiStreamingDelegate(
+            cameraConfig.camera.id, cameraConfig.camera.name,
+            this.infoLogger, this.debugLogger,
+            this.hap, cameraConfig, this.log, this.config.videoProcessor
+        );
         UnifiStreamingDelegate.instances.push(streamingDelegate);
         const options: CameraControllerOptions = {
             cameraStreamCount: cameraConfig.videoConfig.maxStreams || 2, // HomeKit requires at least 2 streams, but 1 is also just fine
