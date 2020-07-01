@@ -36,7 +36,7 @@ const verifyDetections = async (detector: Detector) => {
     expect(detections).not.toBeNull();
     expect(detections.length).toBeGreaterThan(0);
 
-    const fileName: string = await ImageUtils.saveAnnotatedImage(image, detections);
+    const fileName: string = (await ImageUtils.saveAnnotatedImage(image, detections)).fileLocation;
     let stats = fs.statSync(fileName);
     expect(stats.isFile()).toBeTruthy();
 
