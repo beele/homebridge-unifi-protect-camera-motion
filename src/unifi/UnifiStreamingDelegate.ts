@@ -12,11 +12,20 @@ export class UnifiStreamingDelegate extends StreamingDelegate {
 
     public static readonly instances: UnifiStreamingDelegate[] = [];
 
+    private readonly logInfo: Function;
+    private readonly logDebug: Function;
+
+    public readonly cameraName: string
     public readonly cameraId: string;
     private camera: UnifiCamera;
 
-    constructor(cameraId: string, hap: HAP, cameraConfig: object, logging: Logging, videoProcessor: string) {
+
+    constructor(cameraId: string, cameraName: string, infoLogger: Function, debugLogger: Function, hap: HAP, cameraConfig: object, logging: Logging, videoProcessor: string) {
         super(hap, cameraConfig, logging, videoProcessor);
+
+        this.logInfo = infoLogger;
+        this.logDebug = debugLogger;
+
         this.cameraId = cameraId;
     }
 
@@ -26,14 +35,13 @@ export class UnifiStreamingDelegate extends StreamingDelegate {
 
     //This will be called by Homekit!
     public handleSnapshotRequest(request: any, callback: Function): void {
-        console.log('Handling snapshot request for Unifi!');
-        console.log(request);
+        this.logDebug('Handling snapshot request for Camera: ' + this.cameraName);
 
         if (!this.camera || !this.camera.lastDetectionSnapshot) {
-            console.log('Handling with regular image!');
+            this.logDebug('Getting snapshot via FFmpeg');
             super.handleSnapshotRequest(request, callback);
         } else {
-            console.log('Handling with custom image!');
+            this.logDebug('Returning annotated snapshot');
             const canvas: Canvas = ImageUtils.resizeCanvas(this.camera.lastDetectionSnapshot, request.width, request.height);
             callback(undefined, canvas.toBuffer('image/jpeg'));
         }

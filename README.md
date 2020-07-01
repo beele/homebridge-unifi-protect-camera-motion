@@ -13,8 +13,8 @@ This plugin will automatically discover all of the Unifi Protect cameras from yo
 
 # Motion Events
 Motion is detected by the Unifi Protect API and is used to generate a Motion Event in Homekit. This plugin can use one of two methods to generate these events:  
-- The "score" of the Unifi Protect motion event  
-- The "score" plus additional object detection step by use of a Tensorflow model. This logic/model runs on-device, and no data is ever sent to any online/external/cloud source or service. It is based on [this](https://github.com/tensorflow/tfjs-models/tree/master/coco-ssd) project.
+- The basic method: The "score" of the Unifi Protect motion event (which currently has a bug and is 0 as long as the motion is occurring!)
+- The advanced method: Object detection by use of a Tensorflow model. This logic/model runs on-device, and no data is ever sent to any online/external/cloud source or service. It is based on [this](https://github.com/tensorflow/tfjs-models/tree/master/coco-ssd) project.
   
 # Installation:  
 Before installing this plugin, please make sure all of the prerequisites are completely first.
@@ -25,8 +25,11 @@ First, this plugin requires node-canvas:
   - install: `sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev`
 - Mac OS: 
   - install via homebrew: `brew install pkg-config cairo pango libpng jpeg giflib librsvg`   
+- Linux:
+  - install g++: `sudo apt install g++`
 - Other OSes:
   - [See the node-canvas documentation](https://github.com/Automattic/node-canvas#compiling)
+  - [See the node-gyp documentation](https://github.com/nodejs/node-gyp) => install any dependencies for your OS!
   
 Next, to install this plugin simply type:
 
@@ -51,7 +54,7 @@ Next, open the `config.json` that contains your Homebridge configuration, and ad
         ],
         "motion_interval": 5000, 
         "motion_repeat_interval": 30000, 
-        "motion_score": 50, 
+        "motion_score": 0, 
         "enhanced_motion": true, 
         "enhanced_motion_score": 50, 
         "enhanced_classes": ["person"], 
@@ -102,7 +105,7 @@ If you are using Homebridge Config X, it will do its best to alert you to any sy
 |password|string|yes|/|Contains the password that is used to login in the web UI|
 |motion_interval|number|yes|/|Contains the interval in milliseconds used to check for motion, a good default is 5000 milliseconds|
 |motion_repeat_interval|number|no|/|Contains the repeat interval in milliseconds during which new motion events will not be triggered if they belong to the same ongoing motion, a good default is 30000 to 60000 milliseconds. This will prevent a bunch of notifications for events which are longer than the motion_interval! Omit this field to disable this functionality|
-|motion_score|number|yes|/|Contains the minimum score in % that a motion event has to have to be processed, a good default is 50%|
+|motion_score|number|yes|/|Contains the minimum score in % that a motion event has to have to be processed, a good default is 50%, set this to 0 when using enhanced motion!|
 |enhanced_motion|boolean|yes|/|Enables or disables the enhanced motion & object detection detection with Tensorflow|
 |enhanced_motion_score|number|sometimes|/|This field is required if the `enhanced_motion` field is set to true and contains the minimum score/certainty in % the enhanced detection should reach before allowing an motion event to be triggered |
 |enhanced_classes|string[]|sometimes|[]|This field is required if the `enhanced_motion` field is set to true and contains an array of classes (in lowercase) of objects to dispatch motion events for. The array should not be empty when using the enhanced detection! Look in look in src/coco/classes.ts for all available classes|
@@ -190,8 +193,8 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
  
 - Running this plugin on CPUs that do not support AVX (celerons in NAS, ...) is not supported because there are no prebuilt Tensorflow binaries. Compiling Tensorflow from scratch is out of scope for this project!
   - Run it on a RBPI or MacOS/Windows/Linux (Debian based)
-- Previews in notifications are requested by the Home app, and can thus be "after the fact" and show an image with nothing of interest on it.  
-  - The actual motion detection is done with the snapshot that is requested internally.  
+- ~~Previews in notifications are requested by the Home app, and can thus be "after the fact" and show an image with nothing of interest on it.~~   
+  - ~~The actual motion detection is done with the snapshot that is requested internally.~~  
 - Unifi Protect has a snapshot saved for every event, and there is an API to get these (with Width & Height) but the actual saved image is pretty low res and is upscaled to 1080p. Using the Anonymous snapshot actually gets a full res snapshot (better for object detection).  
 - There is no way to know what motion zone (from Unifi) a motion has occurred in. This information is not present is the response from their API.  
 - The enhanced object detection using CoCo is far from perfect and might not catch all the thing you want it to.  
@@ -199,8 +202,8 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
 ### TODOs:  
 
 - Add more unit and integration tests 
-- Upgrade tfjs-node, now held back because newer versions [will not install correctly on RBPI](https://github.com/tensorflow/tfjs/issues/3052)
-- ~~Implement required changes to make this work with Unifi OS (In progress)~~
+- Implement required changes to make this work with Unifi OS (In progress)
+- ~~Upgrade tfjs-node, now held back because newer versions~~ (Fix in beta)
 - ~~Figure out how to get higher res streams on iPhone (only iPad seems to request 720p streams)~~ (Not possible) 
 - ~~Extend documentation & wiki~~ (Done)
   
