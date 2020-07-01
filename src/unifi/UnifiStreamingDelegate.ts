@@ -10,10 +10,17 @@ const StreamingDelegate = require('homebridge-camera-ffmpeg/dist/streamingDelega
 
 export class UnifiStreamingDelegate extends StreamingDelegate {
 
-    private readonly camera: UnifiCamera;
+    public static readonly instances: UnifiStreamingDelegate[] = [];
 
-    constructor(camera: UnifiCamera, hap: HAP, cameraConfig: object, logging: Logging, videoProcessor: string) {
+    public readonly cameraId: string;
+    private camera: UnifiCamera;
+
+    constructor(cameraId: string, hap: HAP, cameraConfig: object, logging: Logging, videoProcessor: string) {
         super(hap, cameraConfig, logging, videoProcessor);
+        this.cameraId = cameraId;
+    }
+
+    public setCamera(camera: UnifiCamera): void {
         this.camera = camera;
     }
 
@@ -28,7 +35,7 @@ export class UnifiStreamingDelegate extends StreamingDelegate {
         } else {
             console.log('Handling with custom image!');
             const canvas: Canvas = ImageUtils.resizeCanvas(this.camera.lastDetectionSnapshot, request.width, request.height);
-            callback(undefined, canvas.toBuffer('image/jpeg', { quality: 0.75 }));
+            callback(undefined, canvas.toBuffer('image/jpeg'));
         }
     }
 }
