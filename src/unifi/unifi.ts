@@ -1,7 +1,7 @@
 import {Utils} from "../utils/utils";
 import {AxiosInstance, AxiosRequestConfig, AxiosResponse} from "axios";
 import * as https from "https";
-import {Image} from "canvas";
+import {Canvas} from "canvas";
 
 const axios = require('axios').default;
 
@@ -259,7 +259,7 @@ export interface UnifiCamera {
     firmware: string;
     streams: UnifiCameraStream[];
     lastMotionEvent?: UnifiMotionEvent;
-    lastDetectionSnapshot?: Image;
+    lastDetectionSnapshot?: Canvas;
 }
 
 export interface UnifiCameraStream {

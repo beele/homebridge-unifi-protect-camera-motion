@@ -56,6 +56,79 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         });
     }
 
+    public async didFinishLaunching(): Promise<void> {
+        let cameras: UnifiCamera[] = [];
+        try {
+            cameras = await this.uFlows.enumerateCameras();
+            cameras = cameras.filter((camera: UnifiCamera) => {
+                if (!this.config.unifi.excluded_cameras.includes(camera.id)) {
+                    return camera;
+                } else {
+                    this.infoLogger('Camera (' + camera.name + ') excluded by config!');
+                }
+            });
+        } catch (error) {
+            this.infoLogger('Cannot get cameras: ' + error);
+        }
+
+        if (cameras.length > 0) {
+            cameras.forEach((camera: UnifiCamera) => {
+                if (camera.streams.length < 1) {
+                    this.infoLogger('Camera (' + camera.name + ') has no streams, skipping!')
+                    return;
+                }
+
+                // Camera names must be unique
+                const uuid = this.hap.uuid.generate(camera.name);
+                camera.uuid = uuid;
+                const cameraAccessory = new this.Accessory(camera.name, uuid);
+
+                cameraAccessory.context.cameraConfig = {
+                    uuid: uuid,
+                    name: camera.name,
+                    camera: camera
+                };
+
+                const cameraAccessoryInfo = cameraAccessory.getService(this.hap.Service.AccessoryInformation);
+                if (cameraAccessoryInfo) {
+                    cameraAccessoryInfo.setCharacteristic(this.hap.Characteristic.Manufacturer, 'Ubiquity');
+                    if (camera.type) {
+                        cameraAccessoryInfo.setCharacteristic(this.hap.Characteristic.Model, camera.type);
+                    }
+                    if (camera.mac) {
+                        cameraAccessoryInfo.setCharacteristic(this.hap.Characteristic.SerialNumber, camera.mac);
+                    }
+                    if (camera.firmware) {
+                        cameraAccessoryInfo.setCharacteristic(this.hap.Characteristic.FirmwareRevision, camera.firmware);
+                    }
+                }
+
+                // Only add new cameras that are not cached
+                if (!this.accessories.find((x: PlatformAccessory) => x.UUID === uuid)) {
+                    this.infoLogger('Adding ' + cameraAccessory.context.cameraConfig.uuid);
+                    this.configureAccessory(cameraAccessory); // abusing the configureAccessory here
+                    this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [cameraAccessory]);
+                }
+            });
+
+            // Remove cameras that were not in previous call
+            this.accessories.forEach((accessory: PlatformAccessory) => {
+                if (!cameras.find((x: UnifiCamera) => x.uuid === accessory.context.cameraConfig.uuid)) {
+                    this.infoLogger('Removing ' + accessory.context.cameraConfig.uuid);
+                    this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+                }
+            });
+
+            try {
+                const motionDetector: MotionDetector = new MotionDetector(this.api, this.config, this.uFlows, cameras, this.infoLogger, this.debugLogger);
+                await motionDetector.setupMotionChecking(this.accessories);
+                this.infoLogger('Motion checking setup done!');
+            } catch (error) {
+                this.infoLogger('Error during motion checking setup: ' + error);
+            }
+        }
+    }
+
     public configureAccessory(cameraAccessory: PlatformAccessory): void {
         this.infoLogger('Configuring accessory ' + cameraAccessory.displayName);
 
@@ -97,9 +170,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 callback();
             });
 
-        const streamingDelegate = new UnifiStreamingDelegate(this.hap, cameraConfig, this.log, this.config.videoProcessor);
-        //streamingDelegate.handleSnapshotRequest(null, null);
-
+        const streamingDelegate = new UnifiStreamingDelegate(cameraConfig.camera, this.hap, cameraConfig, this.log, this.config.videoProcessor);
         const options: CameraControllerOptions = {
             cameraStreamCount: cameraConfig.videoConfig.maxStreams || 2, // HomeKit requires at least 2 streams, but 1 is also just fine
             delegate: streamingDelegate as unknown as CameraStreamingDelegate,
@@ -135,89 +206,14 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             },
         };
 
-        //TODO: Refactor
         cameraAccessory.context.id = cameraConfig.camera.id;
         cameraAccessory.context.motionEnabled = true;
         cameraAccessory.context.lastMotionId = null;
         cameraAccessory.context.lastMotionIdRepeatCount = 0;
-        cameraAccessory.context.streamingDelegate = streamingDelegate;
 
         const cameraController = new this.hap.CameraController(options);
         streamingDelegate.controller = cameraController;
         cameraAccessory.configureController(cameraController);
         this.accessories.push(cameraAccessory);
-    }
-
-    public async didFinishLaunching(): Promise<void> {
-        let cameras: UnifiCamera[] = [];
-        try {
-            cameras = await this.uFlows.enumerateCameras();
-            cameras = cameras.filter((camera: UnifiCamera) => {
-                if (!this.config.unifi.excluded_cameras.includes(camera.id)) {
-                    return camera;
-                } else {
-                    this.infoLogger('Camera (' + camera.name + ') excluded by config!');
-                }
-            });
-        } catch (error) {
-            this.infoLogger('Cannot get cameras: ' + error);
-        }
-
-        if (cameras.length > 0) {
-            cameras.forEach((camera: UnifiCamera) => {
-                if (camera.streams.length < 1) {
-                    this.infoLogger('Camera (' + camera.name + ') has no streams, skipping!')
-                    return;
-                }
-
-                // Camera names must be unique
-                const uuid = this.hap.uuid.generate(camera.name);
-                camera.uuid = uuid;
-                const cameraAccessory = new this.Accessory(camera.name, uuid);
-
-                cameraAccessory.context.cameraConfig = {
-                    uuid: uuid,
-                    name: camera.name,
-                    camera
-                };
-
-                const cameraAccessoryInfo = cameraAccessory.getService(this.hap.Service.AccessoryInformation);
-                if (cameraAccessoryInfo) {
-                    cameraAccessoryInfo.setCharacteristic(this.hap.Characteristic.Manufacturer, 'Ubiquity');
-                    if (camera.type) {
-                        cameraAccessoryInfo.setCharacteristic(this.hap.Characteristic.Model, camera.type);
-                    }
-                    if (camera.mac) {
-                        cameraAccessoryInfo.setCharacteristic(this.hap.Characteristic.SerialNumber, camera.mac);
-                    }
-                    if (camera.firmware) {
-                        cameraAccessoryInfo.setCharacteristic(this.hap.Characteristic.FirmwareRevision, camera.firmware);
-                    }
-                }
-
-                // Only add new cameras that are not cached
-                if (!this.accessories.find((x: PlatformAccessory) => x.UUID === uuid)) {
-                    this.infoLogger('Adding ' + cameraAccessory.context.cameraConfig.uuid);
-                    this.configureAccessory(cameraAccessory); // abusing the configureAccessory here
-                    this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [cameraAccessory]);
-                }
-            });
-
-            // Remove cameras that were not in previous call
-            this.accessories.forEach((accessory: PlatformAccessory) => {
-                if (!cameras.find((x: UnifiCamera) => x.uuid === accessory.context.cameraConfig.uuid)) {
-                    this.infoLogger('Removing ' + accessory.context.cameraConfig.uuid);
-                    this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-                }
-            });
-
-            try {
-                const motionDetector: MotionDetector = new MotionDetector(this.api, this.config, this.uFlows, cameras, this.infoLogger, this.debugLogger);
-                await motionDetector.setupMotionChecking(this.accessories);
-                this.infoLogger('Motion checking setup done!');
-            } catch (error) {
-                this.infoLogger('Error during motion checking setup: ' + error);
-            }
-        }
     }
 }

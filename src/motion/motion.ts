@@ -1,10 +1,10 @@
 import {UnifiCamera, UnifiConfig, UnifiMotionEvent} from "../unifi/unifi";
 import {Detection, Detector, Loader} from "../coco/loader";
 import {UnifiFlows} from "../unifi/unifi-flows";
-import {Image} from "canvas";
+import {Canvas, Image} from "canvas";
 import {ImageUtils} from "../utils/image-utils";
 import {GooglePhotos, GooglePhotosConfig} from "../utils/google-photos";
-import type { API, PlatformConfig} from 'homebridge';
+import type {API, PlatformConfig} from 'homebridge';
 
 export class MotionDetector {
 
@@ -54,8 +54,8 @@ export class MotionDetector {
 
         outer: for (const camera of this.cameras) {
             for (const configuredAccessory of this.configuredAccessories) {
-                if(configuredAccessory.context.id === camera.id) {
-                    configuredAccessory.context.streamingDelegate.setCamera(camera);
+                if (configuredAccessory.context.id === camera.id) {
+                    //configuredAccessory.context.streamingDelegate.setCamera(camera);
                     continue outer;
                 }
             }
@@ -97,7 +97,7 @@ export class MotionDetector {
                     let snapshot: Image;
                     try {
                         snapshot = await ImageUtils.createImage('http://' + camera.ip + '/snap.jpeg');
-                        camera.lastDetectionSnapshot = snapshot;
+                        camera.lastDetectionSnapshot = ImageUtils.createCanvasFromImage(snapshot);
                         this.persistSnapshot(snapshot, 'Motion detected (' + camera.lastMotionEvent.score + '%) by camera ' + camera.name, []);
                     } catch (error) {
                         this.logDebug('Cannot save snapshot: ' + error);
@@ -149,8 +149,8 @@ export class MotionDetector {
                             if (score >= this.unifiConfig.enhanced_motion_score) {
                                 this.logInfo('Detected: ' + classToDetect + ' (' + score + '%) by camera ' + camera.name);
                                 configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
-                                camera.lastDetectionSnapshot = snapshot;
-                                await this.persistSnapshot(snapshot, classToDetect + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
+                                const annotatedImage: Canvas = await this.persistSnapshot(snapshot, classToDetect + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
+                                camera.lastDetectionSnapshot = annotatedImage;
                                 continue outer;
                             } else {
                                 this.logDebug('Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.unifiConfig.enhanced_motion_score + '% or higher)');
@@ -164,12 +164,14 @@ export class MotionDetector {
         }
     }
 
-    private async persistSnapshot(snapshot: Image, description: string, detections: Detection[]): Promise<void> {
-        let localImagePath: string = null;
+    private async persistSnapshot(snapshot: Image, description: string, detections: Detection[]): Promise<Canvas> {
+        let annotatedImage: Canvas = null;
+        let annotatedImageData: { fileLocation: string, annotatedImage: Canvas } = null;
         try {
             if (this.unifiConfig.save_snapshot) {
-                localImagePath = await ImageUtils.saveAnnotatedImage(snapshot, detections);
-                this.logDebug('The snapshot has been saved to: ' + localImagePath);
+                annotatedImageData = await ImageUtils.saveAnnotatedImage(snapshot, detections);
+                annotatedImage = annotatedImageData.annotatedImage;
+                this.logDebug('The snapshot has been saved to: ' + annotatedImageData.fileLocation);
             }
         } catch (error) {
             this.logDebug('Snapshot cannot be saved locally: ' + error);
@@ -177,26 +179,34 @@ export class MotionDetector {
 
         try {
             if (this.googlePhotosConfig.upload_gphotos) {
-                let imagePath: string = localImagePath ? localImagePath : await ImageUtils.saveAnnotatedImage(snapshot, detections);
-                const fileName: string = imagePath.split('/').pop();
+                let annotatedImageDataTemp: { fileLocation: string, annotatedImage: Canvas } = annotatedImageData;
+                if (!annotatedImageData) {
+                    annotatedImageDataTemp = await ImageUtils.saveAnnotatedImage(snapshot, detections);
+                    annotatedImage = annotatedImage ? annotatedImage : annotatedImageDataTemp.annotatedImage;
+                }
+
+                const fileName: string = annotatedImageDataTemp.fileLocation.split('/').pop();
+
                 //No await because the upload should not block!
                 this.gPhotos
-                    .uploadImage(imagePath, fileName, description)
+                    .uploadImage(annotatedImageDataTemp.fileLocation, fileName, description)
                     .then((url: string) => {
                         if (url) {
                             this.logDebug('Photo uploaded: ' + url);
                         } else {
-                           this.logDebug('Photo not uploaded!');
+                            this.logDebug('Photo not uploaded!');
                         }
 
-                        if (!localImagePath) {
-                            ImageUtils.remove(imagePath);
+                        if (!annotatedImageData) {
+                            ImageUtils.remove(annotatedImageDataTemp.fileLocation);
                         }
                     });
             }
         } catch (error) {
             this.logDebug('Snapshot cannot be uploaded to Google Photos: ' + error);
         }
+
+        return annotatedImage;
     }
 
     private isSkippableLongRunningMotion(accessory: any, motionEvent: UnifiMotionEvent): boolean {

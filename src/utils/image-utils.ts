@@ -22,21 +22,21 @@ export class ImageUtils {
         return canvas;
     }
 
-    public static createCanvasFromImageWithTargetWidthAndHeight(image: Image, targetWidth: number, targetHeight: number): Canvas {
-        const canvas: Canvas = createCanvas(image.width, image.height);
+    public static resizeCanvas(inputCanvas: Canvas, targetWidth: number, targetHeight: number): Canvas {
+        const canvas: Canvas = createCanvas(targetWidth, targetHeight);
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, targetWidth, targetHeight);
+        ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, targetWidth, targetHeight);
         return canvas;
     }
 
-    public static async saveAnnotatedImage(image: Image, detections: Detection[]): Promise<string> {
+    public static async saveAnnotatedImage(image: Image, detections: Detection[]): Promise<{ fileLocation: string, annotatedImage: Canvas }> {
         const canvas: Canvas = ImageUtils.createCanvasFromImage(image);
         const ctx = canvas.getContext('2d');
         for (const detection of detections) {
             ImageUtils.drawRect(ctx, detection.bbox);
             ImageUtils.drawText(ctx, detection);
         }
-        return await ImageUtils.saveImage(canvas);
+        return {fileLocation: await ImageUtils.saveImage(canvas), annotatedImage: canvas};
     }
 
     public static async remove(path: string): Promise<void> {
