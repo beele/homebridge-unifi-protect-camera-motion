@@ -1,5 +1,5 @@
 import {Detection, Detector, Loader} from "../src/coco/loader";
-import {Image} from "canvas";
+import {Canvas, Image} from "canvas";
 import {ImageUtils} from "../src/utils/image-utils";
 
 const path = require('path');
@@ -36,7 +36,8 @@ const verifyDetections = async (detector: Detector) => {
     expect(detections).not.toBeNull();
     expect(detections.length).toBeGreaterThan(0);
 
-    const fileName: string = (await ImageUtils.saveAnnotatedImage(image, detections)).fileLocation;
+    const annotatedImage: Canvas = await ImageUtils.generateAnnotatedImage(image, detections);
+    const fileName: string = await ImageUtils.saveCanvasToFile(annotatedImage);
     let stats = fs.statSync(fileName);
     expect(stats.isFile()).toBeTruthy();
 
