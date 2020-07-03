@@ -9,7 +9,11 @@ import {
     Logging,
     PlatformAccessory,
     PlatformAccessoryEvent,
-    PlatformConfig
+    PlatformConfig,
+    CharacteristicEventTypes,
+    CharacteristicValue,
+    CharacteristicSetCallback,
+    Service
 } from 'homebridge';
 import {Utils} from "./utils/utils";
 import {Unifi, UnifiCamera} from "./unifi/unifi";
@@ -156,6 +160,15 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             cameraAccessory.removeService(motionSwitch);
         }
 
+        const doorbell: Service = cameraAccessory.getService(this.hap.Service.Doorbell);
+        let doorbellSwitch: Service = cameraAccessory.getServiceById(this.hap.Service.Switch, 'DoorbellTrigger');
+        if (doorbell) {
+            cameraAccessory.removeService(doorbell);
+        }
+        if (doorbellSwitch) {
+            cameraAccessory.removeService(doorbellSwitch);
+        }
+
         cameraAccessory.addService(new this.Service.MotionSensor(cameraConfig.name + ' Motion sensor'));
         cameraAccessory.addService(new this.Service.Switch(cameraConfig.name + ' Motion enabled', 'MotionTrigger'));
         cameraAccessory
@@ -169,6 +182,30 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 this.infoLogger('Motion detection for ' + cameraConfig.name + ' has been turned ' + (cameraAccessory.context.motionEnabled ? 'ON' : 'OFF'));
                 callback();
             });
+
+        doorbellSwitch = new this.Service.Switch(cameraConfig.name + ' Doorbell switch', 'DoorbellTrigger');
+        cameraAccessory.addService(new this.Service.Doorbell(cameraConfig.name + ' Doorbell'));
+        cameraAccessory.addService(doorbellSwitch);
+        doorbellSwitch
+            .getCharacteristic(this.hap.Characteristic.On)
+            .on(CharacteristicEventTypes.SET, (state: CharacteristicValue, callback: CharacteristicSetCallback) => {
+                if (state) {
+                    const doorbell = cameraAccessory.getService(this.hap.Service.Doorbell);
+                    if (doorbell) {
+                        doorbell.updateCharacteristic(
+                            this.hap.Characteristic.ProgrammableSwitchEvent,
+                            this.hap.Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS,
+                        );
+
+                        setTimeout(() => {
+                            console.log('auto off');
+                            doorbellSwitch.getCharacteristic(this.hap.Characteristic.On).updateValue(false);
+                        }, 1000);
+                    }
+                }
+                callback(null, state);
+            });
+
 
         const streamingDelegate = new UnifiStreamingDelegate(
             cameraConfig.camera.id, cameraConfig.camera.name,

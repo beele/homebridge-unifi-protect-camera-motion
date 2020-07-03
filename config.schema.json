@@ -581,6 +581,18 @@
                         "description": "If enabled every time a motion event is generated the snapshot used for detection will be saved to the .homebridge directory",
                         "required": true
                     },
+                    "excluded_cameras": {
+                        "type": "array",
+                        "title": "Contains the id of the camera's for which not camera accessory should be made available",
+                        "items": {
+                            "title": "Camera ID",
+                            "description": "ID of the camera to omit",
+                            "type": "string"
+                        },
+                        "default": [],
+                        "description": "",
+                        "required": false
+                    },
                     "debug": {
                         "title": "Enable debug logging?",
                         "type": "boolean",
@@ -588,7 +600,7 @@
                         "description": "If enabled will print out a lot of debug logging of the plugin and FFmpeg, only use this for debugging!",
                         "required": true
                     },
-                    "debugNetworkTraffic": {
+                    "debug_network_traffic": {
                         "title": "Enable debug logging for network requests?",
                         "type": "boolean",
                         "default": false,

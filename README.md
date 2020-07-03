@@ -59,6 +59,7 @@ Next, open the `config.json` that contains your Homebridge configuration, and ad
         "enhanced_motion_score": 50, 
         "enhanced_classes": ["person"], 
         "debug": false, 
+        "debug_network_traffic": false,
         "save_snapshot": true,
         "upload_gphotos": false 
     },
