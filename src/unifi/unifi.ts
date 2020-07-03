@@ -35,7 +35,7 @@ export class Unifi {
             })
         });
 
-        if (this.config.debugNetworkTraffic) {
+        if (this.config.debug_network_traffic) {
             this.axiosInstance.interceptors.request.use((request: AxiosRequestConfig) => {
                 this.logDebug(request);
                 return request;
@@ -86,7 +86,7 @@ export class Unifi {
             headers: endpointStyle.isUnifiOS ?
                 {
                     'Content-Type': 'application/json',
-                    'X-CSRF-Token': endpointStyle.csrfToken
+                    'x-csrf-token': endpointStyle.csrfToken
                 } : {
                     'Content-Type': 'application/json'
                 },
@@ -104,6 +104,10 @@ export class Unifi {
 
         this.logDebug('Authenticated, returning session');
         if (endpointStyle.isUnifiOS) {
+
+            //TODO: Remove, For debugging!
+            console.log(response.headers['set-cookie']['0']);
+
             return {
                 cookie: response.headers['set-cookie']['0'],
                 timestamp: Date.now()
@@ -138,8 +142,9 @@ export class Unifi {
             headers: endPointStyle.isUnifiOS ?
                 {
                     'Content-Type': 'application/json',
-                    'X-CSRF-Token': endPointStyle.csrfToken,
-                    'Cookie': session.cookie
+                    'Accept': 'application/json',
+                    'Cookie': session.cookie,
+                    'x-csrf-token': endPointStyle.csrfToken
                 } : {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + session.authorization
@@ -148,7 +153,16 @@ export class Unifi {
             timeout: 1000
         };
 
+        //TODO: Remove, For debugging!
+        console.log(JSON.stringify(opts, null, 4));
+
         const response: AxiosResponse = await Utils.backOff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
+
+        //TODO: Remove, For debugging!
+        console.log(response.status);
+        console.log(response.statusText);
+        console.log(JSON.stringify(response.data, null, 4));
+
         Utils.checkResponseForErrors(response, 'data', ['cameras']);
 
         this.logDebug('Cameras retrieved, enumerating motion sensors');
@@ -296,6 +310,6 @@ export interface UnifiConfig {
     enhanced_motion_score: number;
     enhanced_classes: string[];
     debug: boolean;
-    debugNetworkTraffic: boolean;
+    debug_network_traffic: boolean;
     save_snapshot: boolean;
 }

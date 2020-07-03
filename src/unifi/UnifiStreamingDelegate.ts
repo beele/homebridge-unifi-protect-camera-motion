@@ -33,7 +33,7 @@ export class UnifiStreamingDelegate extends StreamingDelegate {
         this.camera = camera;
     }
 
-    //This will be called by Homekit!
+    //This is called by Homekit!
     public handleSnapshotRequest(request: any, callback: Function): void {
         this.logDebug('Handling snapshot request for Camera: ' + this.cameraName);
 
