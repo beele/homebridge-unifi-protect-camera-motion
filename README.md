@@ -100,7 +100,7 @@ If you are using Homebridge Config X, it will do its best to alert you to any sy
 ### Unifi config fields:
 |Field|Type|Required|Default value|Description|
 |-----|----|--------|-------------|-----------|
-|controller|string|yes|/|Contains the URL to the CloudKey or UDM with UnifiOS, or as legacy the URL to the Unifi Protect web UI, including port (no / at the end)|
+|controller|string|yes|/|Contains the URL to the CloudKey or UDM with UnifiOS, or as legacy the URL to the Unifi Protect web UI, including port (no / or  /protect/ at the end!)|
 |controller_rtsp|string|yes|/|Contains the base URL to be used for playing back the RTSP streams, as seen in the RTSP configuration (no / at the end)|
 |username|string|yes|/|Contains the username that is used to login in the web UI|
 |password|string|yes|/|Contains the password that is used to login in the web UI|
