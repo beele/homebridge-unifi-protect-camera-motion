@@ -34,6 +34,24 @@ export class GooglePhotos {
         })
     }
 
+    public async uploadImage(imagePath: string, imageName: string, description: string): Promise<string> {
+        if (!this.initPerformed) {
+            this.logDebug('Google Photos logic could not start or is still starting...');
+            return null;
+        }
+
+        try {
+            const photos = new Photos(await this.authenticate());
+            const response = await photos.mediaItems.upload(this.gPhotosPersistData.albumId, imageName, imagePath, description);
+            return response.newMediaItemResults[0].mediaItem.productUrl;
+
+        } catch (error) {
+            this.logDebug('Uploading to Google Photos failed');
+            this.logDebug(error);
+            throw new Error('Cannot upload image to Google Photos!');
+        }
+    }
+
     private async init(): Promise<void> {
         try {
             this.gPhotosPersistData = await this.readConfig();
@@ -73,24 +91,6 @@ export class GooglePhotos {
         } catch (error) {
             this.logDebug('Could not create album');
             this.logDebug(error);
-        }
-    }
-
-    public async uploadImage(imagePath: string, imageName: string, description: string): Promise<string> {
-        if (!this.initPerformed) {
-            this.logDebug('Google Photos logic could not start or is still starting...');
-            return null;
-        }
-
-        try {
-            const photos = new Photos(await this.authenticate());
-            const response = await photos.mediaItems.upload(this.gPhotosPersistData.albumId, imageName, imagePath, description);
-            return response.newMediaItemResults[0].mediaItem.productUrl;
-
-        } catch (error) {
-            this.logDebug('Uploading to Google Photos failed');
-            this.logDebug(error);
-            throw new Error('Cannot upload image to Google Photos!');
         }
     }
 

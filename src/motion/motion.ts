@@ -1,11 +1,11 @@
 import {UnifiCamera, UnifiConfig, UnifiMotionEvent} from "../unifi/unifi";
-import {Detection, Detector, Loader} from "../coco/loader";
+import {Detection, Detector, Loader} from "./coco/loader";
 import {UnifiFlows} from "../unifi/unifi-flows";
 import {Canvas, Image} from "canvas";
 import {ImageUtils} from "../utils/image-utils";
 import {GooglePhotos, GooglePhotosConfig} from "../utils/google-photos";
 import type {API, PlatformAccessory, PlatformConfig} from 'homebridge';
-import {UnifiStreamingDelegate} from "../unifi/UnifiStreamingDelegate";
+import {UnifiStreamingDelegate} from "../streaming/unifi-streaming-delegate";
 
 export class MotionDetector {
 
@@ -159,7 +159,8 @@ export class MotionDetector {
                             const score: number = Math.round(detection.score * 100);
                             if (score >= this.unifiConfig.enhanced_motion_score) {
                                 this.logInfo('Detected: ' + classToDetect + ' (' + score + '%) by camera ' + camera.name);
-                                camera.lastDetectionSnapshot = await this.persistSnapshot(snapshot, classToDetect + ' detected (' + score + '%) by camera ' + camera.name, [detection]);;
+                                camera.lastDetectionSnapshot = await this.persistSnapshot(snapshot, classToDetect + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
+                                ;
                                 configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
                                 continue outer;
                             } else {

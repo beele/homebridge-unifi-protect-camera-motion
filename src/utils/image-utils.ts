@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 import {Canvas, createCanvas, Image, loadImage} from "canvas";
-import {Detection} from "../coco/loader";
+import {Detection} from "../motion/coco/loader";
 
 export class ImageUtils {
 
@@ -47,20 +47,6 @@ export class ImageUtils {
         });
     }
 
-    private static drawRect(ctx: any, bbox: number[]): void {
-        ctx.strokeStyle = 'rgba(255,0,0,1)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.rect(bbox[0], bbox[1], bbox[2], bbox[3]);
-        ctx.stroke();
-    }
-
-    private static drawText(ctx: any, detection: Detection): void {
-        ctx.font = '16px Arial';
-        ctx.fillStyle = 'red';
-        ctx.fillText(detection.class + ': ' + Math.round(detection.score * 100) + '%', detection.bbox[0] + 5, detection.bbox[1] + 15);
-    }
-
     public static saveCanvasToFile(canvas: Canvas): Promise<string> {
         return new Promise((resolve, reject) => {
             const snapshotName: string = 'snapshot-' + new Date().toISOString() + '.jpg';
@@ -78,5 +64,19 @@ export class ImageUtils {
                 resolve(fileName);
             });
         });
+    }
+
+    private static drawRect(ctx: any, bbox: number[]): void {
+        ctx.strokeStyle = 'rgba(255,0,0,1)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.rect(bbox[0], bbox[1], bbox[2], bbox[3]);
+        ctx.stroke();
+    }
+
+    private static drawText(ctx: any, detection: Detection): void {
+        ctx.font = '16px Arial';
+        ctx.fillStyle = 'red';
+        ctx.fillText(detection.class + ': ' + Math.round(detection.score * 100) + '%', detection.bbox[0] + 5, detection.bbox[1] + 15);
     }
 }

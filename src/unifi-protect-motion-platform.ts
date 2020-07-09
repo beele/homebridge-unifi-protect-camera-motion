@@ -1,28 +1,24 @@
 import {
     API,
     APIEvent,
-    AudioStreamingCodecType,
-    AudioStreamingSamplerate,
-    CameraControllerOptions,
     DynamicPlatformPlugin,
     HAP,
     Logging,
     PlatformAccessory,
     PlatformAccessoryEvent,
-    PlatformConfig,
-    CharacteristicEventTypes,
-    CharacteristicValue,
-    CharacteristicSetCallback,
-    Service
+    PlatformConfig
 } from 'homebridge';
 import {Utils} from "./utils/utils";
 import {Unifi, UnifiCamera} from "./unifi/unifi";
 import {UnifiFlows} from "./unifi/unifi-flows";
 import {PLATFORM_NAME, PLUGIN_NAME} from "./settings";
-import {VideoConfig} from "./ffmpeg/video-config";
+import {VideoConfig} from "./streaming/video-config";
 import {MotionDetector} from "./motion/motion";
-import {UnifiStreamingDelegate} from "./unifi/UnifiStreamingDelegate";
-import {CameraStreamingDelegate} from "hap-nodejs/dist/lib/controller/CameraController";
+import {UnifiCameraAccessoryInfo} from "./characteristics/unifi-camera-accessory-info";
+import {CameraConfig} from "./streaming/camera-config";
+import {UnifiCameraMotionSensor} from "./characteristics/unifi-camera-motion-sensor";
+import {UnifiCameraDoorbell} from "./characteristics/unifi-camera-doorbell";
+import {UnifiCameraStreaming} from "./streaming/unifi-camera-streaming";
 
 export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
@@ -91,21 +87,9 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                     uuid: uuid,
                     name: camera.name,
                     camera: camera
-                };
+                } as CameraConfig;
 
-                const cameraAccessoryInfo = cameraAccessory.getService(this.hap.Service.AccessoryInformation);
-                if (cameraAccessoryInfo) {
-                    cameraAccessoryInfo.setCharacteristic(this.hap.Characteristic.Manufacturer, 'Ubiquity');
-                    if (camera.type) {
-                        cameraAccessoryInfo.setCharacteristic(this.hap.Characteristic.Model, camera.type);
-                    }
-                    if (camera.mac) {
-                        cameraAccessoryInfo.setCharacteristic(this.hap.Characteristic.SerialNumber, camera.mac);
-                    }
-                    if (camera.firmware) {
-                        cameraAccessoryInfo.setCharacteristic(this.hap.Characteristic.FirmwareRevision, camera.firmware);
-                    }
-                }
+                UnifiCameraAccessoryInfo.createAccessoryInfo(camera, cameraAccessory, this.hap);
 
                 // Only add new cameras that are not cached
                 if (!this.accessories.find((x: PlatformAccessory) => x.UUID === uuid)) {
@@ -140,122 +124,20 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             this.infoLogger(cameraAccessory.displayName + ' identified!');
         });
 
-        const cameraConfig = cameraAccessory.context.cameraConfig;
+        const cameraConfig: CameraConfig = cameraAccessory.context.cameraConfig;
 
         //Update the camera config!
         const videoConfigCopy: VideoConfig = JSON.parse(JSON.stringify(this.config.videoConfig));
         //Assign stillImageSource, source and debug (overwrite if they are present from the videoConfig, which they should not be!)
         videoConfigCopy.stillImageSource = '-i http://' + cameraConfig.camera.ip + '/snap.jpeg';
         videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + this.config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(cameraConfig.camera.streams);
-
         videoConfigCopy.debug = this.config.unifi.debug;
         cameraConfig.videoConfig = videoConfigCopy;
 
-        const motion = cameraAccessory.getService(this.hap.Service.MotionSensor);
-        const motionSwitch = cameraAccessory.getServiceById(this.hap.Service.Switch, 'MotionTrigger');
-        if (motion) {
-            cameraAccessory.removeService(motion);
-        }
-        if (motionSwitch) {
-            cameraAccessory.removeService(motionSwitch);
-        }
+        UnifiCameraMotionSensor.setupMotionSensor(cameraConfig, cameraAccessory, this.config, this.hap, this.infoLogger, this.debugLogger);
+        UnifiCameraDoorbell.setupDoorbell(cameraConfig, cameraAccessory, this.config, this.hap, this.infoLogger, this.debugLogger);
+        UnifiCameraStreaming.setupStreaming(cameraConfig, cameraAccessory, this.config, this.hap, this.infoLogger, this.debugLogger, this.log);
 
-        const doorbell: Service = cameraAccessory.getService(this.hap.Service.Doorbell);
-        let doorbellSwitch: Service = cameraAccessory.getServiceById(this.hap.Service.Switch, 'DoorbellTrigger');
-        if (doorbell) {
-            cameraAccessory.removeService(doorbell);
-        }
-        if (doorbellSwitch) {
-            cameraAccessory.removeService(doorbellSwitch);
-        }
-
-        cameraAccessory.addService(new this.Service.MotionSensor(cameraConfig.name + ' Motion sensor'));
-        cameraAccessory.addService(new this.Service.Switch(cameraConfig.name + ' Motion enabled', 'MotionTrigger'));
-        cameraAccessory
-            .getService(this.Service.Switch)
-            .getCharacteristic(this.Characteristic.On)
-            .on(this.api.hap.CharacteristicEventTypes.GET, (callback: Function) => {
-                callback(null, cameraAccessory.context.motionEnabled);
-            })
-            .on(this.api.hap.CharacteristicEventTypes.SET, (value: boolean, callback: Function) => {
-                cameraAccessory.context.motionEnabled = value;
-                this.infoLogger('Motion detection for ' + cameraConfig.name + ' has been turned ' + (cameraAccessory.context.motionEnabled ? 'ON' : 'OFF'));
-                callback();
-            });
-
-        doorbellSwitch = new this.Service.Switch(cameraConfig.name + ' Doorbell switch', 'DoorbellTrigger');
-        cameraAccessory.addService(new this.Service.Doorbell(cameraConfig.name + ' Doorbell'));
-        cameraAccessory.addService(doorbellSwitch);
-        doorbellSwitch
-            .getCharacteristic(this.hap.Characteristic.On)
-            .on(CharacteristicEventTypes.SET, (state: CharacteristicValue, callback: CharacteristicSetCallback) => {
-                if (state) {
-                    const doorbell = cameraAccessory.getService(this.hap.Service.Doorbell);
-                    if (doorbell) {
-                        doorbell.updateCharacteristic(
-                            this.hap.Characteristic.ProgrammableSwitchEvent,
-                            this.hap.Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS,
-                        );
-
-                        setTimeout(() => {
-                            console.log('auto off');
-                            doorbellSwitch.getCharacteristic(this.hap.Characteristic.On).updateValue(false);
-                        }, 1000);
-                    }
-                }
-                callback(null, state);
-            });
-
-
-        const streamingDelegate = new UnifiStreamingDelegate(
-            cameraConfig.camera.id, cameraConfig.camera.name,
-            this.infoLogger, this.debugLogger,
-            this.hap, cameraConfig, this.log, this.config.videoProcessor
-        );
-        UnifiStreamingDelegate.instances.push(streamingDelegate);
-        const options: CameraControllerOptions = {
-            cameraStreamCount: cameraConfig.videoConfig.maxStreams || 2, // HomeKit requires at least 2 streams, but 1 is also just fine
-            delegate: streamingDelegate as unknown as CameraStreamingDelegate,
-            streamingOptions: {
-                supportedCryptoSuites: [this.hap.SRTPCryptoSuites.AES_CM_128_HMAC_SHA1_80],
-                video: {
-                    resolutions: [
-                        [320, 180, 30],
-                        [320, 240, 15], // Apple Watch requires this configuration
-                        [320, 240, 30],
-                        [480, 270, 30],
-                        [480, 360, 30],
-                        [640, 360, 30],
-                        [640, 480, 30],
-                        [1280, 720, 30],
-                        [1280, 960, 30],
-                        [1920, 1080, 30],
-                        [1600, 1200, 30],
-                    ],
-                    codec: {
-                        profiles: [this.hap.H264Profile.BASELINE, this.hap.H264Profile.MAIN, this.hap.H264Profile.HIGH],
-                        levels: [this.hap.H264Level.LEVEL3_1, this.hap.H264Level.LEVEL3_2, this.hap.H264Level.LEVEL4_0],
-                    },
-                },
-                audio: {
-                    codecs: [
-                        {
-                            type: AudioStreamingCodecType.AAC_ELD,
-                            samplerate: AudioStreamingSamplerate.KHZ_16,
-                        },
-                    ],
-                },
-            },
-        };
-
-        cameraAccessory.context.id = cameraConfig.camera.id;
-        cameraAccessory.context.motionEnabled = true;
-        cameraAccessory.context.lastMotionId = null;
-        cameraAccessory.context.lastMotionIdRepeatCount = 0;
-
-        const cameraController = new this.hap.CameraController(options);
-        streamingDelegate.controller = cameraController;
-        cameraAccessory.configureController(cameraController);
         this.accessories.push(cameraAccessory);
     }
 }

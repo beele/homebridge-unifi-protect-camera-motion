@@ -1,24 +1,18 @@
-import {
-    HAP,
-    Logging
-} from 'homebridge';
+import {HAP, Logging} from 'homebridge';
 import {ImageUtils} from "../utils/image-utils";
 import {Canvas} from "canvas";
-import {UnifiCamera} from "./unifi";
+import {UnifiCamera} from "../unifi/unifi";
 
 const StreamingDelegate = require('homebridge-camera-ffmpeg/dist/streamingDelegate').StreamingDelegate;
 
 export class UnifiStreamingDelegate extends StreamingDelegate {
 
     public static readonly instances: UnifiStreamingDelegate[] = [];
-
-    private readonly logInfo: Function;
-    private readonly logDebug: Function;
-
     public readonly cameraName: string
     public readonly cameraId: string;
+    private readonly logInfo: Function;
+    private readonly logDebug: Function;
     private camera: UnifiCamera;
-
 
     constructor(cameraId: string, cameraName: string, infoLogger: Function, debugLogger: Function, hap: HAP, cameraConfig: object, logging: Logging, videoProcessor: string) {
         super(hap, cameraConfig, logging, videoProcessor);
