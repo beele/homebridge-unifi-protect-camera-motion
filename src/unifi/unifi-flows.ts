@@ -1,4 +1,4 @@
-import {Unifi, UnifiMotionEvent, UnifiCamera, UnifiSession, UnifiConfig, UnifiEndPointStyle} from "./unifi";
+import {Unifi, UnifiCamera, UnifiConfig, UnifiEndPointStyle, UnifiMotionEvent, UnifiSession} from "./unifi";
 
 export class UnifiFlows {
 

@@ -23,7 +23,7 @@ import {CLASSES} from './classes';
 const BASE_PATH = 'https://storage.googleapis.com/tfjs-models/savedmodel/';
 
 export type ObjectDetectionBaseModel =
-    'mobilenet_v1'|'mobilenet_v2'|'lite_mobilenet_v2';
+    'mobilenet_v1' | 'mobilenet_v2' | 'lite_mobilenet_v2';
 
 export interface DetectedObject {
     bbox: [number, number, number, number];  // [x, y, width, height]
@@ -77,10 +77,6 @@ export class ObjectDetection {
             modelUrl || `${BASE_PATH}${this.getPrefix(base)}/model.json`;
     }
 
-    private getPrefix(base: ObjectDetectionBaseModel) {
-        return base === 'lite_mobilenet_v2' ? `ssd${base}` : `ssd_${base}`;
-    }
-
     async load() {
         this.model = await tfconv.loadGraphModel(this.modelPath);
 
@@ -90,6 +86,40 @@ export class ObjectDetection {
         await Promise.all(result.map(t => t.data()));
         result.map(t => t.dispose());
         zeroTensor.dispose();
+    }
+
+    /**
+     * Detect objects for an image returning a list of bounding boxes with
+     * assocated class and score.
+     *
+     * @param img The image to detect objects from. Can be a tensor or a DOM
+     *     element image, video, or canvas.
+     * @param maxNumBoxes The maximum number of bounding boxes of detected
+     * objects. There can be multiple objects of the same class, but at different
+     * locations. Defaults to 20.
+     * @param minScore The minimum score of the returned bounding boxes
+     * of detected objects. Value between 0 and 1. Defaults to 0.5.
+     */
+    async detect(
+        img: tf.Tensor3D | ImageData | HTMLImageElement | HTMLCanvasElement |
+            HTMLVideoElement,
+        maxNumBoxes = 20,
+        minScore = 0.5): Promise<DetectedObject[]> {
+        return this.infer(img, maxNumBoxes, minScore);
+    }
+
+    /**
+     * Dispose the tensors allocated by the model. You should call this when you
+     * are done with the model.
+     */
+    dispose() {
+        if (this.model != null) {
+            this.model.dispose();
+        }
+    }
+
+    private getPrefix(base: ObjectDetectionBaseModel) {
+        return base === 'lite_mobilenet_v2' ? `ssd${base}` : `ssd_${base}`;
     }
 
     /**
@@ -104,7 +134,7 @@ export class ObjectDetection {
      * of detected objects. Value between 0 and 1. Defaults to 0.5.
      */
     private async infer(
-        img: tf.Tensor3D|ImageData|HTMLImageElement|HTMLCanvasElement|
+        img: tf.Tensor3D | ImageData | HTMLImageElement | HTMLCanvasElement |
             HTMLVideoElement,
         maxNumBoxes: number,
         minScore: number): Promise<DetectedObject[]> {
@@ -200,35 +230,5 @@ export class ObjectDetection {
             classes[i] = index;
         }
         return [maxes, classes];
-    }
-
-    /**
-     * Detect objects for an image returning a list of bounding boxes with
-     * assocated class and score.
-     *
-     * @param img The image to detect objects from. Can be a tensor or a DOM
-     *     element image, video, or canvas.
-     * @param maxNumBoxes The maximum number of bounding boxes of detected
-     * objects. There can be multiple objects of the same class, but at different
-     * locations. Defaults to 20.
-     * @param minScore The minimum score of the returned bounding boxes
-     * of detected objects. Value between 0 and 1. Defaults to 0.5.
-     */
-    async detect(
-        img: tf.Tensor3D|ImageData|HTMLImageElement|HTMLCanvasElement|
-            HTMLVideoElement,
-        maxNumBoxes = 20,
-        minScore = 0.5): Promise<DetectedObject[]> {
-        return this.infer(img, maxNumBoxes, minScore);
-    }
-
-    /**
-     * Dispose the tensors allocated by the model. You should call this when you
-     * are done with the model.
-     */
-    dispose() {
-        if (this.model != null) {
-            this.model.dispose();
-        }
     }
 }

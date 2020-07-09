@@ -26,12 +26,12 @@ export class Utils {
         if (!response[fieldToCheck]) {
             throw new Error('Invalid response, missing: ' + fieldToCheck);
 
-        } else if(response[fieldToCheck].error) {
+        } else if (response[fieldToCheck].error) {
             throw new Error('Error in response: ' + response[fieldToCheck].error);
 
-        } else if(subFields && subFields.length > 0) {
+        } else if (subFields && subFields.length > 0) {
             for (const subField of subFields) {
-                if(!response[fieldToCheck][subField]) {
+                if (!response[fieldToCheck][subField]) {
                     throw new Error('Invalid response, missing: ' + subField + ' on ' + fieldToCheck);
                 }
             }
@@ -43,7 +43,7 @@ export class Utils {
             return (message: any) => {
                 wrappedLogger.log(LogLevel.INFO, message);
             }
-        } else if(createDebugLogger) {
+        } else if (createDebugLogger) {
             return (message: any) => {
                 wrappedLogger.log(LogLevel.DEBUG, message);
             }

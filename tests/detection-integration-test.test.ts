@@ -1,4 +1,4 @@
-import {Detection, Detector, Loader} from "../src/coco/loader";
+import {Detection, Detector, Loader} from "../src/motion/coco/loader";
 import {Canvas, Image} from "canvas";
 import {ImageUtils} from "../src/utils/image-utils";
 

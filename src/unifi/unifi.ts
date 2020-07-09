@@ -7,18 +7,15 @@ const axios = require('axios').default;
 
 export class Unifi {
 
-    private readonly config: UnifiConfig;
-
-    private readonly initialBackoffDelay: number;
-    private readonly maxRetries: number;
-
-    private readonly logDebug: any;
-
     private static readonly axiosInstance: AxiosInstance = axios.create({
         httpsAgent: new https.Agent({
             rejectUnauthorized: false
         })
     });
+    private readonly config: UnifiConfig;
+    private readonly initialBackoffDelay: number;
+    private readonly maxRetries: number;
+    private readonly logDebug: any;
     private readonly axiosInstance: AxiosInstance;
 
     constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, debugLogger: Function) {
@@ -75,6 +72,20 @@ export class Unifi {
         }
     }
 
+    public static pickHighestQualityAlias(streams: UnifiCameraStream[]): string {
+        return streams
+            .map(((stream: UnifiCameraStream) => {
+                return {
+                    resolution: stream.width * stream.height,
+                    alias: stream.alias
+                };
+            }))
+            .sort((a, b) => {
+                return a.resolution - b.resolution;
+            })
+            .shift().alias;
+    }
+
     public async authenticate(username: string, password: string, endpointStyle: UnifiEndPointStyle): Promise<UnifiSession> {
         if (!username || !password) {
             throw new Error('Username and password should be filled in!');
@@ -86,7 +97,7 @@ export class Unifi {
             headers: endpointStyle.isUnifiOS ?
                 {
                     'Content-Type': 'application/json',
-                    'x-csrf-token': endpointStyle.csrfToken
+                    'X-CSRF-Token': endpointStyle.csrfToken
                 } : {
                     'Content-Type': 'application/json'
                 },
@@ -99,15 +110,20 @@ export class Unifi {
             timeout: 1000
         };
 
+        //TODO: Remove, For debugging!
+        console.log(JSON.stringify(opts, null, 4));
+
         const response: AxiosResponse = await Utils.backOff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
+
+        //TODO: Remove, For debugging!
+        console.log(response.status);
+        console.log(response.statusText);
+        console.log(JSON.stringify(response.data, null, 4));
+
         Utils.checkResponseForErrors(response, 'headers', [endpointStyle.isUnifiOS ? 'set-cookie' : 'authorization']);
 
         this.logDebug('Authenticated, returning session');
         if (endpointStyle.isUnifiOS) {
-
-            //TODO: Remove, For debugging!
-            console.log(response.headers['set-cookie']['0']);
-
             return {
                 cookie: response.headers['set-cookie']['0'],
                 timestamp: Date.now()
@@ -142,9 +158,8 @@ export class Unifi {
             headers: endPointStyle.isUnifiOS ?
                 {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Cookie': session.cookie,
-                    'x-csrf-token': endPointStyle.csrfToken
+                    'X-CSRF-Token': endPointStyle.csrfToken,
+                    'Cookie': session.cookie
                 } : {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + session.authorization
@@ -241,20 +256,6 @@ export class Unifi {
             }
         });
     }
-
-    public static pickHighestQualityAlias(streams: UnifiCameraStream[]): string {
-        return streams
-            .map(((stream: UnifiCameraStream) => {
-                return {
-                    resolution: stream.width * stream.height,
-                    alias: stream.alias
-                };
-            }))
-            .sort((a, b) => {
-                return a.resolution - b.resolution;
-            })
-            .shift().alias;
-    }
 }
 
 export interface UnifiSession {
@@ -309,7 +310,9 @@ export interface UnifiConfig {
     enhanced_motion: boolean;
     enhanced_motion_score: number;
     enhanced_classes: string[];
+    save_snapshot: boolean;
+    enable_motion_trigger: boolean;
+    enable_doorbell: boolean;
     debug: boolean;
     debug_network_traffic: boolean;
-    save_snapshot: boolean;
 }

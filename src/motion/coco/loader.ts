@@ -1,5 +1,5 @@
 import {Canvas, Image} from "canvas";
-import {ImageUtils} from "../utils/image-utils";
+import {ImageUtils} from "../../utils/image-utils";
 import {load, ObjectDetection} from "./coco";
 
 export class Loader {
@@ -14,7 +14,7 @@ export class Loader {
         const printProcessDuration: Function = (name: string, start: number) => {
             this.logInfo(name + ' processing took: ' + (Date.now() - start) + 'ms');
         };
-        const printResults: Function = (results: any[]) =>{
+        const printResults: Function = (results: any[]) => {
             for (const result of results) {
                 this.logInfo('==> Detected: ' + result.class + ' [' + Math.round(result.score * 100) + '%]');
             }
