@@ -20,6 +20,9 @@ export class UnifiCameraMotionSensor {
         if (motionSwitch) {
             accessory.removeService(motionSwitch);
         }
+        if (motionTrigger) {
+            accessory.removeService(motionTrigger)
+        }
 
         motionSwitch = new Service.Switch(cameraConfig.name + ' Motion enabled', 'MotionEnabled');
         accessory.addService(new Service.MotionSensor(cameraConfig.name + ' Motion sensor'));
@@ -45,10 +48,7 @@ export class UnifiCameraMotionSensor {
                     if (state) {
                         const motionSensor = accessory.getService(hap.Service.MotionSensor);
                         if (motionSensor) {
-                            motionSensor.updateCharacteristic(
-                                hap.Characteristic.ProgrammableSwitchEvent,
-                                hap.Characteristic.ProgrammableSwitchEvent.SINGLE_PRESS,
-                            );
+                            motionSensor.updateCharacteristic(hap.Characteristic.MotionDetected, 1);
 
                             setTimeout(() => {
                                 console.log('motion trigger auto off');
