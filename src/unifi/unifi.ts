@@ -207,6 +207,7 @@ export class Unifi {
                 return (a.height * a.width) - (b.height * b.width);
             });
 
+            this.log.info('Found camera: ' + cam.name + ' (id: ' + cam.id + ')');
             return {
                 id: cam.id,
                 name: cam.name,
@@ -305,15 +306,17 @@ export interface UnifiConfig {
     controller_rtsp: string;
     username: string;
     password: string;
+    excluded_cameras: string[];
     motion_interval: number;
     motion_repeat_interval: number;
     motion_score: number;
     enhanced_motion: boolean;
     enhanced_motion_score: number;
     enhanced_classes: string[];
-    save_snapshot: boolean;
     enable_motion_trigger: boolean;
-    enable_doorbell: boolean;
+    enable_doorbell_for: string[];
+    save_snapshot: boolean;
+    upload_gphotos: boolean;
     debug: boolean;
     debug_network_traffic: boolean;
 }

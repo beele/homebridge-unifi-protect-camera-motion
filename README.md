@@ -58,10 +58,12 @@ Next, open the `config.json` that contains your Homebridge configuration, and ad
         "enhanced_motion": true, 
         "enhanced_motion_score": 50, 
         "enhanced_classes": ["person"], 
+        "enable_motion_trigger": true,
+        "enable_doorbell": false,
+        "save_snapshot": true,
+        "upload_gphotos": false,
         "debug": false, 
         "debug_network_traffic": false,
-        "save_snapshot": true,
-        "upload_gphotos": false 
     },
     "videoConfig": { 
         "vcodec": "h264",
@@ -104,15 +106,19 @@ If you are using Homebridge Config X, it will do its best to alert you to any sy
 |controller_rtsp|string|yes|/|Contains the base URL to be used for playing back the RTSP streams, as seen in the RTSP configuration (no / at the end)|
 |username|string|yes|/|Contains the username that is used to login in the web UI|
 |password|string|yes|/|Contains the password that is used to login in the web UI|
+|excluded_cameras|no|string[]|[]|An array that contains the IDs of the cameras which should be excluded from the enumeration in Homekit, all available IDs are printed during startup|
 |motion_interval|number|yes|/|Contains the interval in milliseconds used to check for motion, a good default is 5000 milliseconds|
 |motion_repeat_interval|number|no|/|Contains the repeat interval in milliseconds during which new motion events will not be triggered if they belong to the same ongoing motion, a good default is 30000 to 60000 milliseconds. This will prevent a bunch of notifications for events which are longer than the motion_interval! Omit this field to disable this functionality|
 |motion_score|number|yes|/|Contains the minimum score in % that a motion event has to have to be processed, a good default is 50%, set this to 0 when using enhanced motion!|
 |enhanced_motion|boolean|yes|/|Enables or disables the enhanced motion & object detection detection with Tensorflow|
 |enhanced_motion_score|number|sometimes|/|This field is required if the `enhanced_motion` field is set to true and contains the minimum score/certainty in % the enhanced detection should reach before allowing an motion event to be triggered |
 |enhanced_classes|string[]|sometimes|[]|This field is required if the `enhanced_motion` field is set to true and contains an array of classes (in lowercase) of objects to dispatch motion events for. The array should not be empty when using the enhanced detection! Look in look in src/coco/classes.ts for all available classes|
-|debug|boolean|no|false|Contains a boolean indicating whether or not to enable debug logging for the plugin and FFmpeg|
+|enable_motion_trigger|boolean|no|false|Contains a boolean that when set to true will enable an extra button for each camera to manually trigger a motion notification|
+|enable_doorbell_for|string[]|no|[]|Contains the id of the camera's for which the doorbell functionality should be enabled, all available IDs are printed during startup|
 |save_snapshot|boolean|no|false|Contains a boolean indicating whether or not to save each detection to a jpg file in the `.homebridge` directory. When using enhanced mode the image is annotated with the class/score that was detected.|
 |upload_gphotos|boolean|no|false|Contains a boolean indicating whether or not to upload each detection to a google photos album. When using enhanced mode the image is annotated with the class/score that was detected.|
+|debug|boolean|no|false|Contains a boolean indicating whether or not to enable debug logging for the plugin and FFmpeg|
+|debug_network_traffic|boolean|no|false|Contains a boolean indication whether or not to enable logging of all network requests|
 
 ### Google Photos config:
 
