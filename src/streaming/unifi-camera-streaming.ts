@@ -1,5 +1,6 @@
 import {UnifiStreamingDelegate} from "./unifi-streaming-delegate";
 import {
+    API,
     AudioStreamingCodecType,
     AudioStreamingSamplerate,
     CameraControllerOptions,
@@ -11,11 +12,12 @@ import {CameraConfig} from "./camera-config";
 
 export class UnifiCameraStreaming {
 
-    public static setupStreaming(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, hap: HAP, infoLogger: Function, debugLogger: Function, log: any): void {
+    public static setupStreaming(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, api: API, infoLogger: Function, debugLogger: Function, log: any): void {
+        const hap: HAP = api.hap;
         const streamingDelegate = new UnifiStreamingDelegate(
             cameraConfig.camera.id, cameraConfig.camera.name,
             infoLogger, debugLogger,
-            hap, cameraConfig, log, config.videoProcessor
+            api, cameraConfig, log, config.videoProcessor
         );
         UnifiStreamingDelegate.instances.push(streamingDelegate);
         const options: CameraControllerOptions = {
