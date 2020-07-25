@@ -4,16 +4,17 @@ import {
     CharacteristicValue,
     HAP,
     PlatformAccessory,
-    Service
 } from "homebridge";
 import {CameraConfig} from "../streaming/camera-config";
 
 export class UnifiCameraMotionSensor {
 
     public static setupMotionSensor(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, hap: HAP, infoLogger: Function, debugLogger: Function): void {
-        const motion: Service = accessory.getService(hap.Service.MotionSensor);
-        let motionSwitch: Service = accessory.getServiceById(hap.Service.Switch, 'MotionEnabled');
-        let motionTrigger: Service = accessory.getServiceById(hap.Service.Switch, 'MotionTrigger');
+        const Service = hap.Service;
+
+        const motion = accessory.getService(hap.Service.MotionSensor);
+        let motionSwitch = accessory.getServiceById(hap.Service.Switch, 'MotionEnabled');
+        let motionTrigger = accessory.getServiceById(hap.Service.Switch, 'MotionTrigger');
         if (motion) {
             accessory.removeService(motion);
         }

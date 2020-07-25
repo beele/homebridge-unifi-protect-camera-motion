@@ -24,8 +24,6 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
     public readonly hap: HAP = this.api.hap;
     public readonly Accessory: typeof PlatformAccessory = this.api.platformAccessory;
-    public readonly Service = this.api.hap.Service;
-    public readonly Characteristic = this.api.hap.Characteristic;
 
     private readonly accessories: Array<PlatformAccessory> = [];
 
@@ -136,7 +134,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
         UnifiCameraMotionSensor.setupMotionSensor(cameraConfig, cameraAccessory, this.config, this.hap, this.infoLogger, this.debugLogger);
         UnifiCameraDoorbell.setupDoorbell(cameraConfig, cameraAccessory, this.config, this.hap, this.infoLogger, this.debugLogger);
-        UnifiCameraStreaming.setupStreaming(cameraConfig, cameraAccessory, this.config, this.hap, this.infoLogger, this.debugLogger, this.log);
+        UnifiCameraStreaming.setupStreaming(cameraConfig, cameraAccessory, this.config, this.api, this.infoLogger, this.debugLogger, this.log);
 
         this.accessories.push(cameraAccessory);
     }

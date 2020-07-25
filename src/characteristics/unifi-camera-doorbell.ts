@@ -3,16 +3,17 @@ import {
     CharacteristicSetCallback,
     CharacteristicValue,
     HAP,
-    PlatformAccessory,
-    Service
+    PlatformAccessory
 } from "homebridge";
 import {CameraConfig} from "../streaming/camera-config";
 
 export class UnifiCameraDoorbell {
 
     public static setupDoorbell(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, hap: HAP, infoLogger: Function, debugLogger: Function): void {
-        const doorbell: Service = accessory.getService(hap.Service.Doorbell);
-        let doorbellTrigger: Service = accessory.getServiceById(hap.Service.Switch, 'DoorbellTrigger');
+        const Service = hap.Service;
+
+        const doorbell = accessory.getService(hap.Service.Doorbell);
+        let doorbellTrigger = accessory.getServiceById(hap.Service.Switch, 'DoorbellTrigger');
         if (doorbell) {
             accessory.removeService(doorbell);
         }
