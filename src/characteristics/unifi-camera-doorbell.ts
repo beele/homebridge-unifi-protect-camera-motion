@@ -22,7 +22,7 @@ export class UnifiCameraDoorbell {
             accessory.removeService(doorbellTrigger);
         }
 
-        if (config.unifi.enable_doorbell) {
+        if (config.unifi.enable_doorbell_for && config.unifi.enable_doorbell_for.includes(cameraConfig.camera.id)) {
             doorbellTrigger = new Service.Switch(cameraConfig.name + ' Doorbell switch', 'DoorbellTrigger');
             accessory.addService(new Service.Doorbell(cameraConfig.name + ' Doorbell'));
             accessory.addService(doorbellTrigger);

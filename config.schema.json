@@ -43,6 +43,18 @@
                         "default": "",
                         "required": true
                     },
+                    "excluded_cameras": {
+                        "type": "array",
+                        "title": "Excluded camera IDs",
+                        "items": {
+                            "title": "Camera ID",
+                            "description": "ID of the camera to omit in Homekit",
+                            "type": "string"
+                        },
+                        "default": [],
+                        "description": "Contains the id of the camera's for which not camera accessory should be made available, all available IDs are printed during startup",
+                        "required": false
+                    },
                     "motion_interval": {
                         "title": "The motion interval in milliseconds",
                         "type": "integer",
@@ -574,24 +586,31 @@
                         "description": "A motion event will only be generated if one of the specified classes is detected",
                         "required": true
                     },
+                    "enable_motion_trigger": {
+                        "title": "Enable manual motion trigger switch",
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Enable this to create a manual motion trigger switch per camera",
+                        "required": true
+                    },
+                    "enable_doorbell_for": {
+                        "type": "array",
+                        "title": "Enable doorbell functionality for cameras with ID",
+                        "items": {
+                            "title": "Camera ID",
+                            "description": "ID of the camera to enable doorbell functionality for",
+                            "type": "string"
+                        },
+                        "default": [],
+                        "description": "Contains the id of the camera's for which the doorbell functionality should be enabled, all available IDs are printed during startup",
+                        "required": false
+                    },
                     "save_snapshot": {
                         "title": "Enable saving of snapshots of motion events?",
                         "type": "boolean",
                         "default": false,
                         "description": "If enabled every time a motion event is generated the snapshot used for detection will be saved to the .homebridge directory",
                         "required": true
-                    },
-                    "excluded_cameras": {
-                        "type": "array",
-                        "title": "Contains the id of the camera's for which not camera accessory should be made available",
-                        "items": {
-                            "title": "Camera ID",
-                            "description": "ID of the camera to omit",
-                            "type": "string"
-                        },
-                        "default": [],
-                        "description": "",
-                        "required": false
                     },
                     "debug": {
                         "title": "Enable debug logging?",
