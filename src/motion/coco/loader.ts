@@ -1,22 +1,21 @@
 import {Canvas, Image} from "canvas";
 import {ImageUtils} from "../../utils/image-utils";
 import {load, ObjectDetection} from "./coco";
+import {Logging} from "homebridge";
 
 export class Loader {
 
-    private readonly logInfo: Function;
-
-    constructor(infoLogger: Function) {
-        this.logInfo = infoLogger;
+    constructor(private readonly log: Logging) {
+        
     }
 
     public async loadCoco(): Promise<Detector> {
         const printProcessDuration: Function = (name: string, start: number) => {
-            this.logInfo(name + ' processing took: ' + (Date.now() - start) + 'ms');
+            this.log.info(name + ' processing took: ' + (Date.now() - start) + 'ms');
         };
         const printResults: Function = (results: any[]) => {
             for (const result of results) {
-                this.logInfo('==> Detected: ' + result.class + ' [' + Math.round(result.score * 100) + '%]');
+                this.log.info('==> Detected: ' + result.class + ' [' + Math.round(result.score * 100) + '%]');
             }
         };
 

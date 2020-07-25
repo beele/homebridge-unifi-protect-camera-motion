@@ -1,6 +1,7 @@
 import {IncomingMessage, ServerResponse} from "http";
 import {google} from "googleapis";
 import {OAuth2Client} from 'google-auth-library';
+import {Logging} from "homebridge";
 
 const http = require('http');
 const fs = require('fs');
@@ -13,7 +14,7 @@ const writeFileAsync = promisify(fs.writeFile);
 
 export class GooglePhotos {
 
-    private readonly logInfo: Function;
+    private readonly log: Logging;
     private readonly logDebug: Function;
     private readonly config: GooglePhotosConfig;
     private readonly userStoragePath: string;
@@ -23,11 +24,10 @@ export class GooglePhotos {
 
     private initPerformed = false;
 
-    constructor(config: GooglePhotosConfig, userStoragePath: string, infoLogger: Function, debugLogger: Function) {
+    constructor(config: GooglePhotosConfig, userStoragePath: string, log: Logging) {
         this.config = config;
         this.userStoragePath = userStoragePath;
-        this.logInfo = infoLogger;
-        this.logDebug = debugLogger;
+        this.log = log;
 
         setTimeout(async () => {
             await this.init();
@@ -101,7 +101,7 @@ export class GooglePhotos {
                 access_type: 'offline',
                 scope: [Photos.Scopes.READ_AND_APPEND]
             });
-            this.logInfo('Please log in on Google Photos to allow for uploading: ' + url);
+            this.log.info('Please log in on Google Photos to allow for uploading: ' + url);
         } else {
             this.oauth2Client.setCredentials({
                 refresh_token: this.gPhotosPersistData.auth_refresh_token

@@ -4,7 +4,7 @@ import {UnifiFlows} from "../unifi/unifi-flows";
 import {Canvas, Image} from "canvas";
 import {ImageUtils} from "../utils/image-utils";
 import {GooglePhotos, GooglePhotosConfig} from "../utils/google-photos";
-import type {API, PlatformAccessory, PlatformConfig} from 'homebridge';
+import type {API, Logging, PlatformAccessory, PlatformConfig} from 'homebridge';
 import {UnifiStreamingDelegate} from "../streaming/unifi-streaming-delegate";
 
 export class MotionDetector {
@@ -15,15 +15,14 @@ export class MotionDetector {
     private readonly googlePhotosConfig: GooglePhotosConfig;
     private readonly flows: UnifiFlows;
     private readonly cameras: UnifiCamera[];
-    private readonly logInfo: Function;
-    private readonly logDebug: Function;
+    private readonly log: Logging;
 
     private modelLoader: Loader;
     private detector: Detector;
     private gPhotos: GooglePhotos;
     private configuredAccessories: any[];
 
-    constructor(api: API, config: PlatformConfig, unifiFlows: UnifiFlows, cameras: UnifiCamera[], infoLogger: Function, debugLogger: Function) {
+    constructor(api: API, config: PlatformConfig, unifiFlows: UnifiFlows, cameras: UnifiCamera[], log: Logging) {
         this.api = api;
 
         this.unifiConfig = config.unifi;
@@ -31,15 +30,14 @@ export class MotionDetector {
         this.flows = unifiFlows;
         this.cameras = cameras;
 
-        this.logInfo = infoLogger;
-        this.logDebug = debugLogger;
+        this.log = log;
 
-        this.modelLoader = new Loader(infoLogger);
+        this.modelLoader = new Loader(log);
         this.detector = null;
 
         const userStoragePath: string = this.api.user.storagePath();
         ImageUtils.userStoragePath = userStoragePath;
-        this.gPhotos = this.googlePhotosConfig && this.googlePhotosConfig.upload_gphotos ? new GooglePhotos(config.googlePhotos, userStoragePath, infoLogger, debugLogger) : null;
+        this.gPhotos = this.googlePhotosConfig && this.googlePhotosConfig.upload_gphotos ? new GooglePhotos(config.googlePhotos, userStoragePath, log) : null;
     }
 
     public async setupMotionChecking(configuredAccessories: PlatformAccessory[]): Promise<any> {
@@ -52,7 +50,7 @@ export class MotionDetector {
             if (matchingStreamingDelegate) {
                 matchingStreamingDelegate.setCamera(camera);
             } else {
-                this.logDebug('Cannot update camera for snapshot handling: ' + camera.name);
+                this.log.debug('Cannot update camera for snapshot handling: ' + camera.name);
             }
         });
 
@@ -77,7 +75,7 @@ export class MotionDetector {
             try {
                 intervalFunction();
             } catch (error) {
-                this.logDebug('Error during motion interval loop: ' + error);
+                this.log.debug('Error during motion interval loop: ' + error);
             }
         }, this.unifiConfig.motion_interval);
         return;
@@ -87,7 +85,7 @@ export class MotionDetector {
         try {
             await this.flows.assignMotionEventsToCameras(this.cameras);
         } catch (error) {
-            this.logDebug('Cannot get latest motion info: ' + error);
+            this.log.debug('Cannot get latest motion info: ' + error);
         }
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
@@ -103,7 +101,7 @@ export class MotionDetector {
                         continue outer;
                     }
 
-                    this.logInfo('Motion detected (' + camera.lastMotionEvent.score + '%) by camera ' + camera.name + ' !!!!');
+                    this.log.info('Motion detected (' + camera.lastMotionEvent.score + '%) by camera ' + camera.name + ' !!!!');
                     configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
 
                     let snapshot: Image;
@@ -111,7 +109,7 @@ export class MotionDetector {
                         snapshot = await ImageUtils.createImage('http://' + camera.ip + '/snap.jpeg');
                         camera.lastDetectionSnapshot = await this.persistSnapshot(snapshot, 'Motion detected (' + camera.lastMotionEvent.score + '%) by camera ' + camera.name, []);
                     } catch (error) {
-                        this.logDebug('Cannot save snapshot: ' + error);
+                        this.log.debug('Cannot save snapshot: ' + error);
                     }
 
                     continue outer;
@@ -124,7 +122,7 @@ export class MotionDetector {
         try {
             await this.flows.assignMotionEventsToCameras(this.cameras);
         } catch (error) {
-            this.logDebug('Cannot get latest motion info: ' + error);
+            this.log.debug('Cannot get latest motion info: ' + error);
         }
 
         outer: for (const configuredAccessory of this.configuredAccessories) {
@@ -158,16 +156,15 @@ export class MotionDetector {
 
                             const score: number = Math.round(detection.score * 100);
                             if (score >= this.unifiConfig.enhanced_motion_score) {
-                                this.logInfo('Detected: ' + classToDetect + ' (' + score + '%) by camera ' + camera.name);
+                                this.log.info('Detected: ' + classToDetect + ' (' + score + '%) by camera ' + camera.name);
                                 camera.lastDetectionSnapshot = await this.persistSnapshot(snapshot, classToDetect + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
-                                ;
                                 configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
                                 continue outer;
                             } else {
-                                this.logDebug('Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.unifiConfig.enhanced_motion_score + '% or higher)');
+                                this.log.debug('Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.unifiConfig.enhanced_motion_score + '% or higher)');
                             }
                         } else {
-                            this.logDebug('None of the required classes found by enhanced motion detection, discarding!');
+                            this.log.debug('None of the required classes found by enhanced motion detection, discarding!');
                         }
                     }
                 }
@@ -182,7 +179,7 @@ export class MotionDetector {
             //Save image locally
             if ((this.unifiConfig.save_snapshot || this.googlePhotosConfig.upload_gphotos) && annotatedImage) {
                 const fileLocation: string = await ImageUtils.saveCanvasToFile(annotatedImage);
-                this.logDebug('The snapshot has been saved to: ' + fileLocation);
+                this.log.debug('The snapshot has been saved to: ' + fileLocation);
 
                 if (this.googlePhotosConfig.upload_gphotos) {
                     const fileName: string = fileLocation.split('/').pop();
@@ -191,14 +188,14 @@ export class MotionDetector {
                         .uploadImage(fileLocation, fileName, description)
                         .then((url: string) => {
                             if (url) {
-                                this.logDebug('Photo uploaded: ' + url);
+                                this.log.debug('Photo uploaded: ' + url);
                             } else {
-                                this.logDebug('Photo not uploaded!');
+                                this.log.debug('Photo not uploaded!');
                             }
 
                             if (!this.unifiConfig.save_snapshot) {
                                 ImageUtils.remove(fileLocation);
-                                this.logDebug('The snapshot has been removed from: ' + fileLocation);
+                                this.log.debug('The snapshot has been removed from: ' + fileLocation);
                             }
                         });
                 }
@@ -206,7 +203,7 @@ export class MotionDetector {
 
             return annotatedImage;
         } catch (error) {
-            this.logDebug('Error persisting snapshot image: ' + error);
+            this.log.debug('Error persisting snapshot image: ' + error);
         }
     }
 
@@ -219,7 +216,7 @@ export class MotionDetector {
                 if (accessory.context.lastMotionIdRepeatCount === (this.unifiConfig.motion_repeat_interval / this.unifiConfig.motion_interval)) {
                     accessory.context.lastMotionIdRepeatCount = 0;
                 } else {
-                    this.logDebug('Motion detected inside of skippable timeframe, ignoring!');
+                    this.log.debug('Motion detected inside of skippable timeframe, ignoring!');
                     return true;
                 }
             } else {
