@@ -8,13 +8,13 @@ const fs = require('fs');
 jest.setTimeout(20000);
 
 test('Loader-detect-image-full-model-IT', async () => {
-    const modelLoader: Loader = new Loader(console.log);
+    const modelLoader: Loader = new Loader(mockLogging());
     const detector: Detector = await modelLoader.loadCoco();
     await verifyDetections(detector);
 });
 
 test('Loader-detect-image-lite-model-IT', async () => {
-    const modelLoader: Loader = new Loader(console.log);
+    const modelLoader: Loader = new Loader(mockLogging());
     const detector: Detector = await modelLoader.loadCoco();
     await verifyDetections(detector);
 });
@@ -43,3 +43,14 @@ const verifyDetections = async (detector: Detector) => {
 
     fs.unlinkSync(fileName);
 };
+
+const mockLogging = (): any => {
+    return {
+        info: jest.fn((message: string) => {
+            console.log(message);
+        }),
+        debug: jest.fn((message: string) => {
+            console.log(message);
+        })
+    }
+}
