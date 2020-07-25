@@ -2,6 +2,7 @@ import {Utils} from "../utils/utils";
 import {AxiosInstance, AxiosRequestConfig, AxiosResponse} from "axios";
 import * as https from "https";
 import {Canvas} from "canvas";
+import {Logging} from "homebridge";
 
 const axios = require('axios').default;
 
@@ -15,15 +16,15 @@ export class Unifi {
     private readonly config: UnifiConfig;
     private readonly initialBackoffDelay: number;
     private readonly maxRetries: number;
-    private readonly logDebug: any;
+    private readonly log: Logging;
     private readonly axiosInstance: AxiosInstance;
 
-    constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, debugLogger: Function) {
+    constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, log: Logging) {
         this.config = config;
         this.initialBackoffDelay = initialBackoffDelay;
         this.maxRetries = maxRetries;
 
-        this.logDebug = debugLogger;
+        this.log = log;
 
         this.axiosInstance = axios.create({
             withCredentials: true,
@@ -34,18 +35,18 @@ export class Unifi {
 
         if (this.config.debug_network_traffic) {
             this.axiosInstance.interceptors.request.use((request: AxiosRequestConfig) => {
-                this.logDebug(request);
+                this.log.debug(JSON.stringify(request, null, 4));
                 return request;
             });
 
             this.axiosInstance.interceptors.response.use((response: AxiosResponse) => {
-                this.logDebug(response);
+                this.log.debug(JSON.stringify(response, null, 4));
                 return response;
             });
         }
     }
 
-    public static async determineEndpointStyle(baseControllerUrl: string, log: Function): Promise<UnifiEndPointStyle> {
+    public static async determineEndpointStyle(baseControllerUrl: string, log: Logging): Promise<UnifiEndPointStyle> {
         const opts: AxiosRequestConfig = {
             url: baseControllerUrl,
             method: 'get',
@@ -55,7 +56,7 @@ export class Unifi {
 
         const response: AxiosResponse = await Unifi.axiosInstance.request(opts);
         if (response.headers['x-csrf-token']) {
-            log('Endpoint Style: UnifiOS');
+            log.info('Endpoint Style: UnifiOS');
             return {
                 authURL: baseControllerUrl + '/api/auth/login',
                 apiURL: baseControllerUrl + '/proxy/protect/api',
@@ -63,7 +64,7 @@ export class Unifi {
                 csrfToken: response.headers['x-csrf-token']
             }
         } else {
-            log('Endpoint Style: Unifi Protect (Legacy)');
+            log.info('Endpoint Style: Unifi Protect (Legacy)');
             return {
                 authURL: baseControllerUrl + '/api/auth',
                 apiURL: baseControllerUrl + '/api',
@@ -111,18 +112,18 @@ export class Unifi {
         };
 
         //TODO: Remove, For debugging!
-        console.log(JSON.stringify(opts, null, 4));
+        this.log.debug((JSON.stringify(opts, null, 4)));
 
         const response: AxiosResponse = await Utils.backOff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
 
         //TODO: Remove, For debugging!
-        console.log(response.status);
-        console.log(response.statusText);
-        console.log(JSON.stringify(response.data, null, 4));
+        this.log.debug(JSON.stringify(response.status, null, 4));
+        this.log.debug(JSON.stringify(response.statusText, null, 4));
+        this.log.debug(JSON.stringify(response.data, null, 4));
 
         Utils.checkResponseForErrors(response, 'headers', [endpointStyle.isUnifiOS ? 'set-cookie' : 'authorization']);
 
-        this.logDebug('Authenticated, returning session');
+        this.log.debug('Authenticated, returning session');
         if (endpointStyle.isUnifiOS) {
             return {
                 cookie: response.headers['set-cookie']['0'],
@@ -143,10 +144,10 @@ export class Unifi {
             if ((session.timestamp + (12 * 3600 * 1000)) >= Date.now()) {
                 return true;
             } else {
-                this.logDebug('WARNING: Session expired, a new session must be created!');
+                this.log.debug('WARNING: Session expired, a new session must be created!');
             }
         } else {
-            this.logDebug('WARNING: No previous session found, a new session must be created!');
+            this.log.debug('WARNING: No previous session found, a new session must be created!');
         }
         return false;
     }
@@ -169,23 +170,23 @@ export class Unifi {
         };
 
         //TODO: Remove, For debugging!
-        console.log(JSON.stringify(opts, null, 4));
+        this.log.debug(JSON.stringify(opts, null, 4));
 
         const response: AxiosResponse = await Utils.backOff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
 
         //TODO: Remove, For debugging!
-        console.log(response.status);
-        console.log(response.statusText);
-        console.log(JSON.stringify(response.data, null, 4));
+        this.log.debug(JSON.stringify(response.status, null, 4));
+        this.log.debug(JSON.stringify(response.statusText, null, 4));
+        this.log.debug(JSON.stringify(JSON.stringify(response.data, null, 4)));
 
         Utils.checkResponseForErrors(response, 'data', ['cameras']);
 
-        this.logDebug('Cameras retrieved, enumerating motion sensors');
+        this.log.debug('Cameras retrieved, enumerating motion sensors');
         const cams = response.data.cameras;
 
         return cams.map((cam: any) => {
             if (this.config.debug) {
-                this.logDebug(cam);
+                this.log.debug(cam);
             }
 
             const streams: UnifiCameraStream[] = [];
@@ -244,7 +245,7 @@ export class Unifi {
         const events: any[] = response.data;
         return events.map((event: any) => {
             if (this.config.debug) {
-                this.logDebug(event);
+                this.log.debug(event);
             }
 
             return {

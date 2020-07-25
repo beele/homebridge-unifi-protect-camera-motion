@@ -3,13 +3,14 @@ import {
     CharacteristicSetCallback,
     CharacteristicValue,
     HAP,
+    Logging,
     PlatformAccessory
 } from "homebridge";
 import {CameraConfig} from "../streaming/camera-config";
 
 export class UnifiCameraDoorbell {
 
-    public static setupDoorbell(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, hap: HAP, infoLogger: Function, debugLogger: Function): void {
+    public static setupDoorbell(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, hap: HAP, log: Logging): void {
         const Service = hap.Service;
 
         const doorbell = accessory.getService(hap.Service.Doorbell);
@@ -38,7 +39,7 @@ export class UnifiCameraDoorbell {
                             );
 
                             setTimeout(() => {
-                                console.log('doorbell trigger auto off');
+                                log.debug('Doorbell trigger auto off');
                                 doorbellTrigger.getCharacteristic(hap.Characteristic.On).updateValue(false);
                             }, 1000);
                         }

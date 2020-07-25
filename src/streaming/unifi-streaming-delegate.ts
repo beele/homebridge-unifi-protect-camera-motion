@@ -1,4 +1,4 @@
-import {API, HAP, Logging} from 'homebridge';
+import {API, Logging} from 'homebridge';
 import {ImageUtils} from "../utils/image-utils";
 import {Canvas} from "canvas";
 import {UnifiCamera} from "../unifi/unifi";
@@ -10,16 +10,10 @@ export class UnifiStreamingDelegate extends StreamingDelegate {
     public static readonly instances: UnifiStreamingDelegate[] = [];
     public readonly cameraName: string
     public readonly cameraId: string;
-    private readonly logInfo: Function;
-    private readonly logDebug: Function;
     private camera: UnifiCamera;
 
-    constructor(cameraId: string, cameraName: string, infoLogger: Function, debugLogger: Function, api: API, cameraConfig: object, logging: Logging, videoProcessor: string) {
-        super(logging, cameraConfig, api, api.hap, videoProcessor, null);
-
-        this.logInfo = infoLogger;
-        this.logDebug = debugLogger;
-
+    constructor(cameraId: string, cameraName: string, log: Logging, api: API, cameraConfig: object, videoProcessor: string) {
+        super(log, cameraConfig, api, api.hap, videoProcessor, null);
         this.cameraId = cameraId;
     }
 

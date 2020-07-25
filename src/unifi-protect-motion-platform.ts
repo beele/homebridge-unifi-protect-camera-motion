@@ -8,7 +8,6 @@ import {
     PlatformAccessoryEvent,
     PlatformConfig
 } from 'homebridge';
-import {Utils} from "./utils/utils";
 import {Unifi, UnifiCamera} from "./unifi/unifi";
 import {UnifiFlows} from "./unifi/unifi-flows";
 import {PLATFORM_NAME, PLUGIN_NAME} from "./settings";
@@ -27,19 +26,14 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
     private readonly accessories: Array<PlatformAccessory> = [];
 
-    private readonly infoLogger: Function;
-    private readonly debugLogger: Function;
-
     private unifi: Unifi;
     private uFlows: UnifiFlows;
 
     constructor(private readonly log: Logging, private readonly config: PlatformConfig, private readonly api: API) {
-        this.infoLogger = Utils.createLogger(this.log, true, false);
         if (!config || !this.config.unifi || !this.config.videoConfig) {
-            this.infoLogger('Incorrect plugin configuration!');
+            this.log.info('Incorrect plugin configuration!');
             return;
         }
-        this.debugLogger = Utils.createLogger(this.log, false, this.config.unifi.debug);
 
         //Set config defaults
         this.config.unifi.excluded_cameras = this.config.unifi.excluded_cameras ? this.config.unifi.excluded_cameras : [];
@@ -47,8 +41,8 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
             //Hack to get async functions!
             setTimeout(async () => {
-                this.unifi = new Unifi(this.config.unifi, 500, 2, this.infoLogger);
-                this.uFlows = new UnifiFlows(this.unifi, this.config.unifi, await Unifi.determineEndpointStyle(this.config.unifi.controller, this.infoLogger), this.debugLogger);
+                this.unifi = new Unifi(this.config.unifi, 500, 2, this.log);
+                this.uFlows = new UnifiFlows(this.unifi, this.config.unifi, await Unifi.determineEndpointStyle(this.config.unifi.controller, this.log), this.log);
                 await this.didFinishLaunching();
             });
         });
@@ -62,17 +56,17 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 if (!this.config.unifi.excluded_cameras.includes(camera.id)) {
                     return camera;
                 } else {
-                    this.infoLogger('Camera (' + camera.name + ') excluded by config!');
+                    this.log.info('Camera (' + camera.name + ') excluded by config!');
                 }
             });
         } catch (error) {
-            this.infoLogger('Cannot get cameras: ' + error);
+            this.log.info('Cannot get cameras: ' + error);
         }
 
         if (cameras.length > 0) {
             cameras.forEach((camera: UnifiCamera) => {
                 if (camera.streams.length < 1) {
-                    this.infoLogger('Camera (' + camera.name + ') has no streams, skipping!')
+                    this.log.info('Camera (' + camera.name + ') has no streams, skipping!')
                     return;
                 }
 
@@ -91,7 +85,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
                 // Only add new cameras that are not cached
                 if (!this.accessories.find((x: PlatformAccessory) => x.UUID === uuid)) {
-                    this.infoLogger('Adding ' + cameraAccessory.context.cameraConfig.uuid);
+                    this.log.info('Adding ' + cameraAccessory.context.cameraConfig.uuid);
                     this.configureAccessory(cameraAccessory); // abusing the configureAccessory here
                     this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [cameraAccessory]);
                 }
@@ -100,26 +94,26 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             // Remove cameras that were not in previous call
             this.accessories.forEach((accessory: PlatformAccessory) => {
                 if (!cameras.find((x: UnifiCamera) => x.uuid === accessory.context.cameraConfig.uuid)) {
-                    this.infoLogger('Removing ' + accessory.context.cameraConfig.uuid);
+                    this.log.info('Removing ' + accessory.context.cameraConfig.uuid);
                     this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
                 }
             });
 
             try {
-                const motionDetector: MotionDetector = new MotionDetector(this.api, this.config, this.uFlows, cameras, this.infoLogger, this.debugLogger);
+                const motionDetector: MotionDetector = new MotionDetector(this.api, this.config, this.uFlows, cameras, this.log);
                 await motionDetector.setupMotionChecking(this.accessories);
-                this.infoLogger('Motion checking setup done!');
+                this.log.info('Motion checking setup done!');
             } catch (error) {
-                this.infoLogger('Error during motion checking setup: ' + error);
+                this.log.info('Error during motion checking setup: ' + error);
             }
         }
     }
 
     public configureAccessory(cameraAccessory: PlatformAccessory): void {
-        this.infoLogger('Configuring accessory ' + cameraAccessory.displayName);
+        this.log.info('Configuring accessory ' + cameraAccessory.displayName);
 
         cameraAccessory.on(PlatformAccessoryEvent.IDENTIFY, () => {
-            this.infoLogger(cameraAccessory.displayName + ' identified!');
+            this.log.info(cameraAccessory.displayName + ' identified!');
         });
 
         const cameraConfig: CameraConfig = cameraAccessory.context.cameraConfig;
@@ -132,9 +126,9 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         videoConfigCopy.debug = this.config.unifi.debug;
         cameraConfig.videoConfig = videoConfigCopy;
 
-        UnifiCameraMotionSensor.setupMotionSensor(cameraConfig, cameraAccessory, this.config, this.hap, this.infoLogger, this.debugLogger);
-        UnifiCameraDoorbell.setupDoorbell(cameraConfig, cameraAccessory, this.config, this.hap, this.infoLogger, this.debugLogger);
-        UnifiCameraStreaming.setupStreaming(cameraConfig, cameraAccessory, this.config, this.api, this.infoLogger, this.debugLogger, this.log);
+        UnifiCameraMotionSensor.setupMotionSensor(cameraConfig, cameraAccessory, this.config, this.hap, this.log);
+        UnifiCameraDoorbell.setupDoorbell(cameraConfig, cameraAccessory, this.config, this.hap, this.log);
+        UnifiCameraStreaming.setupStreaming(cameraConfig, cameraAccessory, this.config, this.api, this.log);
 
         this.accessories.push(cameraAccessory);
     }

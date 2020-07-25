@@ -3,13 +3,14 @@ import {
     CharacteristicSetCallback,
     CharacteristicValue,
     HAP,
+    Logging,
     PlatformAccessory,
 } from "homebridge";
 import {CameraConfig} from "../streaming/camera-config";
 
 export class UnifiCameraMotionSensor {
 
-    public static setupMotionSensor(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, hap: HAP, infoLogger: Function, debugLogger: Function): void {
+    public static setupMotionSensor(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, hap: HAP, log: Logging): void {
         const Service = hap.Service;
 
         const motion = accessory.getService(hap.Service.MotionSensor);
@@ -36,7 +37,7 @@ export class UnifiCameraMotionSensor {
             })
             .on(hap.CharacteristicEventTypes.SET, (state: CharacteristicValue, callback: CharacteristicSetCallback) => {
                 accessory.context.motionEnabled = state;
-                infoLogger('Motion detection for ' + cameraConfig.name + ' has been turned ' + (accessory.context.motionEnabled ? 'ON' : 'OFF'));
+                log.info('Motion detection for ' + cameraConfig.name + ' has been turned ' + (accessory.context.motionEnabled ? 'ON' : 'OFF'));
                 callback();
             });
 
@@ -52,7 +53,7 @@ export class UnifiCameraMotionSensor {
                             motionSensor.updateCharacteristic(hap.Characteristic.MotionDetected, 1);
 
                             setTimeout(() => {
-                                console.log('motion trigger auto off');
+                                log.debug('Motion trigger auto off');
                                 motionTrigger.getCharacteristic(hap.Characteristic.On).updateValue(false);
                             }, 1000);
                         }
