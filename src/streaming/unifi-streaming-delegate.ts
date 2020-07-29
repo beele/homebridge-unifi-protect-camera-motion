@@ -11,10 +11,12 @@ export class UnifiStreamingDelegate extends StreamingDelegate {
     public readonly cameraName: string
     public readonly cameraId: string;
     private camera: UnifiCamera;
+    private readonly log: Logging;
 
     constructor(cameraId: string, cameraName: string, log: Logging, api: API, cameraConfig: object, videoProcessor: string) {
         super(log, cameraConfig, api, api.hap, videoProcessor, null);
         this.cameraId = cameraId;
+        this.log = log;
     }
 
     public setCamera(camera: UnifiCamera): void {
@@ -23,13 +25,13 @@ export class UnifiStreamingDelegate extends StreamingDelegate {
 
     //This is called by Homekit!
     public handleSnapshotRequest(request: any, callback: Function): void {
-        this.logDebug('Handling snapshot request for Camera: ' + this.cameraName);
+        this.log.debug('Handling snapshot request for Camera: ' + this.cameraName);
 
         if (!this.camera || !this.camera.lastDetectionSnapshot) {
-            this.logDebug('Getting snapshot via FFmpeg');
+            this.log.debug('Getting snapshot via FFmpeg');
             super.handleSnapshotRequest(request, callback);
         } else {
-            this.logDebug('Returning annotated snapshot');
+            this.log.debug('Returning annotated snapshot');
             const canvas: Canvas = ImageUtils.resizeCanvas(this.camera.lastDetectionSnapshot, request.width, request.height);
             callback(undefined, canvas.toBuffer('image/jpeg'));
         }
