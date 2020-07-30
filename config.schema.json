@@ -22,14 +22,14 @@
             "title": "The base controller URL",
             "type": "string",
             "default": "",
-            "description": "The base URL that points to the controller instance, also supports Unifi OS",
+            "description": "The base URL that points to the controller instance, also supports Unifi OS. (No trailing /)",
             "required": true
           },
           "controller_rtsp": {
             "title": "The base URL for RTSP streams",
             "type": "string",
             "default": "",
-            "description": "The base URL that is to be used for al RTSP streams, be sure to include the correct port!",
+            "description": "The base URL that is to be used for all RTSP streams, be sure to include the correct port! (No trailing /)",
             "required": true
           },
           "username": {
