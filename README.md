@@ -90,6 +90,9 @@ The config must be valid or Homebridge will fail to restart correctly.
 
 If you are using Homebridge Config X, it will do its best to alert you to any syntax errors it finds.
 
+If you are upgrading from a pre 0.4.1 version please note that your camera's will be added in automatically by the plugin from now on.
+This means that the old camera's need to be removed as these will no longer work.
+Tap on a camera preview to open the camera feed, click the settings icon and scroll all the way to the bottom, there select `Remove camera from home`.
 
 ## Config fields:  
 
