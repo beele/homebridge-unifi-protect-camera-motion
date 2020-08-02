@@ -2,11 +2,17 @@
 .idea
 *.iml
 .git/
+.github/
 .travis.yml
+jest.config.js
+tsconfig.json
+*.ts
+*.js.map
 
 dist/
+tests/
 coverage/
 resources/test-config
 resources/tfjs-arm
-resources/images/readme/*
+resources/test.jpg
 src/experimental

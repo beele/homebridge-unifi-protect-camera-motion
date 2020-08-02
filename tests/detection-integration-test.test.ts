@@ -1,19 +1,21 @@
-import {Detection, Detector, Loader} from "../src/coco/loader";
-import {Image} from "canvas";
+import {Detection, Detector, Loader} from "../src/motion/coco/loader";
+import {Canvas, Image} from "canvas";
 import {ImageUtils} from "../src/utils/image-utils";
 
 const path = require('path');
 const fs = require('fs');
 
+jest.setTimeout(20000);
+
 test('Loader-detect-image-full-model-IT', async () => {
-    const modelLoader: Loader = new Loader(console.log);
-    const detector: Detector = await modelLoader.loadCoco(false, path.dirname(path.resolve('resources')));
+    const modelLoader: Loader = new Loader(mockLogging());
+    const detector: Detector = await modelLoader.loadCoco();
     await verifyDetections(detector);
 });
 
 test('Loader-detect-image-lite-model-IT', async () => {
-    const modelLoader: Loader = new Loader(console.log);
-    const detector: Detector = await modelLoader.loadCoco(true, path.dirname(path.resolve('resources')));
+    const modelLoader: Loader = new Loader(mockLogging());
+    const detector: Detector = await modelLoader.loadCoco();
     await verifyDetections(detector);
 });
 
@@ -34,9 +36,21 @@ const verifyDetections = async (detector: Detector) => {
     expect(detections).not.toBeNull();
     expect(detections.length).toBeGreaterThan(0);
 
-    const fileName: string = await ImageUtils.saveAnnotatedImage(image, detections);
+    const annotatedImage: Canvas = await ImageUtils.generateAnnotatedImage(image, detections);
+    const fileName: string = await ImageUtils.saveCanvasToFile(annotatedImage);
     let stats = fs.statSync(fileName);
     expect(stats.isFile()).toBeTruthy();
 
     fs.unlinkSync(fileName);
 };
+
+const mockLogging = (): any => {
+    return {
+        info: jest.fn((message: string) => {
+            console.log(message);
+        }),
+        debug: jest.fn((message: string) => {
+            console.log(message);
+        })
+    }
+}

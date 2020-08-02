@@ -1,31 +1,30 @@
 import {Utils} from "../utils/utils";
 import {AxiosInstance, AxiosRequestConfig, AxiosResponse} from "axios";
 import * as https from "https";
+import {Canvas} from "canvas";
+import {Logging} from "homebridge";
 
 const axios = require('axios').default;
 
 export class Unifi {
-
-    private readonly config: UnifiConfig;
-
-    private readonly initialBackoffDelay: number;
-    private readonly maxRetries: number;
-
-    private readonly logDebug: any;
 
     private static readonly axiosInstance: AxiosInstance = axios.create({
         httpsAgent: new https.Agent({
             rejectUnauthorized: false
         })
     });
+    private readonly config: UnifiConfig;
+    private readonly initialBackoffDelay: number;
+    private readonly maxRetries: number;
+    private readonly log: Logging;
     private readonly axiosInstance: AxiosInstance;
 
-    constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, debugLogger: Function) {
+    constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, log: Logging) {
         this.config = config;
         this.initialBackoffDelay = initialBackoffDelay;
         this.maxRetries = maxRetries;
 
-        this.logDebug = debugLogger;
+        this.log = log;
 
         this.axiosInstance = axios.create({
             withCredentials: true,
@@ -34,20 +33,20 @@ export class Unifi {
             })
         });
 
-        if (this.config.debug) {
+        if (this.config.debug_network_traffic) {
             this.axiosInstance.interceptors.request.use((request: AxiosRequestConfig) => {
-                this.logDebug(request);
+                this.log.debug(JSON.stringify(request, null, 4));
                 return request;
             });
 
             this.axiosInstance.interceptors.response.use((response: AxiosResponse) => {
-                this.logDebug(response);
+                this.log.debug(JSON.stringify(response, null, 4));
                 return response;
             });
         }
     }
 
-    public static async determineEndpointStyle(baseControllerUrl: string, log: Function): Promise<UnifiEndPointStyle> {
+    public static async determineEndpointStyle(baseControllerUrl: string, log: Logging): Promise<UnifiEndPointStyle> {
         const opts: AxiosRequestConfig = {
             url: baseControllerUrl,
             method: 'get',
@@ -57,7 +56,7 @@ export class Unifi {
 
         const response: AxiosResponse = await Unifi.axiosInstance.request(opts);
         if (response.headers['x-csrf-token']) {
-            log('Endpoint Style: UnifiOS');
+            log.info('Endpoint Style: UnifiOS');
             return {
                 authURL: baseControllerUrl + '/api/auth/login',
                 apiURL: baseControllerUrl + '/proxy/protect/api',
@@ -65,13 +64,27 @@ export class Unifi {
                 csrfToken: response.headers['x-csrf-token']
             }
         } else {
-            log('Endpoint Style: Unifi Protect (Legacy)');
+            log.info('Endpoint Style: Unifi Protect (Legacy)');
             return {
                 authURL: baseControllerUrl + '/api/auth',
                 apiURL: baseControllerUrl + '/api',
                 isUnifiOS: false
             }
         }
+    }
+
+    public static pickHighestQualityAlias(streams: UnifiCameraStream[]): string {
+        return streams
+            .map(((stream: UnifiCameraStream) => {
+                return {
+                    resolution: stream.width * stream.height,
+                    alias: stream.alias
+                };
+            }))
+            .sort((a, b) => {
+                return a.resolution - b.resolution;
+            })
+            .shift().alias;
     }
 
     public async authenticate(username: string, password: string, endpointStyle: UnifiEndPointStyle): Promise<UnifiSession> {
@@ -98,10 +111,19 @@ export class Unifi {
             timeout: 1000
         };
 
+        //TODO: Remove, For debugging!
+        this.log.debug((JSON.stringify(opts, null, 4)));
+
         const response: AxiosResponse = await Utils.backOff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
+
+        //TODO: Remove, For debugging!
+        this.log.debug(JSON.stringify(response.status, null, 4));
+        this.log.debug(JSON.stringify(response.statusText, null, 4));
+        this.log.debug(JSON.stringify(response.data, null, 4));
+
         Utils.checkResponseForErrors(response, 'headers', [endpointStyle.isUnifiOS ? 'set-cookie' : 'authorization']);
 
-        this.logDebug('Authenticated, returning session');
+        this.log.debug('Authenticated, returning session');
         if (endpointStyle.isUnifiOS) {
             return {
                 cookie: response.headers['set-cookie']['0'],
@@ -122,10 +144,10 @@ export class Unifi {
             if ((session.timestamp + (12 * 3600 * 1000)) >= Date.now()) {
                 return true;
             } else {
-                this.logDebug('WARNING: Session expired, a new session must be created!');
+                this.log.debug('WARNING: Session expired, a new session must be created!');
             }
         } else {
-            this.logDebug('WARNING: No previous session found, a new session must be created!');
+            this.log.debug('WARNING: No previous session found, a new session must be created!');
         }
         return false;
     }
@@ -147,15 +169,24 @@ export class Unifi {
             timeout: 1000
         };
 
+        //TODO: Remove, For debugging!
+        this.log.debug(JSON.stringify(opts, null, 4));
+
         const response: AxiosResponse = await Utils.backOff(this.maxRetries, this.axiosInstance.request(opts), this.initialBackoffDelay);
+
+        //TODO: Remove, For debugging!
+        this.log.debug(JSON.stringify(response.status, null, 4));
+        this.log.debug(JSON.stringify(response.statusText, null, 4));
+        this.log.debug(JSON.stringify(JSON.stringify(response.data, null, 4)));
+
         Utils.checkResponseForErrors(response, 'data', ['cameras']);
 
-        this.logDebug('Cameras retrieved, enumerating motion sensors');
+        this.log.debug('Cameras retrieved, enumerating motion sensors');
         const cams = response.data.cameras;
 
         return cams.map((cam: any) => {
             if (this.config.debug) {
-                this.logDebug(cam);
+                this.log.debug(cam);
             }
 
             const streams: UnifiCameraStream[] = [];
@@ -176,6 +207,7 @@ export class Unifi {
                 return (a.height * a.width) - (b.height * b.width);
             });
 
+            this.log.info('Found camera: ' + cam.name + ' (id: ' + cam.id + ')');
             return {
                 id: cam.id,
                 name: cam.name,
@@ -214,7 +246,7 @@ export class Unifi {
         const events: any[] = response.data;
         return events.map((event: any) => {
             if (this.config.debug) {
-                this.logDebug(event);
+                this.log.debug(event);
             }
 
             return {
@@ -226,20 +258,6 @@ export class Unifi {
             }
         });
     }
-
-    public static pickHighestQualityAlias(streams: UnifiCameraStream[]): string {
-        return streams
-            .map(((stream: UnifiCameraStream) => {
-                return {
-                    resolution: stream.width * stream.height,
-                    alias: stream.alias
-                };
-            }))
-            .sort((a, b) => {
-                return a.resolution - b.resolution;
-            })
-            .shift().alias;
-    }
 }
 
 export interface UnifiSession {
@@ -250,12 +268,15 @@ export interface UnifiSession {
 
 export interface UnifiCamera {
     id: string;
+    uuid: string;
     name: string;
     ip: string;
     mac: string;
     type: string;
     firmware: string;
     streams: UnifiCameraStream[];
+    lastMotionEvent?: UnifiMotionEvent;
+    lastDetectionSnapshot?: Canvas;
 }
 
 export interface UnifiCameraStream {
@@ -269,24 +290,8 @@ export interface UnifiCameraStream {
 export interface UnifiMotionEvent {
     id: string;
     cameraId: string;
-    camera?: UnifiCamera;
     score: number;
     timestamp: number;
-}
-
-export interface UnifiConfig {
-    controller: string;
-    controller_rtsp: string;
-    username: string;
-    password: string;
-    motion_interval: number;
-    motion_repeat_interval: number;
-    motion_score: number;
-    enhanced_motion: boolean;
-    enhanced_motion_score: number;
-    enhanced_classes: string[];
-    debug: boolean;
-    save_snapshot: boolean;
 }
 
 export interface UnifiEndPointStyle {
@@ -294,4 +299,24 @@ export interface UnifiEndPointStyle {
     apiURL: string;
     isUnifiOS: boolean;
     csrfToken?: string;
+}
+
+export interface UnifiConfig {
+    controller: string;
+    controller_rtsp: string;
+    username: string;
+    password: string;
+    excluded_cameras: string[];
+    motion_interval: number;
+    motion_repeat_interval: number;
+    motion_score: number;
+    enhanced_motion: boolean;
+    enhanced_motion_score: number;
+    enhanced_classes: string[];
+    enable_motion_trigger: boolean;
+    enable_doorbell_for: string[];
+    save_snapshot: boolean;
+    upload_gphotos: boolean;
+    debug: boolean;
+    debug_network_traffic: boolean;
 }
