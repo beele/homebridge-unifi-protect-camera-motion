@@ -59,7 +59,10 @@ Next, open the `config.json` that contains your Homebridge configuration, and ad
         "enhanced_motion_score": 50, 
         "enhanced_classes": ["person"], 
         "enable_motion_trigger": true,
-        "enable_doorbell": false,
+        "enable_doorbell_for": [
+            "id-of-camera-to-act-as-doorbell-1",
+            "id-of-camera-to-act-as-doorbell-1"
+        ],
         "save_snapshot": true,
         "upload_gphotos": false,
         "debug": false, 
