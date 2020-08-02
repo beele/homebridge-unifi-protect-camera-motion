@@ -1,6 +1,7 @@
 import {IncomingMessage, ServerResponse} from "http";
 import {google} from "googleapis";
 import {OAuth2Client} from 'google-auth-library';
+import {Logging} from "homebridge";
 
 const http = require('http');
 const fs = require('fs');
@@ -13,8 +14,7 @@ const writeFileAsync = promisify(fs.writeFile);
 
 export class GooglePhotos {
 
-    private readonly logInfo: Function;
-    private readonly logDebug: Function;
+    private readonly log: Logging;
     private readonly config: GooglePhotosConfig;
     private readonly userStoragePath: string;
     private oauth2Client: OAuth2Client;
@@ -23,15 +23,32 @@ export class GooglePhotos {
 
     private initPerformed = false;
 
-    constructor(config: GooglePhotosConfig, userStoragePath: string, infoLogger: Function, debugLogger: Function) {
+    constructor(config: GooglePhotosConfig, userStoragePath: string, log: Logging) {
         this.config = config;
         this.userStoragePath = userStoragePath;
-        this.logInfo = infoLogger;
-        this.logDebug = debugLogger;
+        this.log = log;
 
         setTimeout(async () => {
             await this.init();
         })
+    }
+
+    public async uploadImage(imagePath: string, imageName: string, description: string): Promise<string> {
+        if (!this.initPerformed) {
+            this.log.debug('Google Photos logic could not start or is still starting...');
+            return null;
+        }
+
+        try {
+            const photos = new Photos(await this.authenticate());
+            const response = await photos.mediaItems.upload(this.gPhotosPersistData.albumId, imageName, imagePath, description);
+            return response.newMediaItemResults[0].mediaItem.productUrl;
+
+        } catch (error) {
+            this.log.debug('Uploading to Google Photos failed');
+            this.log.debug(error);
+            throw new Error('Cannot upload image to Google Photos!');
+        }
     }
 
     private async init(): Promise<void> {
@@ -43,13 +60,13 @@ export class GooglePhotos {
                 albumId: null
             };
 
-            this.logDebug('Google photos persisted data cannot be read/parsed, initial setup!');
-            this.logDebug(error);
+            this.log.debug('Google photos persisted data cannot be read/parsed, initial setup!');
+            this.log.debug(error);
         }
-        this.logDebug(this.gPhotosPersistData);
+        this.log.debug(JSON.stringify(this.gPhotosPersistData, null, 4));
 
         if (!this.config || !this.config.auth_clientId || !this.config.auth_clientSecret || !this.config.auth_redirectUrl) {
-            this.logDebug('Google photos config not correct/incomplete! Disabling functionality!');
+            this.log.debug('Google photos config not correct/incomplete! Disabling functionality!');
             return;
         }
 
@@ -62,35 +79,17 @@ export class GooglePhotos {
         const photos = new Photos(await this.authenticate());
         try {
             if (!this.gPhotosPersistData.albumId) {
-                this.logDebug('Creating Google Photos album');
+                this.log.debug('Creating Google Photos album');
                 const response = await photos.albums.create('Homebridge-Unifi-Protect-Motion-Captures');
                 this.gPhotosPersistData.albumId = response.id;
             } else {
-                this.logDebug('Google Photos album already created');
+                this.log.debug('Google Photos album already created');
             }
             await this.writeConfig(this.gPhotosPersistData);
             this.initPerformed = true;
         } catch (error) {
-            this.logDebug('Could not create album');
-            this.logDebug(error);
-        }
-    }
-
-    public async uploadImage(imagePath: string, imageName: string, description: string): Promise<string> {
-        if (!this.initPerformed) {
-            this.logDebug('Google Photos logic could not start or is still starting...');
-            return null;
-        }
-
-        try {
-            const photos = new Photos(await this.authenticate());
-            const response = await photos.mediaItems.upload(this.gPhotosPersistData.albumId, imageName, imagePath, description);
-            return response.newMediaItemResults[0].mediaItem.productUrl;
-
-        } catch (error) {
-            this.logDebug('Uploading to Google Photos failed');
-            this.logDebug(error);
-            throw new Error('Cannot upload image to Google Photos!');
+            this.log.debug('Could not create album');
+            this.log.debug(error);
         }
     }
 
@@ -101,7 +100,7 @@ export class GooglePhotos {
                 access_type: 'offline',
                 scope: [Photos.Scopes.READ_AND_APPEND]
             });
-            this.logInfo('Please log in on Google Photos to allow for uploading: ' + url);
+            this.log.info('Please log in on Google Photos to allow for uploading: ' + url);
         } else {
             this.oauth2Client.setCredentials({
                 refresh_token: this.gPhotosPersistData.auth_refresh_token
@@ -112,23 +111,23 @@ export class GooglePhotos {
         try {
             //TODO: only refresh if token is about to expire!
             if (this.gPhotosPersistData.auth_refresh_token) {
-                this.logDebug('Refreshing access token');
+                this.log.debug('Refreshing access token');
                 accessToken = (await this.oauth2Client.getAccessToken()).token;
             } else {
-                this.logDebug('Fetching new access token');
+                this.log.debug('Fetching new access token');
                 const {tokens} = await this.oauth2Client.getToken(await this.getAuthCodeFromOauth2callback());
                 this.oauth2Client.setCredentials(tokens);
                 if (tokens.refresh_token) {
                     this.gPhotosPersistData.auth_refresh_token = tokens.refresh_token;
                 }
-                this.logDebug(tokens);
+                this.log.debug(JSON.stringify(tokens, null, 4));
                 accessToken = tokens.access_token;
             }
 
             return accessToken;
         } catch (error) {
-            this.logDebug('Failed to get auth!');
-            this.logDebug(error);
+            this.log.debug('Failed to get auth!');
+            this.log.debug(error);
         }
     }
 

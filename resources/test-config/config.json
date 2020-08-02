@@ -19,14 +19,17 @@
                 "password": "password",
                 "motion_interval": 5000,
                 "motion_repeat_interval": 30000,
-                "motion_score": 50,
+                "motion_score": 0,
                 "enhanced_motion": true,
                 "enhanced_motion_score": 50,
                 "enhanced_classes": [
                     "person"
                 ],
                 "save_snapshot": false,
-                "debug": true
+                "enable_motion_trigger": true,
+                "enable_doorbell_for": [],
+                "debug": false,
+                "debug_network_traffic": false
             },
             "googlePhotos": {
                 "upload_gphotos": false,
@@ -36,13 +39,16 @@
             },
             "videoConfig": {
                 "vcodec": "h264",
-                "audio": false,
+                "audio": true,
                 "maxStreams": 2,
-                "maxWidth": 1024,
-                "maxHeight": 576,
+                "maxWidth": 1920,
+                "maxHeight": 1080,
                 "maxFPS": 15,
                 "mapvideo": "0:1",
-                "mapaudio": "0:0"
+                "mapaudio": "0:0",
+                "maxBitrate": 3000,
+                "packetSize": 188,
+                "additionalCommandline": "-protocol_whitelist https,crypto,srtp,rtp,udp -loglevel verbose"
             }
         }
     ]

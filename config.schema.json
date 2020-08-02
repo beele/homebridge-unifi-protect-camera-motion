@@ -1,318 +1,747 @@
 {
-  "pluginAlias": "UnifiProtectMotion",
-  "pluginType": "platform",
-  "singular": true,
-  "headerDisplay": "Please select/fill in the required fields. If anything is unclear please consult the readme: https://github.com/beele/homebridge-unifi-protect-camera-motion",
-  "footerDisplay": "The **FFmpeg** binary must be installed on your system for this plugin to work.Only supported on regular X86 or X86-64 and ARM CPUs, if you have a special CPU with missing instructions like AVX it will not work!",
-  "schema": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "title": "Name",
-        "type": "string",
-        "default": "Unifi protect cameras & motion sensors",
-        "required": true
-      },
-
-      "unifi": {
+    "pluginAlias": "UnifiProtectMotion",
+    "pluginType": "platform",
+    "singular": true,
+    "headerDisplay": "Please select/fill in the required fields. If anything is unclear please consult the readme: https://github.com/beele/homebridge-unifi-protect-camera-motion",
+    "footerDisplay": "The **FFmpeg** binary must be installed on your system for this plugin to work.Only supported on regular X86 or X86-64 and ARM CPUs, if you have a special CPU with missing instructions like AVX it will not work!",
+    "schema": {
         "type": "object",
-        "title": "Unifi specific configuration",
         "properties": {
-          "controller": {
-            "title": "The base controller URL",
-            "type": "string",
-            "default": "",
-            "description": "The base URL that points to the controller instance, also supports Unifi OS. (No trailing /)",
-            "required": true
-          },
-          "controller_rtsp": {
-            "title": "The base URL for RTSP streams",
-            "type": "string",
-            "default": "",
-            "description": "The base URL that is to be used for all RTSP streams, be sure to include the correct port! (No trailing /)",
-            "required": true
-          },
-          "username": {
-            "title": "The username for the Protect UI login",
-            "type": "string",
-            "default": "",
-            "required": true
-          },
-          "password": {
-            "title": "The password for the Protect UI login",
-            "type": "string",
-            "default": "",
-            "required": true
-          },
-          "motion_interval": {
-            "title": "The motion interval in milliseconds",
-            "type": "integer",
-            "minimum": 2000,
-            "default": 5000,
-            "description": "This interval describes the time between the checks for new motion. A lower value yields more detection but has a higher system load!",
-            "required": true
-          },
-          "motion_repeat_interval": {
-            "title": "The motion repeat interval in milliseconds",
-            "type": "integer",
-            "minimum": 15000,
-            "default": 30000,
-            "description": "This interval describers the time in which new motion events will not be generated for the same motion id since the last detection",
-            "required": true
-          },
-          "motion_score": {
-            "title": "The score required for a motion event to be detected",
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 100,
-            "default": 50,
-            "description": "A higher value can exclude bogus events, a lower value will generate more events",
-            "required": true
-          },
-          "enhanced_motion": {
-            "title": "Enable enhanced (AI) based motion detection",
-            "type": "boolean",
-            "default": true,
-            "description": "Setting this to true will use a MobileNet CoCo SSD detection on the motion events from Protect to filter only the relevant events",
-            "required": true
-          },
-          "enhanced_motion_score": {
-            "title": "The score required for an enhanced motion event to be detected",
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 100,
-            "default": 50,
-            "description": "This score does not supersede the motion_score field. In acts on top of it. So a Protect motion event is detected by the first parameter and than fed into the enhanced detection system which uses the second parameter",
-            "required": true
-          },
-          "enhanced_classes": {
-            "type": "array",
-            "title": "Contains all the object classes to use for enhanced detection",
-            "items": {
-              "title": "Class name",
-              "description": "Name of the class to detect",
-              "type": "string",
-              "oneOf": [
-                { "title": "person",        "enum": ["person"] },
-                { "title": "bicycle",       "enum": ["bicycle"] },
-                { "title": "car",           "enum": ["car"] },
-                { "title": "motorcycle",    "enum": ["motorcycle"] },
-                { "title": "airplane",      "enum": ["airplane"] },
-                { "title": "bus",           "enum": ["bus"] },
-                { "title": "train",         "enum": ["train"] },
-                { "title": "truck",         "enum": ["truck"] },
-                { "title": "boat",          "enum": ["boat"] },
-                { "title": "traffic light", "enum": ["traffic light"] },
-                { "title": "fire hydrant",  "enum": ["fire hydrant"] },
-                { "title": "stop sign",     "enum": ["stop sign"] },
-                { "title": "parking meter", "enum": ["parking meter"] },
-                { "title": "bird",          "enum": ["bird"] },
-                { "title": "cat",           "enum": ["cat"] },
-                { "title": "dog",           "enum": ["dog"] },
-                { "title": "horse",         "enum": ["horse"] },
-                { "title": "sheep",         "enum": ["sheep"] },
-                { "title": "cow",           "enum": ["cow"] },
-                { "title": "elephant",      "enum": ["elephant"] },
-                { "title": "bear",          "enum": ["bear"] },
-                { "title": "zebra",         "enum": ["zebra"] },
-                { "title": "giraffe",       "enum": ["giraffe"] },
-                { "title": "backpack",      "enum": ["backpack"] },
-                { "title": "umbrella",      "enum": ["umbrella"] },
-                { "title": "handbag",       "enum": ["handbag"] },
-                { "title": "tie",           "enum": ["tie"] },
-                { "title": "suitcase",      "enum": ["suitcase"] },
-                { "title": "frisbee",       "enum": ["frisbee"] },
-                { "title": "skis",          "enum": ["skis"] },
-                { "title": "snowboard",     "enum": ["snowboard"] },
-                { "title": "sports ball",   "enum": ["sports ball"] },
-                { "title": "kite",          "enum": ["kite"] },
-                { "title": "baseball bat",  "enum": ["baseball bat"] },
-                { "title": "baseball glove","enum": ["baseball glove"] },
-                { "title": "skateboard",    "enum": ["skateboard"] },
-                { "title": "surfboard",     "enum": ["surfboard"] },
-                { "title": "tennis racke",  "enum": ["tennis racket"] },
-                { "title": "bottle",        "enum": ["bottle"] },
-                { "title": "wine glass",    "enum": ["wine glass"] },
-                { "title": "cup",           "enum": ["cup"] },
-                { "title": "fork",          "enum": ["fork"] },
-                { "title": "knife",         "enum": ["knife"] },
-                { "title": "spoon",         "enum": ["spoon"] },
-                { "title": "bowl",          "enum": ["bowl"] },
-                { "title": "banana",        "enum": ["banana"] },
-                { "title": "apple",         "enum": ["apple"] },
-                { "title": "sandwich",      "enum": ["sandwich"] },
-                { "title": "orange",        "enum": ["orange"] },
-                { "title": "broccoli",      "enum": ["broccoli"] },
-                { "title": "carrot",        "enum": ["carrot"] },
-                { "title": "hot do",        "enum": ["hot dog"] },
-                { "title": "pizza",         "enum": ["pizza"] },
-                { "title": "donut",         "enum": ["donut"] },
-                { "title": "cake",          "enum": ["cake"] },
-                { "title": "chair",         "enum": ["chair"] },
-                { "title": "couch",         "enum": ["couch"] },
-                { "title": "potted plan",   "enum": ["potted plant"] },
-                { "title": "bed",           "enum": ["bed"] },
-                { "title": "dining table",  "enum": ["dining table"] },
-                { "title": "toilet",        "enum": ["toilet"] },
-                { "title": "tv",            "enum": ["tv"] },
-                { "title": "laptop",        "enum": ["laptop"] },
-                { "title": "mouse",         "enum": ["mouse"] },
-                { "title": "remote",        "enum": ["remote"] },
-                { "title": "keyboard",      "enum": ["keyboard"] },
-                { "title": "cell phone",    "enum": ["cell phone"] },
-                { "title": "microwave",     "enum": ["microwave"] },
-                { "title": "oven",          "enum": ["oven"] },
-                { "title": "toaster",       "enum": ["toaster"] },
-                { "title": "sink",          "enum": ["sink"] },
-                { "title": "refrigerator",  "enum": ["refrigerator"] },
-                { "title": "book",          "enum": ["book"] },
-                { "title": "clock",         "enum": ["clock"] },
-                { "title": "vase",          "enum": ["vase"] },
-                { "title": "scissors",      "enum": ["scissors"] },
-                { "title": "teddy bear",    "enum": ["teddy bear"] },
-                { "title": "hair drier",    "enum": ["hair drier"] },
-                { "title": "toothbrush",    "enum": ["toothbrush"] }
-              ]
+            "name": {
+                "title": "Name",
+                "type": "string",
+                "default": "Unifi protect cameras & motion sensors",
+                "required": true
             },
-            "default": [
-              "person"
-            ],
-            "description": "A motion event will only be generated if one of the specified classes is detected",
-            "required": true
-          },
-          "save_snapshot": {
-            "title": "Enable saving of snapshots of motion events?",
-            "type": "boolean",
-            "default": false,
-            "description": "If enabled every time a motion event is generated the snapshot used for detection will be saved to the .homebridge directory",
-            "required": true
-          },
-          "debug": {
-            "title": "Enable debug logging?",
-            "type": "boolean",
-            "default": false,
-            "description": "If enabled will print out a lot of debug logging of the plugin and FFmpeg, only use this for debugging!",
-            "required": true
-          }
+            "unifi": {
+                "type": "object",
+                "title": "Unifi specific configuration",
+                "properties": {
+                    "controller": {
+                        "title": "The base controller URL",
+                        "type": "string",
+                        "default": "",
+                        "description": "The base URL that points to the controller instance, also supports Unifi OS",
+                        "required": true
+                    },
+                    "controller_rtsp": {
+                        "title": "The base URL for RTSP streams",
+                        "type": "string",
+                        "default": "",
+                        "description": "The base URL that is to be used for al RTSP streams, be sure to include the correct port!",
+                        "required": true
+                    },
+                    "username": {
+                        "title": "The username for the Protect UI login",
+                        "type": "string",
+                        "default": "",
+                        "required": true
+                    },
+                    "password": {
+                        "title": "The password for the Protect UI login",
+                        "type": "string",
+                        "default": "",
+                        "required": true
+                    },
+                    "excluded_cameras": {
+                        "type": "array",
+                        "title": "Excluded camera IDs",
+                        "items": {
+                            "title": "Camera ID",
+                            "description": "ID of the camera to omit in Homekit",
+                            "type": "string"
+                        },
+                        "default": [],
+                        "description": "Contains the id of the camera's for which not camera accessory should be made available, all available IDs are printed during startup",
+                        "required": false
+                    },
+                    "motion_interval": {
+                        "title": "The motion interval in milliseconds",
+                        "type": "integer",
+                        "minimum": 2000,
+                        "default": 5000,
+                        "description": "This interval describes the time between the checks for new motion. A lower value yields more detection but has a higher system load!",
+                        "required": true
+                    },
+                    "motion_repeat_interval": {
+                        "title": "The motion repeat interval in milliseconds",
+                        "type": "integer",
+                        "minimum": 15000,
+                        "default": 30000,
+                        "description": "This interval describers the time in which new motion events will not be generated for the same motion id since the last detection",
+                        "required": true
+                    },
+                    "motion_score": {
+                        "title": "The score required for a motion event to be detected",
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 0,
+                        "description": "A higher value can exclude bogus events, a lower value will generate more events",
+                        "required": true
+                    },
+                    "enhanced_motion": {
+                        "title": "Enable enhanced (AI) based motion detection",
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Setting this to true will use a MobileNet CoCo SSD detection on the motion events from Protect to filter only the relevant events",
+                        "required": true
+                    },
+                    "enhanced_motion_score": {
+                        "title": "The score required for an enhanced motion event to be detected",
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 50,
+                        "description": "This score does not supersede the motion_score field. In acts on top of it. So a Protect motion event is detected by the first parameter and than fed into the enhanced detection system which uses the second parameter",
+                        "required": true
+                    },
+                    "enhanced_classes": {
+                        "type": "array",
+                        "title": "Contains all the object classes to use for enhanced detection",
+                        "items": {
+                            "title": "Class name",
+                            "description": "Name of the class to detect",
+                            "type": "string",
+                            "oneOf": [
+                                {
+                                    "title": "person",
+                                    "enum": [
+                                        "person"
+                                    ]
+                                },
+                                {
+                                    "title": "bicycle",
+                                    "enum": [
+                                        "bicycle"
+                                    ]
+                                },
+                                {
+                                    "title": "car",
+                                    "enum": [
+                                        "car"
+                                    ]
+                                },
+                                {
+                                    "title": "motorcycle",
+                                    "enum": [
+                                        "motorcycle"
+                                    ]
+                                },
+                                {
+                                    "title": "airplane",
+                                    "enum": [
+                                        "airplane"
+                                    ]
+                                },
+                                {
+                                    "title": "bus",
+                                    "enum": [
+                                        "bus"
+                                    ]
+                                },
+                                {
+                                    "title": "train",
+                                    "enum": [
+                                        "train"
+                                    ]
+                                },
+                                {
+                                    "title": "truck",
+                                    "enum": [
+                                        "truck"
+                                    ]
+                                },
+                                {
+                                    "title": "boat",
+                                    "enum": [
+                                        "boat"
+                                    ]
+                                },
+                                {
+                                    "title": "traffic light",
+                                    "enum": [
+                                        "traffic light"
+                                    ]
+                                },
+                                {
+                                    "title": "fire hydrant",
+                                    "enum": [
+                                        "fire hydrant"
+                                    ]
+                                },
+                                {
+                                    "title": "stop sign",
+                                    "enum": [
+                                        "stop sign"
+                                    ]
+                                },
+                                {
+                                    "title": "parking meter",
+                                    "enum": [
+                                        "parking meter"
+                                    ]
+                                },
+                                {
+                                    "title": "bird",
+                                    "enum": [
+                                        "bird"
+                                    ]
+                                },
+                                {
+                                    "title": "cat",
+                                    "enum": [
+                                        "cat"
+                                    ]
+                                },
+                                {
+                                    "title": "dog",
+                                    "enum": [
+                                        "dog"
+                                    ]
+                                },
+                                {
+                                    "title": "horse",
+                                    "enum": [
+                                        "horse"
+                                    ]
+                                },
+                                {
+                                    "title": "sheep",
+                                    "enum": [
+                                        "sheep"
+                                    ]
+                                },
+                                {
+                                    "title": "cow",
+                                    "enum": [
+                                        "cow"
+                                    ]
+                                },
+                                {
+                                    "title": "elephant",
+                                    "enum": [
+                                        "elephant"
+                                    ]
+                                },
+                                {
+                                    "title": "bear",
+                                    "enum": [
+                                        "bear"
+                                    ]
+                                },
+                                {
+                                    "title": "zebra",
+                                    "enum": [
+                                        "zebra"
+                                    ]
+                                },
+                                {
+                                    "title": "giraffe",
+                                    "enum": [
+                                        "giraffe"
+                                    ]
+                                },
+                                {
+                                    "title": "backpack",
+                                    "enum": [
+                                        "backpack"
+                                    ]
+                                },
+                                {
+                                    "title": "umbrella",
+                                    "enum": [
+                                        "umbrella"
+                                    ]
+                                },
+                                {
+                                    "title": "handbag",
+                                    "enum": [
+                                        "handbag"
+                                    ]
+                                },
+                                {
+                                    "title": "tie",
+                                    "enum": [
+                                        "tie"
+                                    ]
+                                },
+                                {
+                                    "title": "suitcase",
+                                    "enum": [
+                                        "suitcase"
+                                    ]
+                                },
+                                {
+                                    "title": "frisbee",
+                                    "enum": [
+                                        "frisbee"
+                                    ]
+                                },
+                                {
+                                    "title": "skis",
+                                    "enum": [
+                                        "skis"
+                                    ]
+                                },
+                                {
+                                    "title": "snowboard",
+                                    "enum": [
+                                        "snowboard"
+                                    ]
+                                },
+                                {
+                                    "title": "sports ball",
+                                    "enum": [
+                                        "sports ball"
+                                    ]
+                                },
+                                {
+                                    "title": "kite",
+                                    "enum": [
+                                        "kite"
+                                    ]
+                                },
+                                {
+                                    "title": "baseball bat",
+                                    "enum": [
+                                        "baseball bat"
+                                    ]
+                                },
+                                {
+                                    "title": "baseball glove",
+                                    "enum": [
+                                        "baseball glove"
+                                    ]
+                                },
+                                {
+                                    "title": "skateboard",
+                                    "enum": [
+                                        "skateboard"
+                                    ]
+                                },
+                                {
+                                    "title": "surfboard",
+                                    "enum": [
+                                        "surfboard"
+                                    ]
+                                },
+                                {
+                                    "title": "tennis racke",
+                                    "enum": [
+                                        "tennis racket"
+                                    ]
+                                },
+                                {
+                                    "title": "bottle",
+                                    "enum": [
+                                        "bottle"
+                                    ]
+                                },
+                                {
+                                    "title": "wine glass",
+                                    "enum": [
+                                        "wine glass"
+                                    ]
+                                },
+                                {
+                                    "title": "cup",
+                                    "enum": [
+                                        "cup"
+                                    ]
+                                },
+                                {
+                                    "title": "fork",
+                                    "enum": [
+                                        "fork"
+                                    ]
+                                },
+                                {
+                                    "title": "knife",
+                                    "enum": [
+                                        "knife"
+                                    ]
+                                },
+                                {
+                                    "title": "spoon",
+                                    "enum": [
+                                        "spoon"
+                                    ]
+                                },
+                                {
+                                    "title": "bowl",
+                                    "enum": [
+                                        "bowl"
+                                    ]
+                                },
+                                {
+                                    "title": "banana",
+                                    "enum": [
+                                        "banana"
+                                    ]
+                                },
+                                {
+                                    "title": "apple",
+                                    "enum": [
+                                        "apple"
+                                    ]
+                                },
+                                {
+                                    "title": "sandwich",
+                                    "enum": [
+                                        "sandwich"
+                                    ]
+                                },
+                                {
+                                    "title": "orange",
+                                    "enum": [
+                                        "orange"
+                                    ]
+                                },
+                                {
+                                    "title": "broccoli",
+                                    "enum": [
+                                        "broccoli"
+                                    ]
+                                },
+                                {
+                                    "title": "carrot",
+                                    "enum": [
+                                        "carrot"
+                                    ]
+                                },
+                                {
+                                    "title": "hot do",
+                                    "enum": [
+                                        "hot dog"
+                                    ]
+                                },
+                                {
+                                    "title": "pizza",
+                                    "enum": [
+                                        "pizza"
+                                    ]
+                                },
+                                {
+                                    "title": "donut",
+                                    "enum": [
+                                        "donut"
+                                    ]
+                                },
+                                {
+                                    "title": "cake",
+                                    "enum": [
+                                        "cake"
+                                    ]
+                                },
+                                {
+                                    "title": "chair",
+                                    "enum": [
+                                        "chair"
+                                    ]
+                                },
+                                {
+                                    "title": "couch",
+                                    "enum": [
+                                        "couch"
+                                    ]
+                                },
+                                {
+                                    "title": "potted plan",
+                                    "enum": [
+                                        "potted plant"
+                                    ]
+                                },
+                                {
+                                    "title": "bed",
+                                    "enum": [
+                                        "bed"
+                                    ]
+                                },
+                                {
+                                    "title": "dining table",
+                                    "enum": [
+                                        "dining table"
+                                    ]
+                                },
+                                {
+                                    "title": "toilet",
+                                    "enum": [
+                                        "toilet"
+                                    ]
+                                },
+                                {
+                                    "title": "tv",
+                                    "enum": [
+                                        "tv"
+                                    ]
+                                },
+                                {
+                                    "title": "laptop",
+                                    "enum": [
+                                        "laptop"
+                                    ]
+                                },
+                                {
+                                    "title": "mouse",
+                                    "enum": [
+                                        "mouse"
+                                    ]
+                                },
+                                {
+                                    "title": "remote",
+                                    "enum": [
+                                        "remote"
+                                    ]
+                                },
+                                {
+                                    "title": "keyboard",
+                                    "enum": [
+                                        "keyboard"
+                                    ]
+                                },
+                                {
+                                    "title": "cell phone",
+                                    "enum": [
+                                        "cell phone"
+                                    ]
+                                },
+                                {
+                                    "title": "microwave",
+                                    "enum": [
+                                        "microwave"
+                                    ]
+                                },
+                                {
+                                    "title": "oven",
+                                    "enum": [
+                                        "oven"
+                                    ]
+                                },
+                                {
+                                    "title": "toaster",
+                                    "enum": [
+                                        "toaster"
+                                    ]
+                                },
+                                {
+                                    "title": "sink",
+                                    "enum": [
+                                        "sink"
+                                    ]
+                                },
+                                {
+                                    "title": "refrigerator",
+                                    "enum": [
+                                        "refrigerator"
+                                    ]
+                                },
+                                {
+                                    "title": "book",
+                                    "enum": [
+                                        "book"
+                                    ]
+                                },
+                                {
+                                    "title": "clock",
+                                    "enum": [
+                                        "clock"
+                                    ]
+                                },
+                                {
+                                    "title": "vase",
+                                    "enum": [
+                                        "vase"
+                                    ]
+                                },
+                                {
+                                    "title": "scissors",
+                                    "enum": [
+                                        "scissors"
+                                    ]
+                                },
+                                {
+                                    "title": "teddy bear",
+                                    "enum": [
+                                        "teddy bear"
+                                    ]
+                                },
+                                {
+                                    "title": "hair drier",
+                                    "enum": [
+                                        "hair drier"
+                                    ]
+                                },
+                                {
+                                    "title": "toothbrush",
+                                    "enum": [
+                                        "toothbrush"
+                                    ]
+                                }
+                            ]
+                        },
+                        "default": [
+                            "person"
+                        ],
+                        "description": "A motion event will only be generated if one of the specified classes is detected",
+                        "required": true
+                    },
+                    "enable_motion_trigger": {
+                        "title": "Enable manual motion trigger switch",
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Enable this to create a manual motion trigger switch per camera",
+                        "required": true
+                    },
+                    "enable_doorbell_for": {
+                        "type": "array",
+                        "title": "Enable doorbell functionality for cameras with ID",
+                        "items": {
+                            "title": "Camera ID",
+                            "description": "ID of the camera to enable doorbell functionality for",
+                            "type": "string"
+                        },
+                        "default": [],
+                        "description": "Contains the id of the camera's for which the doorbell functionality should be enabled, all available IDs are printed during startup",
+                        "required": false
+                    },
+                    "save_snapshot": {
+                        "title": "Enable saving of snapshots of motion events?",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "If enabled every time a motion event is generated the snapshot used for detection will be saved to the .homebridge directory",
+                        "required": true
+                    },
+                    "debug": {
+                        "title": "Enable debug logging?",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "If enabled will print out a lot of debug logging of the plugin and FFmpeg, only use this for debugging!",
+                        "required": true
+                    },
+                    "debug_network_traffic": {
+                        "title": "Enable debug logging for network requests?",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "If enabled will print out a lot of debug logging of all network requests, only use this for debugging!",
+                        "required": true
+                    }
+                }
+            },
+            "googlePhotos": {
+                "type": "object",
+                "title": "Google Photos specific configuration",
+                "properties": {
+                    "upload_gphotos": {
+                        "title": "Enable upload to Google Photos?",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "If enabled every time a motion event is generated the snapshot used for detection will be uploaded to Google Photos",
+                        "required": true
+                    },
+                    "auth_clientId": {
+                        "title": "Google OAuth2 Client ID",
+                        "type": "string",
+                        "default": "",
+                        "description": "Consult the readme/wiki for more information!",
+                        "required": true
+                    },
+                    "auth_clientSecret": {
+                        "title": "Google OAuth2 Client Secret",
+                        "type": "string",
+                        "default": "",
+                        "description": "Consult the readme/wiki for more information!",
+                        "required": true
+                    },
+                    "auth_redirectUrl": {
+                        "title": "Auth2 redirect handler",
+                        "type": "string",
+                        "default": "http://localhost:8080/oauth2-callback",
+                        "description": "Consult the readme/wiki for more information!",
+                        "required": true
+                    }
+                }
+            },
+            "videoConfig": {
+                "type": "object",
+                "title": "FFmpeg specific configuration",
+                "properties": {
+                    "maxStreams": {
+                        "title": "Maximum Number of Streams",
+                        "type": "integer",
+                        "default": 2,
+                        "minimum": 1,
+                        "description": "The maximum number of streams that will be generated for this camera",
+                        "required": true
+                    },
+                    "maxWidth": {
+                        "title": "Maximum Width",
+                        "type": "integer",
+                        "default": 1024,
+                        "minimum": 1,
+                        "description": "The maximum width reported to HomeKit",
+                        "required": true
+                    },
+                    "maxHeight": {
+                        "title": "Maximum Height",
+                        "type": "integer",
+                        "default": 576,
+                        "minimum": 1,
+                        "description": "The maximum height reported to HomeKit",
+                        "required": true
+                    },
+                    "maxFPS": {
+                        "title": "Maximum FPS",
+                        "type": "integer",
+                        "default": 15,
+                        "minimum": 1,
+                        "description": "The maximum frame rate of the stream",
+                        "required": true
+                    },
+                    "maxBitrate": {
+                        "title": "Maximum Bitrate",
+                        "type": "integer",
+                        "default": 3000,
+                        "minimum": 1,
+                        "description": "The maximum bit rate of the stream",
+                        "required": true
+                    },
+                    "vcodec": {
+                        "title": "Video Codec",
+                        "type": "string",
+                        "default": "libx264",
+                        "description": "The coded to use, use h264_omx on Raspberry Pi",
+                        "required": true
+                    },
+                    "packetSize": {
+                        "title": "Packet Size",
+                        "type": "number",
+                        "default": 376,
+                        "multipleOf": 188.0
+                    },
+                    "audio": {
+                        "title": "Enable Audio?",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Only enable when your installed FFmpeg supports audio!",
+                        "required": true
+                    },
+                    "additionalCommandline": {
+                        "title": "Additional commandline parameters",
+                        "type": "string",
+                        "default": "-protocol_whitelist https,crypto,srtp,rtp,udp",
+                        "description": "Any additional commandline parameters to pass to FFmpeg",
+                        "required": true
+                    }
+                }
+            },
+            "videoProcessor": {
+                "title": "Optional manual video processor path",
+                "type": "string",
+                "default": "",
+                "description": "Provide an absolute path to an FFmpeg binary to use that binary!",
+                "required": false
+            }
         }
-      },
-
-      "googlePhotos": {
-        "type": "object",
-        "title": "Google Photos specific configuration",
-        "properties": {
-          "upload_gphotos": {
-            "title": "Enable upload to Google Photos?",
-            "type": "boolean",
-            "default": false,
-            "description": "If enabled every time a motion event is generated the snapshot used for detection will be uploaded to Google Photos",
-            "required": true
-          },
-          "auth_clientId": {
-            "title": "Google OAuth2 Client ID",
-            "type": "string",
-            "default": "",
-            "description": "Consult the readme/wiki for more information!",
-            "required": true
-          },
-          "auth_clientSecret": {
-            "title": "Google OAuth2 Client Secret",
-            "type": "string",
-            "default": "",
-            "description": "Consult the readme/wiki for more information!",
-            "required": true
-          },
-          "auth_redirectUrl": {
-            "title": "Auth2 redirect handler",
-            "type": "string",
-            "default": "http://localhost:8080/oauth2-callback",
-            "description": "Consult the readme/wiki for more information!",
-            "required": true
-          }
-        }
-      },
-
-      "videoConfig": {
-        "type": "object",
-        "title": "FFmpeg specific configuration",
-        "properties": {
-          "maxStreams": {
-            "title": "Maximum Number of Streams",
-            "type": "integer",
-            "default": 2,
-            "minimum": 1,
-            "description": "The maximum number of streams that will be generated for this camera",
-            "required": true
-          },
-          "maxWidth": {
-            "title": "Maximum Width",
-            "type": "integer",
-            "default": 1024,
-            "minimum": 1,
-            "description": "The maximum width reported to HomeKit",
-            "required": true
-          },
-          "maxHeight": {
-            "title": "Maximum Height",
-            "type": "integer",
-            "default": 576,
-            "minimum": 1,
-            "description": "The maximum height reported to HomeKit",
-            "required": true
-          },
-          "maxFPS": {
-            "title": "Maximum FPS",
-            "type": "integer",
-            "default": 15,
-            "minimum": 1,
-            "description": "The maximum frame rate of the stream",
-            "required": true
-          },
-          "maxBitrate": {
-            "title": "Maximum Bitrate",
-            "type": "integer",
-            "default": 3000,
-            "minimum": 1,
-            "description": "The maximum bit rate of the stream",
-            "required": true
-          },
-          "vcodec": {
-            "title": "Video Codec",
-            "type": "string",
-            "default": "libx264",
-            "description": "The coded to use, use h264_omx on Raspberry Pi",
-            "required": true
-          },
-          "packetSize": {
-            "title": "Packet Size",
-            "type": "number",
-            "default": 376,
-            "multipleOf": 188.0
-          },
-          "audio": {
-            "title": "Enable Audio?",
-            "type": "boolean",
-            "default": false,
-            "description": "Only enable when your installed FFmpeg supports audio!",
-            "required": true
-          },
-          "additionalCommandline": {
-            "title": "Additional commandline parameters",
-            "type": "string",
-            "default": "-protocol_whitelist https,crypto,srtp,rtp,udp",
-            "description": "Any additional commandline parameters to pass to FFmpeg",
-            "required": true
-          }
-        }
-      },
-
-      "videoProcessor": {
-        "title": "Optional manual video processor path",
-        "type": "string",
-        "default": "",
-        "description": "Provide an absolute path to an FFmpeg binary to use that binary!",
-        "required": false
-      }
     }
-  }
 }

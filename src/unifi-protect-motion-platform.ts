@@ -1,132 +1,135 @@
-import type { API, DynamicPlatformPlugin, Logger, PlatformConfig} from 'homebridge';
-import {APIEvent, Categories} from 'homebridge';
-import {Utils} from "./utils/utils";
-import {Unifi} from "./unifi/unifi";
+import {
+    API,
+    APIEvent,
+    DynamicPlatformPlugin,
+    HAP,
+    Logging,
+    PlatformAccessory,
+    PlatformAccessoryEvent,
+    PlatformConfig
+} from 'homebridge';
+import {Unifi, UnifiCamera} from "./unifi/unifi";
 import {UnifiFlows} from "./unifi/unifi-flows";
+import {PLATFORM_NAME, PLUGIN_NAME} from "./settings";
+import {VideoConfig} from "./streaming/video-config";
 import {MotionDetector} from "./motion/motion";
-import {PLUGIN_NAME} from "./settings";
-import {VideoConfig} from "./ffmpeg/video-config";
-import {CameraConfig} from "./ffmpeg/camera-config";
-
-const FFMPEG = require('homebridge-camera-ffmpeg/ffmpeg.js').FFMPEG;
-const FFMPEG_PATH = require('ffmpeg-for-homebridge');
+import {UnifiCameraAccessoryInfo} from "./characteristics/unifi-camera-accessory-info";
+import {CameraConfig} from "./streaming/camera-config";
+import {UnifiCameraMotionSensor} from "./characteristics/unifi-camera-motion-sensor";
+import {UnifiCameraDoorbell} from "./characteristics/unifi-camera-doorbell";
+import {UnifiCameraStreaming} from "./streaming/unifi-camera-streaming";
 
 export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
-    public readonly Service = this.api.hap.Service;
-    public readonly Characteristic = this.api.hap.Characteristic;
-    public readonly PlatformAccessory = this.api.platformAccessory;
+    public readonly hap: HAP = this.api.hap;
+    public readonly Accessory: typeof PlatformAccessory = this.api.platformAccessory;
 
-    constructor(
-        public readonly logger: Logger,
-        public readonly config: PlatformConfig,
-        public readonly api: API,
-    ) {
+    private readonly accessories: Array<PlatformAccessory> = [];
+
+    private unifi: Unifi;
+    private uFlows: UnifiFlows;
+
+    constructor(private readonly log: Logging, private readonly config: PlatformConfig, private readonly api: API) {
+        if (!config || !this.config.unifi || !this.config.videoConfig) {
+            this.log.info('Incorrect plugin configuration!');
+            return;
+        }
+
+        //Set config defaults
+        this.config.unifi.excluded_cameras = this.config.unifi.excluded_cameras ? this.config.unifi.excluded_cameras : [];
+
         this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
             //Hack to get async functions!
             setTimeout(async () => {
-                this.discoverDevices();
+                this.unifi = new Unifi(this.config.unifi, 500, 2, this.log);
+                this.uFlows = new UnifiFlows(this.unifi, this.config.unifi, await Unifi.determineEndpointStyle(this.config.unifi.controller, this.log), this.log);
+                await this.didFinishLaunching();
             });
         });
     }
 
-    public configureAccessory(accessory: any): void {
-        //Not used for now!
-    }
+    public async didFinishLaunching(): Promise<void> {
+        let cameras: UnifiCamera[] = [];
+        try {
+            cameras = await this.uFlows.enumerateCameras();
+            cameras = cameras.filter((camera: UnifiCamera) => {
+                if (!this.config.unifi.excluded_cameras.includes(camera.id)) {
+                    return camera;
+                } else {
+                    this.log.info('Camera (' + camera.name + ') excluded by config!');
+                }
+            });
+        } catch (error) {
+            this.log.info('Cannot get cameras: ' + error);
+        }
 
-    private async discoverDevices(): Promise<void> {
-        let videoProcessor = this.config.videoProcessor || 'ffmpeg';
-        const interfaceName = this.config.interfaceName || '';
-
-        if (this.config.videoConfig) {
-            const configuredAccessories: any[] = [];
-            const infoLogger = Utils.createLogger(this.logger, true, false);
-            const debugLogger = Utils.createLogger(this.logger, false, this.config.unifi.debug);
-
-            const unifi = new Unifi(
-                this.config.unifi,
-                500,
-                2,
-                infoLogger
-            );
-            const uFlows = new UnifiFlows(
-                unifi,
-                this.config.unifi,
-                await Unifi.determineEndpointStyle(this.config.unifi.controller, infoLogger),
-                debugLogger
-            );
-
-            let cameras = [];
-            try {
-                cameras = await uFlows.enumerateCameras();
-            } catch (error) {
-                infoLogger('Cannot get cameras: ' + error);
-                return;
-            }
-
-            cameras.forEach((camera) => {
-                if (camera.streams.length === 0) {
+        if (cameras.length > 0) {
+            cameras.forEach((camera: UnifiCamera) => {
+                if (camera.streams.length < 1) {
+                    this.log.info('Camera (' + camera.name + ') has no streams, skipping!')
                     return;
                 }
 
-                const uuid = this.api.hap.uuid.generate(camera.id);
-                const cameraAccessory = new this.PlatformAccessory(camera.name, uuid, Categories.CAMERA);
-                const cameraAccessoryInfo = cameraAccessory.getService(this.Service.AccessoryInformation);
-                cameraAccessoryInfo.setCharacteristic(this.Characteristic.Manufacturer, 'Ubiquiti');
-                cameraAccessoryInfo.setCharacteristic(this.Characteristic.Model, camera.type);
-                cameraAccessoryInfo.setCharacteristic(this.Characteristic.SerialNumber, camera.id);
-                cameraAccessoryInfo.setCharacteristic(this.Characteristic.FirmwareRevision, camera.firmware);
+                // Camera names must be unique
+                const uuid = this.hap.uuid.generate(camera.name);
+                camera.uuid = uuid;
+                const cameraAccessory = new this.Accessory(camera.name, uuid);
 
-                cameraAccessory.context.id = camera.id;
-                cameraAccessory.context.motionEnabled = true;
-                cameraAccessory.context.lastMotionId = null;
-                cameraAccessory.context.lastMotionIdRepeatCount = 0;
-                cameraAccessory.addService(new this.Service.MotionSensor(camera.name + ' Motion sensor'));
-                cameraAccessory.addService(new this.Service.Switch(camera.name + ' Motion enabled'));
-                cameraAccessory
-                    .getService(this.Service.Switch)
-                    .getCharacteristic(this.Characteristic.On)
-                    .on(this.api.hap.CharacteristicEventTypes.GET, (callback: Function) => {
-                        callback(null, cameraAccessory.context.motionEnabled);
-                    })
-                    .on(this.api.hap.CharacteristicEventTypes.SET, (value: boolean, callback: Function) => {
-                        cameraAccessory.context.motionEnabled = value;
-                        infoLogger('Motion detection for ' + camera.name + ' has been turned ' + (cameraAccessory.context.motionEnabled ? 'ON': 'OFF'));
-                        callback();
-                    });
-
-                //Make a copy of the config so we can set each one to have its own camera sources!
-                const videoConfigCopy: VideoConfig = JSON.parse(JSON.stringify(this.config.videoConfig));
-                //Assign stillImageSource, source and debug (overwrite if they are present from the videoConfig, which they should not be!)
-                videoConfigCopy.stillImageSource = '-i http://' + camera.ip + '/snap.jpeg';
-                videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + this.config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(camera.streams);
-                videoConfigCopy.debug = this.config.unifi.debug;
-
-                const cameraConfig: CameraConfig = {
+                cameraAccessory.context.cameraConfig = {
+                    uuid: uuid,
                     name: camera.name,
-                    videoConfig: videoConfigCopy
-                };
+                    camera: camera
+                } as CameraConfig;
 
-                if (FFMPEG_PATH && FFMPEG_PATH.trim().length > 0) {
-                    videoProcessor = FFMPEG_PATH;
+                UnifiCameraAccessoryInfo.createAccessoryInfo(camera, cameraAccessory, this.hap);
+
+                // Only add new cameras that are not cached
+                if (!this.accessories.find((x: PlatformAccessory) => x.UUID === uuid)) {
+                    this.log.info('Adding ' + cameraAccessory.context.cameraConfig.uuid);
+                    this.configureAccessory(cameraAccessory); // abusing the configureAccessory here
+                    this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [cameraAccessory]);
                 }
-
-                const cameraSource = new FFMPEG(this.api.hap, cameraConfig, this.logger, videoProcessor, interfaceName);
-                cameraAccessory.configureCameraSource(cameraSource);
-                configuredAccessories.push(cameraAccessory);
             });
-            infoLogger('Cameras: ' + configuredAccessories.length);
+
+            // Remove cameras that were not in previous call
+            this.accessories.forEach((accessory: PlatformAccessory) => {
+                if (!cameras.find((x: UnifiCamera) => x.uuid === accessory.context.cameraConfig.uuid)) {
+                    this.log.info('Removing ' + accessory.context.cameraConfig.uuid);
+                    this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+                }
+            });
 
             try {
-                const motionDetector = new MotionDetector(this.api, this.config, uFlows, cameras, infoLogger, debugLogger);
-                await motionDetector.setupMotionChecking(configuredAccessories);
-                infoLogger('Motion checking setup done!');
+                const motionDetector: MotionDetector = new MotionDetector(this.api, this.config, this.uFlows, cameras, this.log);
+                await motionDetector.setupMotionChecking(this.accessories);
+                this.log.info('Motion checking setup done!');
             } catch (error) {
-                infoLogger('Error during motion checking setup: ' + error);
+                this.log.info('Error during motion checking setup: ' + error);
             }
-
-            this.api.publishExternalAccessories(PLUGIN_NAME, configuredAccessories);
-            infoLogger('Setup done');
         }
+    }
+
+    public configureAccessory(cameraAccessory: PlatformAccessory): void {
+        this.log.info('Configuring accessory ' + cameraAccessory.displayName);
+
+        cameraAccessory.on(PlatformAccessoryEvent.IDENTIFY, () => {
+            this.log.info(cameraAccessory.displayName + ' identified!');
+        });
+
+        const cameraConfig: CameraConfig = cameraAccessory.context.cameraConfig;
+
+        //Update the camera config!
+        const videoConfigCopy: VideoConfig = JSON.parse(JSON.stringify(this.config.videoConfig));
+        //Assign stillImageSource, source and debug (overwrite if they are present from the videoConfig, which they should not be!)
+        videoConfigCopy.stillImageSource = '-i http://' + cameraConfig.camera.ip + '/snap.jpeg';
+        videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + this.config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(cameraConfig.camera.streams);
+        videoConfigCopy.debug = this.config.unifi.debug;
+        cameraConfig.videoConfig = videoConfigCopy;
+
+        UnifiCameraMotionSensor.setupMotionSensor(cameraConfig, cameraAccessory, this.config, this.hap, this.log);
+        UnifiCameraDoorbell.setupDoorbell(cameraConfig, cameraAccessory, this.config, this.hap, this.log);
+        UnifiCameraStreaming.setupStreaming(cameraConfig, cameraAccessory, this.config, this.api, this.log);
+
+        this.accessories.push(cameraAccessory);
     }
 }

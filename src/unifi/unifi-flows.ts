@@ -1,15 +1,16 @@
-import {Unifi, UnifiMotionEvent, UnifiCamera, UnifiSession, UnifiConfig, UnifiEndPointStyle} from "./unifi";
+import {Unifi, UnifiCamera, UnifiConfig, UnifiEndPointStyle, UnifiMotionEvent, UnifiSession} from "./unifi";
+import {Logging} from "homebridge";
 
 export class UnifiFlows {
 
     private readonly unifi: Unifi;
     private readonly config: UnifiConfig;
     private readonly endpointStyle: UnifiEndPointStyle;
-    private readonly log: any;
+    private readonly log: Logging;
 
     private session: UnifiSession;
 
-    constructor(unifi: Unifi, config: UnifiConfig, endPointStyle: UnifiEndPointStyle, logger: Function) {
+    constructor(unifi: Unifi, config: UnifiConfig, endPointStyle: UnifiEndPointStyle, logger: Logging) {
         this.unifi = unifi;
         this.config = config;
         this.endpointStyle = endPointStyle;
@@ -25,29 +26,28 @@ export class UnifiFlows {
         }
     }
 
-    public async getLatestMotionEventPerCamera(cameras: UnifiCamera[]): Promise<UnifiMotionEvent[]> {
+    public async assignMotionEventsToCameras(cameras: UnifiCamera[]): Promise<UnifiCamera[]> {
         try {
             await this.ensureSessionIsValid();
             const motionEvents: UnifiMotionEvent[] = await this.unifi.getMotionEvents(this.session, this.endpointStyle);
-            const filteredMotionEvents: UnifiMotionEvent[] = [];
 
-            //We only want one event per camera!
             outer: for (const camera of cameras) {
+                camera.lastMotionEvent = null;
+
                 for (const motionEvent of motionEvents) {
                     if (camera.id === motionEvent.cameraId) {
                         if (motionEvent.score >= this.config.motion_score) {
-                            this.log('Unifi Motion event (' + motionEvent.id + ') accepted for camera: ' + camera.name + ' - Score: ' + motionEvent.score);
-                            motionEvent.camera = camera;
-                            filteredMotionEvents.push(motionEvent);
+                            this.log.debug('Unifi Motion event (' + motionEvent.id + ') accepted for camera: ' + camera.name + ' - Score: ' + motionEvent.score);
+                            camera.lastMotionEvent = motionEvent;
                         } else {
-                            this.log('Unifi Motion event (' + motionEvent.id + ') rejected for camera: ' + camera.name + ' - Score: ' + motionEvent.score);
+                            this.log.debug('Unifi Motion event (' + motionEvent.id + ') rejected for camera: ' + camera.name + ' - Score: ' + motionEvent.score);
                         }
                         continue outer;
                     }
                 }
             }
 
-            return filteredMotionEvents;
+            return cameras;
         } catch (error) {
             throw new Error('Could not detect motion: ' + error);
         }

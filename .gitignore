@@ -44,3 +44,5 @@ resources/test-config/persist/
 resources/test-config/unifi-protect-google-settings.json
 
 .idea/
+
+.DS_Store
