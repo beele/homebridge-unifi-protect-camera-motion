@@ -90,8 +90,8 @@ The config must be valid or Homebridge will fail to restart correctly.
 
 If you are using Homebridge Config X, it will do its best to alert you to any syntax errors it finds.
 
-If you are upgrading from a pre 0.4.1 version please note that your camera's will be added in automatically by the plugin from now on.
-This means that the old camera's need to be removed as these will no longer work.
+If you are upgrading from a pre 0.4.1 version please note that your cameras will be added in automatically by the plugin from now on.
+This means that the old cameras need to be removed as these will no longer work.
 Tap on a camera preview to open the camera feed, click the settings icon and scroll all the way to the bottom, there select `Remove camera from home`.
 
 ## Config fields:  
@@ -120,7 +120,7 @@ Tap on a camera preview to open the camera feed, click the settings icon and scr
 |enhanced_motion_score|number|sometimes|/|This field is required if the `enhanced_motion` field is set to true and contains the minimum score/certainty in % the enhanced detection should reach before allowing an motion event to be triggered |
 |enhanced_classes|string[]|sometimes|[]|This field is required if the `enhanced_motion` field is set to true and contains an array of classes (in lowercase) of objects to dispatch motion events for. The array should not be empty when using the enhanced detection! Look in look in src/coco/classes.ts for all available classes|
 |enable_motion_trigger|boolean|no|false|Contains a boolean that when set to true will enable an extra button for each camera to manually trigger a motion notification|
-|enable_doorbell_for|string[]|no|[]|Contains the id of the camera's for which the doorbell functionality should be enabled, all available IDs are printed during startup|
+|enable_doorbell_for|string[]|no|[]|Contains the id of the cameras for which the doorbell functionality should be enabled, all available IDs are printed during startup|
 |save_snapshot|boolean|no|false|Contains a boolean indicating whether or not to save each detection to a jpg file in the `.homebridge` directory. When using enhanced mode the image is annotated with the class/score that was detected.|
 |upload_gphotos|boolean|no|false|Contains a boolean indicating whether or not to upload each detection to a google photos album. When using enhanced mode the image is annotated with the class/score that was detected.|
 |debug|boolean|no|false|Contains a boolean indicating whether or not to enable debug logging for the plugin and FFmpeg|
