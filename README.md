@@ -68,6 +68,12 @@ Next, open the `config.json` that contains your Homebridge configuration, and ad
         "debug": false, 
         "debug_network_traffic": false,
     },
+    "googlePhotos": {
+        "upload_gphotos": false,
+        "auth_clientId": "CLIENT-ID",
+        "auth_clientSecret": "CLIENT-SECRET",
+        "auth_redirectUrl": "http://localhost:8080/oauth2-callback"
+    },
     "videoConfig": { 
         "vcodec": "h264",
         "audio": true,
