@@ -6,31 +6,32 @@ import {Logging} from "homebridge";
 export class Loader {
 
     constructor(private readonly log: Logging) {
-        
     }
 
     public async loadCoco(): Promise<Detector> {
         const printProcessDuration: Function = (name: string, start: number) => {
-            this.log.info(name + ' processing took: ' + (Date.now() - start) + 'ms');
+            this.log.debug(name + ' processing took: ' + (Date.now() - start) + 'ms');
         };
         const printResults: Function = (results: any[]) => {
-            for (const result of results) {
-                this.log.info('==> Detected: ' + result.class + ' [' + Math.round(result.score * 100) + '%]');
+            if (results && results.length > 0) {
+                for (const result of results) {
+                    this.log.debug('==> Detected: ' + result.class + ' [' + Math.round(result.score * 100) + '%]');
+                }
+            } else {
+               this.log.debug('Nothing detected!');
             }
         };
 
         const model: ObjectDetection = await load();
         return {
-            async detect(image: Image, logResults: boolean = false): Promise<Detection[]> {
+            async detect(image: Image): Promise<Detection[]> {
                 const start = Date.now();
 
                 const canvas: Canvas = ImageUtils.createCanvasFromImage(image);
                 const results = await model.detect(canvas as unknown as HTMLCanvasElement);
 
-                if (logResults) {
-                    printProcessDuration('COCO', start);
-                    printResults(results);
-                }
+                printProcessDuration('COCO', start);
+                printResults(results);
                 return results;
             }
         };
