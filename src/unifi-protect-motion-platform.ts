@@ -19,6 +19,8 @@ import {UnifiCameraMotionSensor} from "./characteristics/unifi-camera-motion-sen
 import {UnifiCameraDoorbell} from "./characteristics/unifi-camera-doorbell";
 import {UnifiCameraStreaming} from "./streaming/unifi-camera-streaming";
 
+const pathToFfmpeg = require('ffmpeg-for-homebridge');
+
 export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
     public readonly hap: HAP = this.api.hap;
@@ -38,12 +40,18 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         //Set config defaults
         this.config.unifi.excluded_cameras = this.config.unifi.excluded_cameras ? this.config.unifi.excluded_cameras : [];
 
+        log.info('VIDEO PROCESSOR: ' + (this.config.videoConfig.videoProcessor || pathToFfmpeg || 'ffmpeg'));
+
         this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
             //Hack to get async functions!
             setTimeout(async () => {
-                this.unifi = new Unifi(this.config.unifi, 500, 2, this.log);
-                this.uFlows = new UnifiFlows(this.unifi, this.config.unifi, await Unifi.determineEndpointStyle(this.config.unifi.controller, this.log), this.log);
-                await this.didFinishLaunching();
+                try {
+                    this.unifi = new Unifi(this.config.unifi, 500, 2, this.log);
+                    this.uFlows = new UnifiFlows(this.unifi, this.config.unifi, await Unifi.determineEndpointStyle(this.config.unifi.controller, this.log), this.log);
+                    await this.didFinishLaunching();
+                } catch (error) {
+                    this.log.error(error);
+                }
             });
         });
     }
@@ -71,7 +79,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 }
 
                 // Camera names must be unique
-                const uuid = this.hap.uuid.generate(camera.name);
+                const uuid = this.hap.uuid.generate(camera.id);
                 camera.uuid = uuid;
                 const cameraAccessory = new this.Accessory(camera.name, uuid);
 
@@ -85,7 +93,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
                 // Only add new cameras that are not cached
                 if (!this.accessories.find((x: PlatformAccessory) => x.UUID === uuid)) {
-                    this.log.info('Adding ' + cameraAccessory.context.cameraConfig.uuid);
+                    this.log.info('Adding ' + cameraAccessory.context.cameraConfig.uuid + ' (' + cameraAccessory.context.cameraConfig.name + ')');
                     this.configureAccessory(cameraAccessory); // abusing the configureAccessory here
                     this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [cameraAccessory]);
                 }
@@ -94,7 +102,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             // Remove cameras that were not in previous call
             this.accessories.forEach((accessory: PlatformAccessory) => {
                 if (!cameras.find((x: UnifiCamera) => x.uuid === accessory.context.cameraConfig.uuid)) {
-                    this.log.info('Removing ' + accessory.context.cameraConfig.uuid);
+                    this.log.info('Removing ' + accessory.context.cameraConfig.uuid + ' (' + accessory.context.cameraConfig.name + ')');
                     this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
                 }
             });
@@ -117,6 +125,8 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         });
 
         const cameraConfig: CameraConfig = cameraAccessory.context.cameraConfig;
+
+        //TODO: Update the ip of the camera since that could have changed!
 
         //Update the camera config!
         const videoConfigCopy: VideoConfig = JSON.parse(JSON.stringify(this.config.videoConfig));

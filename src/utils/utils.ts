@@ -1,4 +1,12 @@
+import * as https from "https";
+import fetch, { Headers, Response, RequestInfo, RequestInit } from "node-fetch";
+
 export class Utils {
+
+    //Since Protect often uses self-signed certificates, we need to disable TLS validation.
+    private static httpsAgent = new https.Agent({
+        rejectUnauthorized: false
+    });
 
     public static pause(duration: number): Promise<any> {
         return new Promise(res => setTimeout(res, duration));
@@ -16,23 +24,21 @@ export class Utils {
         }
     }
 
-    public static checkResponseForErrors(response: any, fieldToCheck: string, subFields: string[] = []): void {
-        if (!response) {
-            throw new Error('No response received!');
+    public static async fetch(url: RequestInfo, options: RequestInit, headers: Headers): Promise<Response> {
+        options.agent = this.httpsAgent;
+        options.headers = headers;
+
+        let response: Response = await fetch(url, options);
+        if (response.status === 401) {
+            throw new Error('Invalid credentials');
+        }
+        if (response.status === 403) {
+            throw new Error('Access Forbidden');
+        }
+        if (!response.ok) {
+            throw new Error('Invalid response: ' + response);
         }
 
-        if (!response[fieldToCheck]) {
-            throw new Error('Invalid response, missing: ' + fieldToCheck);
-
-        } else if (response[fieldToCheck].error) {
-            throw new Error('Error in response: ' + response[fieldToCheck].error);
-
-        } else if (subFields && subFields.length > 0) {
-            for (const subField of subFields) {
-                if (!response[fieldToCheck][subField]) {
-                    throw new Error('Invalid response, missing: ' + subField + ' on ' + fieldToCheck);
-                }
-            }
-        }
+        return response;
     }
 }
