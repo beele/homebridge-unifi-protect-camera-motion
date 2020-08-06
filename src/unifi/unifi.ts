@@ -10,6 +10,7 @@ export class Unifi {
     private readonly initialBackoffDelay: number;
     private readonly maxRetries: number;
     private readonly log: Logging;
+    private readonly networkLogger: Logging;
 
     constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, log: Logging) {
         this.config = config;
@@ -17,10 +18,7 @@ export class Unifi {
         this.maxRetries = maxRetries;
 
         this.log = log;
-
-        if (this.config.debug_network_traffic) {
-            //TODO: Fix network debugging
-        }
+        this.networkLogger = this.config.debug_network_traffic ? this.log : undefined;
     }
 
     public static async determineEndpointStyle(baseControllerUrl: string, log: Logging): Promise<UnifiEndPointStyle> {
@@ -30,7 +28,10 @@ export class Unifi {
 
         const headers: Headers = new Headers();
         headers.set('Content-Type', 'application/json');
-        const response: Response = await Utils.fetch(baseControllerUrl, {method: 'GET'}, headers);
+        const response: Response = await Utils.fetch(baseControllerUrl,
+            {method: 'GET'},
+            headers
+        );
 
         const csrfToken = response.headers.get('X-CSRF-Token');
         if (csrfToken) {
@@ -64,8 +65,9 @@ export class Unifi {
 
         const loginPromise: Promise<Response> = Utils.fetch(endpointStyle.authURL, {
             body: JSON.stringify({username: username, password: password}),
-            method: 'POST'
-        }, headers);
+            method: 'POST'},
+            headers, this.networkLogger
+        );
         const response: Response = await Utils.backOff(this.maxRetries, loginPromise, this.initialBackoffDelay);
 
         this.log.debug('Authenticated, returning session');
@@ -84,7 +86,7 @@ export class Unifi {
     }
 
     public isSessionStillValid(session: UnifiSession): boolean {
-        //Validity duration for now set at 12 hours!
+        // Validity duration for now set at 12 hours!
         if (session) {
             if ((session.timestamp + (12 * 3600 * 1000)) >= Date.now()) {
                 return true;
@@ -107,7 +109,10 @@ export class Unifi {
             headers.set('Authorization', 'Bearer ' + session.authorization)
         }
 
-        const bootstrapPromise: Promise<Response> = Utils.fetch(endPointStyle.apiURL + '/bootstrap', {method: 'GET'}, headers);
+        const bootstrapPromise: Promise<Response> = Utils.fetch(endPointStyle.apiURL + '/bootstrap',
+            {method: 'GET'},
+            headers, this.networkLogger
+        );
         const response: Response = await Utils.backOff(this.maxRetries, bootstrapPromise, this.initialBackoffDelay);
         const cams = (await response.json()).cameras;
 
@@ -131,7 +136,7 @@ export class Unifi {
                 }
             }
 
-            //Sort streams on highest res!
+            // Sort streams on highest res!
             streams.sort((a: UnifiCameraStream, b: UnifiCameraStream): number => {
                 return (a.height * a.width) - (b.height * b.width);
             });
@@ -161,7 +166,10 @@ export class Unifi {
         } else {
             headers.set('Authorization', 'Bearer ' + session.authorization)
         }
-        const eventsPromise: Promise<Response> = Utils.fetch(endPointStyle.apiURL + '/events?end=' + endEpoch + '&start=' + startEpoch + '&type=motion', {method: 'GET'}, headers);
+        const eventsPromise: Promise<Response> = Utils.fetch(endPointStyle.apiURL + '/events?end=' + endEpoch + '&start=' + startEpoch + '&type=motion',
+            {method: 'GET'},
+            headers, this.networkLogger
+        );
         const response: Response = await Utils.backOff(this.maxRetries, eventsPromise, this.initialBackoffDelay);
 
         const events: any[] = await response.json();
@@ -175,7 +183,7 @@ export class Unifi {
                 cameraId: event.camera,
                 camera: null,
                 score: event.score,
-                timestamp: event.start //event.end is null when the motion is still ongoing!
+                timestamp: event.start // event.end is null when the motion is still ongoing!
             }
         });
     }

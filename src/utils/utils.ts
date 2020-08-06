@@ -1,9 +1,10 @@
 import * as https from "https";
 import fetch, { Headers, Response, RequestInfo, RequestInit } from "node-fetch";
+import {Logging, LogLevel} from "homebridge";
 
 export class Utils {
 
-    //Since Protect often uses self-signed certificates, we need to disable TLS validation.
+    // Since Protect often uses self-signed certificates, we need to disable TLS validation.
     private static httpsAgent = new https.Agent({
         rejectUnauthorized: false
     });
@@ -24,11 +25,20 @@ export class Utils {
         }
     }
 
-    public static async fetch(url: RequestInfo, options: RequestInit, headers: Headers): Promise<Response> {
+    public static async fetch(url: RequestInfo, options: RequestInit, headers: Headers, networkLogger: Logging = this.fakeLogging()): Promise<Response> {
         options.agent = this.httpsAgent;
         options.headers = headers;
 
+        networkLogger.debug('Calling: ' + url);
+        networkLogger.debug('Method: ' + options.method);
+        networkLogger.debug('With headers: ' + JSON.stringify(options.headers, null, 4));
+        if (options.body) {
+           networkLogger.debug('Body: ' + JSON.stringify(options.body, null, 4));
+        }
+
         let response: Response = await fetch(url, options);
+        networkLogger.debug('Response: \n'  + JSON.stringify(response, null, 4));
+
         if (response.status === 401) {
             throw new Error('Invalid credentials');
         }
@@ -38,7 +48,18 @@ export class Utils {
         if (!response.ok) {
             throw new Error('Invalid response: ' + response);
         }
-
         return response;
+    }
+
+    public static fakeLogging(): Logging {
+        // @ts-ignore
+        return {
+            prefix: "FAKE_LOGGING",
+            error(message: string, ...parameters: any[]): void {},
+            info(message: string, ...parameters: any[]): void {},
+            log(level: LogLevel, message: string, ...parameters: any[]): void {},
+            warn(message: string, ...parameters: any[]): void {},
+            debug(message: string, ...parameters: any[]): void {},
+        }
     }
 }
