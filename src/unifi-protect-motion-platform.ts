@@ -26,8 +26,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
     public readonly hap: HAP = this.api.hap;
     public readonly Accessory: typeof PlatformAccessory = this.api.platformAccessory;
 
-    private readonly accessories: Array<PlatformAccessory> = [];
-
+    private accessories: Array<PlatformAccessory> = [];
     private unifi: Unifi;
     private uFlows: UnifiFlows;
 
@@ -56,6 +55,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         });
     }
 
+    // This is called by us and is executed after existing accessories have been restored.
     public async didFinishLaunching(): Promise<void> {
         let cameras: UnifiCamera[] = [];
         try {
@@ -81,32 +81,39 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
                 // Camera names must be unique
                 const uuid = this.hap.uuid.generate(camera.id);
                 camera.uuid = uuid;
-                const cameraAccessory = new this.Accessory(camera.name, uuid);
-
-                cameraAccessory.context.cameraConfig = {
-                    uuid: uuid,
-                    name: camera.name,
-                    camera: camera
-                } as CameraConfig;
-
-                UnifiCameraAccessoryInfo.createAccessoryInfo(camera, cameraAccessory, this.hap);
 
                 // Only add new cameras that are not cached
-                if (!this.accessories.find((x: PlatformAccessory) => x.UUID === uuid)) {
+                const existingAccessory: PlatformAccessory = this.accessories.find((x: PlatformAccessory) => x.UUID === uuid);
+                if (!existingAccessory) {
+                    const cameraAccessory = new this.Accessory(camera.name, uuid);
+                    cameraAccessory.context.cameraConfig = {
+                        uuid: uuid,
+                        name: camera.name,
+                        camera: camera
+                    } as CameraConfig;
+
+                    UnifiCameraAccessoryInfo.createAccessoryInfo(camera, cameraAccessory, this.hap);
+
                     this.log.info('Adding ' + cameraAccessory.context.cameraConfig.uuid + ' (' + cameraAccessory.context.cameraConfig.name + ')');
                     this.configureAccessory(cameraAccessory); // abusing the configureAccessory here
                     this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [cameraAccessory]);
+                } else {
+                    // Update the ip of the camera
+                    existingAccessory.context.cameraConfig.camera.ip = cameras.find((cam: UnifiCamera) => cam.id === existingAccessory.context.cameraConfig.camera.id).ip;
                 }
             });
 
             // Remove cameras that were not in previous call
-            this.accessories.forEach((accessory: PlatformAccessory) => {
+            this.accessories = this.accessories.filter((accessory: PlatformAccessory) => {
                 if (!cameras.find((x: UnifiCamera) => x.uuid === accessory.context.cameraConfig.uuid)) {
                     this.log.info('Removing ' + accessory.context.cameraConfig.uuid + ' (' + accessory.context.cameraConfig.name + ')');
                     this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+                } else {
+                    return accessory;
                 }
             });
 
+            // Set up the motion detection for all valid accessories
             try {
                 const motionDetector: MotionDetector = new MotionDetector(this.api, this.config, this.uFlows, cameras, this.log);
                 await motionDetector.setupMotionChecking(this.accessories);
@@ -117,6 +124,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         }
     }
 
+    // This is called manually by us for newly added accessories, and is called automatically by Homebridge for accessories that have already been added!
     public configureAccessory(cameraAccessory: PlatformAccessory): void {
         this.log.info('Configuring accessory ' + cameraAccessory.displayName);
 
@@ -125,12 +133,9 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         });
 
         const cameraConfig: CameraConfig = cameraAccessory.context.cameraConfig;
-
-        //TODO: Update the ip of the camera since that could have changed!
-
-        //Update the camera config!
+        // Update the camera config!
         const videoConfigCopy: VideoConfig = JSON.parse(JSON.stringify(this.config.videoConfig));
-        //Assign stillImageSource, source and debug (overwrite if they are present from the videoConfig, which they should not be!)
+        // Assign stillImageSource, source and debug (overwrite if they are present from the videoConfig, which they should not be!)
         videoConfigCopy.stillImageSource = '-i http://' + cameraConfig.camera.ip + '/snap.jpeg';
         videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + this.config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(cameraConfig.camera.streams);
         videoConfigCopy.debug = this.config.unifi.debug;
