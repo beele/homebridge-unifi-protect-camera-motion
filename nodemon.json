@@ -1,0 +1,12 @@
+{
+    "watch": [
+        "src"
+    ],
+    "ext": "ts",
+    "ignore": [],
+    "exec": "tsc && homebridge -C -D -P . -U ./resources/test-config/",
+    "signal": "SIGTERM",
+    "env": {
+        "NODE_OPTIONS": "--trace-warnings --inspect=localhost:4444"
+    }
+}
