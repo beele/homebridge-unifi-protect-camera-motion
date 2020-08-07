@@ -7,7 +7,8 @@
         "postinstall": "node scripts/postinstall.js",
         "prepublishOnly": "node --max-old-space-size=1024 ./node_modules/typescript/lib/tsc.js",
         "compile": "node --max-old-space-size=1024 ./node_modules/typescript/lib/tsc.js",
-        "homebridge": "tsc && homebridge -D -P . -U ./resources/test-config/",
+        "homebridge": "tsc && homebridge -C -D -P . -U ./resources/test-config/",
+        "watch": "nodemon",
         "test": "jest --config jest.config.js --collect-coverage"
     },
     "license": "ISC",
@@ -35,11 +36,12 @@
         "googlephotos": "^0.3.3"
     },
     "devDependencies": {
-        "typescript": "^3.9.7",
+        "@types/jest": "^25.2.3",
+        "@types/node": "^14.0.27",
         "homebridge": "^1.1.1",
         "jest": "^24.9.0",
+        "nodemon": "^2.0.4",
         "ts-jest": "^24.3.0",
-        "@types/jest": "^25.2.3",
-        "@types/node": "^14.0.27"
+        "typescript": "^3.9.7"
     }
 }
