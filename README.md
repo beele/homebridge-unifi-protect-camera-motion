@@ -6,29 +6,35 @@
   
 This Homebridge plugin allows you to add your Unifi Protect Cameras (and their Motion Sensors) to Homekit.
 
-It is based on the very popular [FFmpeg Homebridge plugin](https://github.com/KhaosT/homebridge-camera-ffmpeg#readme) plugin, with Unifi-specific conveniences added to it. It is not necessary to have that plugin installed alongside this one, though they can be installed at the same time if you have non-Unifi Protect cameras as well.
+It is based on the very popular [FFmpeg Homebridge plugin](https://github.com/KhaosT/homebridge-camera-ffmpeg#readme) plugin, with Unifi-specific conveniences added to it. 
+It is not necessary to have that plugin installed alongside this one, though they can be installed at the same time if you have non-Unifi Protect cameras as well.
 
 # How it Works
-This plugin will automatically discover all of the Unifi Protect cameras from your Protect installation, and provide the following sensors for each one that it finds:
+This plugin will automatically discover all the Unifi cameras from your Protect installation, and provide the following sensors for each one it finds:
 
 * Camera, for viewing live RTSP streams
-* Motion sensor, for sending push-notifications when there is movement
-* A Switch, for easily enabling and disabling motion detection (on by default)
+* Motion sensor, for sending push-notifications when motion or one of the desired objects have been detected
+* A Switch, for easily enabling and disabling motion detection (on by default and after a Homebridge restart)
+* A Switch, to trigger a motion event manually, forcing a rich notification
+* (if enabled) A switch, that acts as a doorbell trigger, to manually trigger a rich doorbell notification
 
 # Motion Events
-Motion is detected by the Unifi Protect API and is used to generate a Motion Event in Homekit. This plugin can use one of two methods to generate these events:  
-- The basic method: The "score" of the Unifi Protect motion event (which currently has a bug and is 0 as long as the motion is occurring!)
-- The advanced method: Object detection by use of a Tensorflow model. This logic/model runs on-device, and no data is ever sent to any online/external/cloud source or service. It is based on [this](https://github.com/tensorflow/tfjs-models/tree/master/coco-ssd) project.
+The plugin uses the Unifi Protect API to get motion events on a per camera basis.
+When motion has been detected one of the two methods below will be used to generate a motion notification in Homekit:  
+- The basic method: The "score" of the Unifi Protect motion event (which currently has a bug and is 0 as long as the motion is ongoing!)
+- The advanced method: Object detection by use of a Tensorflow model. 
+  This logic/model runs on-device, and no data will be sent to any online/external/cloud source or service. 
+  It is based on the [coco ssd](https://github.com/tensorflow/tfjs-models/tree/master/coco-ssd) project.
   
 # Installation:  
-Before installing this plugin, please make sure all of the prerequisites are completely first.
+Before installing this plugin, please make sure all the prerequisites have been met first.
 Consult the readme and [the wiki](https://github.com/beele/homebridge-unifi-protect-camera-motion/wiki) before proceeding.
 
-First, this plugin requires node-canvas:
+In short, the main dependencies are:
 - Raspberry Pi / Ubuntu / Debian Linux:
   - install: `sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev`
 - Mac OS: 
-  - install via homebrew: `brew install pkg-config cairo pango libpng jpeg giflib librsvg`   
+  - install via Homebrew: `brew install pkg-config cairo pango libpng jpeg giflib librsvg`   
 - Linux:
   - install g++: `sudo apt install g++`
 - Other OSes:
@@ -95,14 +101,8 @@ Next, open the `config.json` that contains your Homebridge configuration, and ad
 ```  
 
 You can verify the correctness of your config file by using [jsonlint](https://jsonlint.com/).   
-
 The config must be valid or Homebridge will fail to restart correctly.
-
 If you are using Homebridge Config X, it will do its best to alert you to any syntax errors it finds.
-
-If you are upgrading from a pre 0.4.1 version please note that your cameras will be added in automatically by the plugin from now on.
-This means that the old cameras need to be removed as these will no longer work.
-Tap on a camera preview to open the camera feed, click the settings icon and scroll all the way to the bottom, there select `Remove camera from home`.
 
 ## Config fields:  
 
@@ -156,13 +156,13 @@ To enable the upload to Google Photos functionality:
 - Click `Create credentials` from the top and select `OAuth Client ID` from the dropdown options
 - Select `web application`, give it a name and fill in the callback URLs with: `http://localhost:8080` for the first and `http://localhost:8080/oauth2-callback` for the second entry (make sure the press return/enter to submit the values, as multiple ones are possible), then click `create` at the bottom of the page
 - Copy your Client ID and Client secret and store them safely
-- Open your config.json, and add a `googlePhotos` and as described in the table above
-- Start your homebridge instance, it will print out an url, open it in a browser an follow the login instructions
+- Open your config.json, and add a `googlePhotos` object as described in the table above
+- Start your Homebridge instance, it will print out an url, open it in a browser and follow the login instructions
 - The page where you will be redirected will display an error unless you are running Homebridge on the same machine as you are running the browser
-- Copy the full url, replace the localhost in the address bar with the ip-address of your raspberry pi, visit the page, you should get the following message: `OAuth2 callback handled!`
+- Copy the full url, replace the localhost (if Homebridge is not running on your current machine) in the address bar with the ip-address of your Homebridge device, visit the page, you should get the following message: `OAuth2 callback handled!`
 - You are now authenticated, and the refresh token has been saved to the previously created config file.
 - The plugin will then create an album named `Homebridge-Unifi-Protect-Motion-Captures`, it will also store the ID of this album so the next time it is not created again (you can rename this album to anything you want)
-- Any detected motions (both normal and enhanced) will now be uploaded to the previously created album
+- Any detected motions (both normal and enhanced) will now be uploaded to the newly created album
 
 
 ### Video Config:
@@ -170,38 +170,37 @@ To enable the upload to Google Photos functionality:
 This config object is the same as used in the Homebridge-Camera-FFmpeg plugin.
 Consult the documentation for more details: [FFmpeg configuration](https://github.com/KhaosT/homebridge-camera-ffmpeg#readme). 
 - ***Make sure the fields `source` and `stillImageSource` are omitted from the config object as these will be generated by the plugin itself!***
-- Make sure that your Unifi camera has anonymous snapshots enabled and that preferably only one RTSP stream is enabled, otherwise it might not work correctly!  
-  - To enable anonymous snapshots: Login on the camera itself (visit the camera's ip address) <br/>  
+- Make sure each of your Unifi cameras has anonymous snapshots enabled, this is needed to perform the object detection.
+  - To enable anonymous snapshots: Login on the camera itself (visit the camera's ip address)    
       ![Anonymous snapshot](resources/images/readme/anonymous_snapshot.jpg?raw=true "CloudKey Gen2 Plus")  
-  - To enable an RTSP stream: Login on the Protect web UI and go the settings of the camera and open the manage tab<br/>   
+  - To enable an RTSP stream: Login on the Protect web UI and go the settings of the camera and open the 'manage' tab   
       Make sure that all your cameras have the same port for the RTSP stream!  
-      For optimal results it is best to assign a static ip to your cameras <br/>  
+      For optimal results it is best to assign a static ip to your cameras  
       ![Enable RTSP stream](resources/images/readme/enable_rtsp.jpg?raw=true "CloudKey Gen2 Plus")  
+- Make sure each of your Unifi cameras has at least one RTSP stream enabled, I suggest enabling the 1080P one in the Protect web interface, this is needed to view the livestream from the camera.
   
 ## How to add the cameras to your Homekit setup:  
 
-The enumerated cameras (and the motion sensors) will not show up automatically, you need to add them in by yourself:
+As per 0.4.1 the enumerated cameras and accompanying switches/triggers will show up automatically, You don't need to add them in manually anymore!
+If you add your Homebridge instance to the Home app the cameras will automatically be there.
 
-- Open the Home app  
-- Click the (+) icon on the top  
-- Select `Add Accessory`  
-- In the next screen select `I Don't Have a Code or Cannot Scan`
-- Your cameras should show up in the next screen, select one  
-- Enter the code for your Homebridge in the prompt, the camera will be added  
-- Repeat for all the cameras you want to add  
+### Upgrade notice!
+
+If you are upgrading from a pre 0.4.1 the cameras you previously had in the Home app will no longer work and will have to be removed!
+Tap on a camera preview to open the camera feed, click the settings icon and scroll all the way to the bottom, there select `Remove camera from home`.
   
 ## How to enable rich notifications (with image preview):  
   
 - Go to the settings of the camera view in the Home app  
 - Each camera has an accompanying motion sensor   
 - Enable notifications for the camera  
-- Whenever motion is detected you will get a notification from the home app with a snapshot from the camera  
+- Whenever motion has been detected you will get a notification from the home app with a snapshot from the camera  
   
 ## Tested with:  
   
 - Raspberry Pi 3B with Node 11.15.0 as Homebridge host  
 - Raspberry Pi 4B 4GB with Node 12.14.0 as Homebridge host  
-- Macbook Pro with Node 12.13.1 as Homebridge host  
+- Macbook Pro with Node 12.18.0 as Homebridge host  
 - Windows 10 with Node 12.13.0 as Homebridge host
 - Ubiquiti UniFi CloudKey Gen2 Plus - Cloud Key with Unifi Protect functionality  
   <br/><br/>![CloudKey Gen2 Plus](resources/images/readme/cloudkey-gen2plus.jpg?raw=true "CloudKey Gen2 Plus")  
@@ -214,27 +213,33 @@ The enumerated cameras (and the motion sensors) will not show up automatically, 
   
 ### Limitations:  
  
-- Running this plugin on CPUs that do not support AVX (celerons in NAS, ...) is not supported because there are no prebuilt Tensorflow binaries. Compiling Tensorflow from scratch is out of scope for this project!
-  - Run it on a RBPI or MacOS/Windows/Linux (Debian based)
+- Running this plugin on CPUs that do not support AVX (Celerons in NAS systems, ...) is not supported because there are no prebuilt Tensorflow binaries. 
+  Compiling Tensorflow from scratch is out of scope for this project!
+  - Run it on a RBPI or machine with MacOS / Windows / Linux (Debian based)
 - ~~Previews in notifications are requested by the Home app, and can thus be "after the fact" and show an image with nothing of interest on it.~~   
   - ~~The actual motion detection is done with the snapshot that is requested internally.~~  
-- Unifi Protect has a snapshot saved for every event, and there is an API to get these (with Width & Height) but the actual saved image is pretty low res and is upscaled to 1080p. Using the Anonymous snapshot actually gets a full res snapshot (better for object detection).  
-- There is no way to know what motion zone (from Unifi) a motion has occurred in. This information is not present is the response from their API.  
-- The enhanced object detection using CoCo is far from perfect and might not catch all the thing you want it to.  
+- Unifi Protect has a snapshot saved for every event, and there is an API to get these (with Width & Height), but the actual saved image is pretty low res and is upscaled to 1080p. 
+  Using the Anonymous snapshot actually gets a full resolution snapshot which is better for object detection.  
+- There is no way to know what motion zone (from Unifi) a motion has occurred in. 
+  This information is not present is the response from their API.  
+- The enhanced object detection using CoCo is not perfect and might not catch all the thing you want it to.
+  It should do fine in about 95% of cases though.
   
 ### TODOs:  
 
 - Add more unit and integration tests 
-- Implement required changes to make this work with Unifi OS (In progress)
-- ~~Upgrade tfjs-node, now held back because newer versions~~ (Fix in beta)
-- ~~Figure out how to get higher res streams on iPhone (only iPad seems to request 720p streams)~~ (Not possible) 
+- Upgrade tfjs-node, now held back because newer versions (Upgrade to 2.x.x in future release)
+- Add support for MQTT (coming in future release)
+- ~~Implement required changes to make this work with Unifi OS~~
+- ~~Figure out how to get higher res streams on iPhone (only iPad seems to request 720p streams)~~ (Done)
 - ~~Extend documentation & wiki~~ (Done)
   
 # Plugin development:  
 - Checkout the git repo  
 - Run `npm install` in the project root folder
 - Adjust the dummy config under `resources/test-config/config.json`  
-- use `npm run homebridge` to start a Homebridge instance that points to the local config  
+- use `npm run watch` to automatically watch for changes and restart Homebridge if needed, you can also add a remote debugger on port 4444 to debug the code.
+- use `npm run homebridge` to start a Homebridge instance that points to the local config that does not auto-reload when changes are saved.
   
 # Disclaimer  
   
