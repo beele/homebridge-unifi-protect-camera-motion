@@ -1,4 +1,8 @@
-# Unifi-Protect-Camera-Motion [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins) [![Build Status](https://travis-ci.com/beele/homebridge-unifi-protect-camera-motion.svg?branch=master)](https://travis-ci.com/beele/homebridge-unifi-protect-camera-motion)  
+# Unifi-Protect-Camera-Motion [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins) 
+
+[![Build Status](https://travis-ci.com/beele/homebridge-unifi-protect-camera-motion.svg?branch=master)](https://travis-ci.com/beele/homebridge-unifi-protect-camera-motion)
+[![npm](https://badge.fury.io/js/homebridge-unifi-protect-camera-motion.svg)](https://www.npmjs.com/package/homebridge-unifi-protect-camera-motion)
+[![donate](https://img.shields.io/badge/donate-paypal-green)](https://paypal.me/MrBeele?locale.x=nl_NL)
   
 This Homebridge plugin allows you to add your Unifi Protect Cameras (and their Motion Sensors) to Homekit.
 
