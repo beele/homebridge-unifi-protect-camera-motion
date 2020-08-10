@@ -6,7 +6,7 @@ export class UnifiCameraAccessoryInfo {
     public static createAccessoryInfo(camera: UnifiCamera, accessory: PlatformAccessory, hap: HAP): Service {
         const cameraAccessoryInfo: Service = accessory.getService(hap.Service.AccessoryInformation);
         if (cameraAccessoryInfo) {
-            cameraAccessoryInfo.setCharacteristic(hap.Characteristic.Manufacturer, 'Ubiquity');
+            cameraAccessoryInfo.setCharacteristic(hap.Characteristic.Manufacturer, 'Ubiquiti');
             if (camera.type) {
                 cameraAccessoryInfo.setCharacteristic(hap.Characteristic.Model, camera.type);
             }
