@@ -27,12 +27,18 @@ function createCustomBinaryJson(packageUrl) {
         "tf-lib": packageUrl
     };
 
-    console.log('Writing custom binary definition in: ' +  process.cwd() + '/node_modules/@tensorflow/tfjs-node/scripts/');
+    let tfjsNodeFolder = process.cwd() + '/node_modules/@tensorflow/tfjs-node/';
+    let tfjsNodeFolderFound = fs.existsSync(tfjsNodeFolder);
+    if (!tfjsNodeFolderFound) {
+        tfjsNodeFolder = process.cwd() + '../../node_modules/@tensorflow/tfjs-node/';
+        tfjsNodeFolderFound = fs.existsSync(tfjsNodeFolder);
+    }
 
-    if (fs.existsSync(process.cwd() + '/node_modules/@tensorflow/tfjs-node/scripts/')) {
-        fs.writeFileSync(process.cwd() + '/node_modules/@tensorflow/tfjs-node/scripts/custom-binary.json', JSON.stringify(content, null, 4));
+    if (tfjsNodeFolderFound) {
+        console.log('Writing custom binary definition in: ' +  tfjsNodeFolder + 'scripts/');
+        fs.writeFileSync(tfjsNodeFolder + 'scripts/custom-binary.json', JSON.stringify(content, null, 4));
 
-        exec('npm install', {cwd: process.cwd() + '/node_modules/@tensorflow/tfjs-node/'}, (error, stdout, stderr) => {
+        exec('npm install', {cwd: tfjsNodeFolder}, (error, stdout, stderr) => {
             if (error) {
                 console.log(error);
                 return;
@@ -40,5 +46,7 @@ function createCustomBinaryJson(packageUrl) {
             console.log(stdout);
             console.error(stderr);
         });
+    } else {
+        console.log('Folder does not exist: ' + tfjsNodeFolderFound);
     }
 }
