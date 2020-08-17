@@ -30,6 +30,7 @@ function createCustomBinaryJson(packageUrl) {
     let tfjsNodeFolder = process.cwd() + '/node_modules/@tensorflow/tfjs-node/';
     let tfjsNodeFolderFound = fs.existsSync(tfjsNodeFolder);
     if (!tfjsNodeFolderFound) {
+        console.log('Using fallback location for tfjs-node');
         // Move up in the folder tree two levels.
         tfjsNodeFolder = tfjsNodeFolder.replace('homebridge-unifi-protect-camera-motion/node_modules/', '')
         tfjsNodeFolderFound = fs.existsSync(tfjsNodeFolder);
@@ -40,7 +41,7 @@ function createCustomBinaryJson(packageUrl) {
         fs.writeFileSync(tfjsNodeFolder + 'scripts/custom-binary.json', JSON.stringify(content, null, 4));
 
         console.log('Running install for tfjs-node again with custom binary specified');
-        const installProcess = exec('sudo npm install --unsafe-perm=true', {cwd: tfjsNodeFolder});
+        const installProcess = exec('npm install --unsafe-perm=true', {cwd: tfjsNodeFolder});
 
         installProcess.stdout.pipe(process.stdout);
         installProcess.stderr.pipe(process.stderr);
