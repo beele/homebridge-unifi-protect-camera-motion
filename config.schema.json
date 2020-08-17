@@ -710,7 +710,7 @@
                         "title": "Video Codec",
                         "type": "string",
                         "default": "libx264",
-                        "description": "The coded to use, use h264_omx on Raspberry Pi",
+                        "description": "The codec to use, use h264_omx on Raspberry Pi",
                         "required": true
                     },
                     "packetSize": {
