@@ -11,7 +11,6 @@ import {
 import {Unifi, UnifiCamera} from "./unifi/unifi";
 import {UnifiFlows} from "./unifi/unifi-flows";
 import {PLATFORM_NAME, PLUGIN_NAME} from "./settings";
-import {VideoConfig} from "./streaming/video-config";
 import {MotionDetector} from "./motion/motion";
 import {UnifiCameraAccessoryInfo} from "./characteristics/unifi-camera-accessory-info";
 import {CameraConfig} from "./streaming/camera-config";
@@ -64,70 +63,61 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             this.log.info('Cannot get cameras: ' + error);
         }
 
-        if (cameras.length > 0) {
-            cameras.forEach((camera: UnifiCamera) => {
-                // Camera names must be unique
-                const uuid = this.hap.uuid.generate(camera.id);
-                camera.uuid = uuid;
+        cameras
+            .map((camera: UnifiCamera) => {
+                camera.uuid = this.hap.uuid.generate(camera.id);
+                const accessory: PlatformAccessory = this.accessories.find((existingAccessory: PlatformAccessory) => existingAccessory.UUID === camera.uuid);
+                return {camera, accessory}
+            })
+            .filter((cameraAndAccessory: { camera: UnifiCamera; accessory: PlatformAccessory }) => {
+                return cameraAndAccessory.accessory === undefined;
+            })
+            .map((cameraAndAccessory: { camera: UnifiCamera; accessory: PlatformAccessory }) => {
+                return cameraAndAccessory.camera;
+            })
+            .forEach((camera: UnifiCamera) => {
+                const cameraAccessory = new this.Accessory(camera.name, camera.uuid);
+                cameraAccessory.context.cameraConfig = {
+                    //Only assign fields here that do not change!
+                    uuid: camera.uuid,
+                    name: camera.name,
+                    camera: camera
+                } as CameraConfig;
 
-                // Only add new cameras that are not cached
-                const existingAccessory: PlatformAccessory = this.accessories.find((x: PlatformAccessory) => x.UUID === uuid);
-                if (!existingAccessory) {
-                    const cameraAccessory = new this.Accessory(camera.name, uuid);
-                    cameraAccessory.context.cameraConfig = {
-                        //Only assign fields here that do not change!
-                        uuid: uuid,
-                        name: camera.name,
-                        camera: camera
-                    } as CameraConfig;
+                UnifiCameraAccessoryInfo.createAccessoryInfo(camera, cameraAccessory, this.hap);
 
-                    UnifiCameraAccessoryInfo.createAccessoryInfo(camera, cameraAccessory, this.hap);
-
-                    this.log.info('Adding ' + cameraAccessory.context.cameraConfig.uuid + ' (' + cameraAccessory.context.cameraConfig.name + ')');
-                    this.configureAccessory(cameraAccessory); // abusing the configureAccessory here
-                    this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [cameraAccessory]);
-                }
+                this.log.info('Adding ' + cameraAccessory.context.cameraConfig.uuid + ' (' + cameraAccessory.context.cameraConfig.name + ')');
+                this.configureAccessory(cameraAccessory); // abusing the configureAccessory here
+                this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [cameraAccessory]);
             });
 
-            // Remove cameras that were not in previous call
-            this.accessories = this.accessories.filter((accessory: PlatformAccessory) => {
-                if (!cameras.find((x: UnifiCamera) => x.uuid === accessory.context.cameraConfig.uuid)) {
-                    this.log.info('Removing ' + accessory.context.cameraConfig.uuid + ' (' + accessory.context.cameraConfig.name + ')');
-                    this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-                } else {
-                    return accessory;
-                }
-            });
-
-            // Set up the motion detection for all valid accessories
-            try {
-                this.accessories.forEach((accessory) => {
-                    const matchingCamera: UnifiCamera = cameras.find((cam: UnifiCamera) => cam.id === accessory.context.cameraConfig.camera.id);
-
-                    const cameraConfig: CameraConfig = accessory.context.cameraConfig;
-                    // Update the camera object
-                    cameraConfig.camera = matchingCamera;
-                    // Update the camera config
-                    const videoConfigCopy: VideoConfig = JSON.parse(JSON.stringify(this.config.videoConfig));
-                    // Assign stillImageSource, source and debug (overwrite if they are present from the videoConfig, which they should not be)
-                    videoConfigCopy.stillImageSource = '-i http://' + matchingCamera.ip + '/snap.jpeg';
-                    videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + this.config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(matchingCamera.streams);
-                    videoConfigCopy.debug = this.config.unifi.debug;
-                    cameraConfig.videoConfig = videoConfigCopy;
-
-                    UnifiCameraMotionSensor.setupMotionSensor(cameraConfig, accessory, this.config, this.hap, this.log);
-                    UnifiCameraDoorbell.setupDoorbell(cameraConfig, accessory, this.config, this.hap, this.log);
-                    UnifiCameraStreaming.setupStreaming(cameraConfig, accessory, this.config, this.api, this.log);
-                });
-
-                const motionDetector: MotionDetector = new MotionDetector(this.api, this.config, this.uFlows, cameras, this.log);
-                await motionDetector.setupMotionChecking(this.accessories);
-                this.log.info('Motion checking setup done!');
-            } catch (error) {
-                this.log.info('Error during motion checking setup: ' + error);
+        // Remove cameras that were not in previous call
+        this.accessories = this.accessories.filter((accessory: PlatformAccessory) => {
+            if (!cameras.find((x: UnifiCamera) => x.uuid === accessory.context.cameraConfig.uuid)) {
+                this.log.info('Removing ' + accessory.context.cameraConfig.uuid + ' (' + accessory.context.cameraConfig.name + ')');
+                this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+            } else {
+                return accessory;
             }
-        } else {
-            this.log.info('No cameras found!');
+        });
+
+        // Set up the motion detection for all valid accessories
+        try {
+            this.accessories.forEach((accessory) => {
+                const cameraConfig: CameraConfig = accessory.context.cameraConfig;
+                // Update the camera object
+                cameraConfig.camera = cameras.find((cam: UnifiCamera) => cam.id === accessory.context.cameraConfig.camera.id);
+
+                UnifiCameraMotionSensor.setupMotionSensor(cameraConfig, accessory, this.config, this.hap, this.log);
+                UnifiCameraDoorbell.setupDoorbell(cameraConfig, accessory, this.config, this.hap, this.log);
+                UnifiCameraStreaming.setupStreaming(cameraConfig, accessory, this.config, this.api, this.log);
+            });
+
+            const motionDetector: MotionDetector = new MotionDetector(this.api, this.config, this.uFlows, cameras, this.log);
+            await motionDetector.setupMotionChecking(this.accessories);
+            this.log.info('Motion checking setup done!');
+        } catch (error) {
+            this.log.info('Error during motion checking setup: ' + error);
         }
     }
 
@@ -149,8 +139,8 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             } else {
                 if (this.config.unifi.excluded_cameras.includes(camera.id)) {
                     this.log.info('Camera (' + camera.name + ') excluded by config!');
-                } else if(camera.streams.length < 1) {
-                    this.log.info('Camera (' + camera.name + ') excluded because is has no streams!');
+                } else if (camera.streams.length < 1) {
+                    this.log.info('Camera (' + camera.name + ') excluded because is has no available RTSP stream!');
                 }
             }
         });
