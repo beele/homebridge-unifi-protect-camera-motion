@@ -19,6 +19,7 @@ export class UnifiStreamingDelegate extends StreamingDelegate {
     constructor(cameraId: string, cameraName: string, log: Logging, api: API, cameraConfig: object, videoProcessor: string) {
         super(log, cameraConfig, api, api.hap, videoProcessor, null);
         this.cameraId = cameraId;
+        this.cameraName = cameraName;
         this.log = log;
     }
 
@@ -31,11 +32,11 @@ export class UnifiStreamingDelegate extends StreamingDelegate {
         this.log.debug('Handling snapshot request for Camera: ' + this.cameraName);
 
         if (!this.camera || !this.camera.lastDetectionSnapshot) {
-            this.log.debug('Getting snapshot via FFmpeg');
+            this.log.debug('Getting new snapshot');
 
-            UnifiStreamingDelegate.uFlows.getCameraSnapshot(this.camera);
-
-            super.handleSnapshotRequest(request, callback);
+            UnifiStreamingDelegate.uFlows.getCameraSnapshot(this.camera).then((snapshot: Buffer) => {
+                callback(undefined, snapshot);
+            });
         } else {
             this.log.debug('Returning annotated snapshot');
             const canvas: Canvas = ImageUtils.resizeCanvas(this.camera.lastDetectionSnapshot, request.width, request.height);

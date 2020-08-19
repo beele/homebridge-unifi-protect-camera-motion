@@ -188,7 +188,7 @@ export class Unifi {
         });
     }
 
-    public async getSnapshotForCamera(session: UnifiSession, endPointStyle: UnifiEndPointStyle, camera: UnifiCamera): Promise<any> {
+    public async getSnapshotForCamera(session: UnifiSession, endPointStyle: UnifiEndPointStyle, camera: UnifiCamera): Promise<Buffer> {
         const headers: Headers = new Headers();
         headers.set('Content-Type', 'application/json');
         if (endPointStyle.isUnifiOS) {
@@ -197,12 +197,12 @@ export class Unifi {
         } else {
             headers.set('Authorization', 'Bearer ' + session.authorization)
         }
-        const eventsPromise: Promise<Response> = Utils.fetch(endPointStyle.apiURL + '/cameras/' + camera.id,
+        const eventsPromise: Promise<Response> = Utils.fetch(endPointStyle.apiURL + '/cameras/' + camera.id + '/snapshot/',
             {method: 'GET'},
             headers, this.networkLogger
         );
         const response: Response = await Utils.backOff(this.maxRetries, eventsPromise, this.initialBackoffDelay);
-        return response;
+        return response.buffer()
     }
 
     public static pickHighestQualityAlias(streams: UnifiCameraStream[]): string {

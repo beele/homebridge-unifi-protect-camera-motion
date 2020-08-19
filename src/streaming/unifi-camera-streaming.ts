@@ -12,6 +12,16 @@ export class UnifiCameraStreaming {
         if (!videoConfigCopy.vcodec) {
             videoConfigCopy.vcodec = 'copy';
         }
+        if (!videoConfigCopy.mapvideo) {
+            videoConfigCopy.mapvideo = '0:1';
+        }
+        if (!videoConfigCopy.mapaudio) {
+            videoConfigCopy.mapaudio = '0:0';
+        }
+        if (!videoConfigCopy.packetSize) {
+            videoConfigCopy.packetSize = 564;
+        }
+
         // TODO: Find a way to set the pixel format to yuvj422p
         videoConfigCopy.source = '-re -rtsp_transport tcp -i ' + config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(cameraConfig.camera.streams);
         videoConfigCopy.debug = config.unifi.debug;
