@@ -188,6 +188,23 @@ export class Unifi {
         });
     }
 
+    public async getSnapshotForCamera(session: UnifiSession, endPointStyle: UnifiEndPointStyle, camera: UnifiCamera): Promise<any> {
+        const headers: Headers = new Headers();
+        headers.set('Content-Type', 'application/json');
+        if (endPointStyle.isUnifiOS) {
+            headers.set('Cookie', session.cookie);
+            headers.set('X-CSRF-Token', endPointStyle.csrfToken);
+        } else {
+            headers.set('Authorization', 'Bearer ' + session.authorization)
+        }
+        const eventsPromise: Promise<Response> = Utils.fetch(endPointStyle.apiURL + '/cameras/' + camera.id,
+            {method: 'GET'},
+            headers, this.networkLogger
+        );
+        const response: Response = await Utils.backOff(this.maxRetries, eventsPromise, this.initialBackoffDelay);
+        return response;
+    }
+
     public static pickHighestQualityAlias(streams: UnifiCameraStream[]): string {
         return streams
             .map(((stream: UnifiCameraStream) => {

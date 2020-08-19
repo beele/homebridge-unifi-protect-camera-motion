@@ -17,6 +17,7 @@ import {CameraConfig} from "./streaming/camera-config";
 import {UnifiCameraMotionSensor} from "./characteristics/unifi-camera-motion-sensor";
 import {UnifiCameraDoorbell} from "./characteristics/unifi-camera-doorbell";
 import {UnifiCameraStreaming} from "./streaming/unifi-camera-streaming";
+import {UnifiStreamingDelegate} from "./streaming/unifi-streaming-delegate";
 
 const pathToFfmpeg = require('ffmpeg-for-homebridge');
 
@@ -26,7 +27,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
     public readonly Accessory: typeof PlatformAccessory = this.api.platformAccessory;
 
     private accessories: Array<PlatformAccessory> = [];
-    private unifi: Unifi;
+
     private uFlows: UnifiFlows;
 
     constructor(private readonly log: Logging, private readonly config: PlatformConfig, private readonly api: API) {
@@ -44,8 +45,10 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             //Hack to get async functions!
             setTimeout(async () => {
                 try {
-                    this.unifi = new Unifi(this.config.unifi, 500, 2, this.log);
-                    this.uFlows = new UnifiFlows(this.unifi, this.config.unifi, await Unifi.determineEndpointStyle(this.config.unifi.controller, this.log), this.log);
+                    const unifi = new Unifi(this.config.unifi, 500, 2, this.log);
+                    this.uFlows = new UnifiFlows(unifi, this.config.unifi, await Unifi.determineEndpointStyle(this.config.unifi.controller, this.log), this.log);
+                    UnifiStreamingDelegate.uFlows = this.uFlows;
+
                     await this.didFinishLaunching();
                 } catch (error) {
                     this.log.error(error);

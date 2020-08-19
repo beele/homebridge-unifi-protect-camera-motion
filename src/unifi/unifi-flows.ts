@@ -53,6 +53,20 @@ export class UnifiFlows {
         }
     }
 
+    public async getCameraSnapshot(camera: UnifiCamera): Promise<any> {
+        try {
+            await this.ensureSessionIsValid();
+            const snapshot: any = await this.unifi.getSnapshotForCamera(this.session, this.endpointStyle, camera);
+
+            console.log(snapshot);
+
+            return null;
+
+        } catch (error) {
+            throw new Error('Could not get camera snapshot: ' + error);
+        }
+    }
+
     private async ensureSessionIsValid(): Promise<UnifiSession> {
         try {
             if (!this.unifi.isSessionStillValid(this.session)) {

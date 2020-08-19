@@ -9,9 +9,11 @@ export class UnifiCameraStreaming {
     public static setupStreaming(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, api: API, log: Logging): void {
         // Update the camera config
         const videoConfigCopy: VideoConfig = JSON.parse(JSON.stringify(config.videoConfig));
-        // Assign stillImageSource, source and debug (overwrite if they are present from the videoConfig, which should not be the case)
-        videoConfigCopy.stillImageSource = '-i http://' + cameraConfig.camera.ip + '/snap.jpeg';
-        videoConfigCopy.source = '-rtsp_transport tcp -re -i ' + config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(cameraConfig.camera.streams);
+        if (!videoConfigCopy.vcodec) {
+            videoConfigCopy.vcodec = 'copy';
+        }
+        // TODO: Find a way to set the pixel format to yuvj422p
+        videoConfigCopy.source = '-re -rtsp_transport tcp -i ' + config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(cameraConfig.camera.streams);
         videoConfigCopy.debug = config.unifi.debug;
         cameraConfig.videoConfig = videoConfigCopy;
 
