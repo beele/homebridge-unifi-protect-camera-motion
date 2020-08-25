@@ -34,9 +34,13 @@ export class UnifiStreamingDelegate extends StreamingDelegate {
         if (!this.camera || !this.camera.lastDetectionSnapshot) {
             this.log.debug('Getting new snapshot');
 
-            UnifiStreamingDelegate.uFlows.getCameraSnapshot(this.camera).then((snapshot: Buffer) => {
-                callback(undefined, snapshot);
-            });
+            UnifiStreamingDelegate.uFlows.getCameraSnapshot(this.camera)
+                .then((snapshot: Buffer) => {
+                    callback(undefined, snapshot);
+                })
+                .catch((error) => {
+                    callback(undefined, null);
+                });
         } else {
             this.log.debug('Returning annotated snapshot');
             const canvas: Canvas = ImageUtils.resizeCanvas(this.camera.lastDetectionSnapshot, request.width, request.height);

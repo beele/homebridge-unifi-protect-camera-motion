@@ -68,7 +68,7 @@ export class Unifi {
             method: 'POST'},
             headers, this.networkLogger
         );
-        const response: Response = await Utils.backOff(this.maxRetries, loginPromise, this.initialBackoffDelay);
+        const response: Response = await Utils.retry(this.maxRetries, () => { return loginPromise }, this.initialBackoffDelay);
 
         this.log.debug('Authenticated, returning session');
         if (endpointStyle.isUnifiOS) {
@@ -113,7 +113,7 @@ export class Unifi {
             {method: 'GET'},
             headers, this.networkLogger
         );
-        const response: Response = await Utils.backOff(this.maxRetries, bootstrapPromise, this.initialBackoffDelay);
+        const response: Response = await Utils.retry(this.maxRetries, () => { return bootstrapPromise }, this.initialBackoffDelay);
         const cams = (await response.json()).cameras;
 
         this.log.debug('Cameras retrieved, enumerating motion sensors');
@@ -170,7 +170,7 @@ export class Unifi {
             {method: 'GET'},
             headers, this.networkLogger
         );
-        const response: Response = await Utils.backOff(this.maxRetries, eventsPromise, this.initialBackoffDelay);
+        const response: Response = await Utils.retry(this.maxRetries, () => { return eventsPromise }, this.initialBackoffDelay);
 
         const events: any[] = await response.json();
         return events.map((event: any) => {
@@ -201,8 +201,9 @@ export class Unifi {
             {method: 'GET'},
             headers, this.networkLogger
         );
-        const response: Response = await Utils.backOff(this.maxRetries, eventsPromise, this.initialBackoffDelay);
-        return response.buffer()
+        // TODO: response is sometimes undefined! Hopefully rework of backoff/retry has fixed this issue!
+        const response: Response = await Utils.retry(this.maxRetries, () => { return eventsPromise }, this.initialBackoffDelay);
+        return response.buffer();
     }
 
     public static pickHighestQualityAlias(streams: UnifiCameraStream[]): string {
