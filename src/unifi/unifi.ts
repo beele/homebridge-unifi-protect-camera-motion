@@ -188,7 +188,7 @@ export class Unifi {
         });
     }
 
-    public async getSnapshotForCamera(session: UnifiSession, endPointStyle: UnifiEndPointStyle, camera: UnifiCamera): Promise<Buffer> {
+    public async getSnapshotForCamera(session: UnifiSession, endPointStyle: UnifiEndPointStyle, camera: UnifiCamera, width: number, height: number): Promise<Buffer> {
         const headers: Headers = new Headers();
         headers.set('Content-Type', 'application/json');
         if (endPointStyle.isUnifiOS) {
@@ -197,12 +197,20 @@ export class Unifi {
         } else {
             headers.set('Authorization', 'Bearer ' + session.authorization)
         }
-        const eventsPromise: Promise<Response> = Utils.fetch(endPointStyle.apiURL + '/cameras/' + camera.id + '/snapshot/',
-            {method: 'GET'},
+
+        const params = new URLSearchParams({ force: "true", width: width as any, height: height as any });
+        const response: Response = await Utils.fetch(endPointStyle.apiURL + '/cameras/' + camera.id + '/snapshot/?' + params,
+            {
+                method: 'GET'
+            },
             headers, this.networkLogger
         );
-        // TODO: response is sometimes undefined! Hopefully rework of backoff/retry has fixed this issue!
-        const response: Response = await Utils.retry(this.maxRetries, () => { return eventsPromise }, this.initialBackoffDelay);
+
+        if (!response?.ok) {
+            // TODO: Remove log, for debug only!
+            console.log(JSON.stringify(response, null, 4));
+            throw new Error('Could not get snapshot for ' + camera.name);
+        }
         return response.buffer();
     }
 

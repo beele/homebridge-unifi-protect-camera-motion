@@ -1,4 +1,4 @@
-import {API, Logging} from 'homebridge';
+import {API, Logging, SnapshotRequest, SnapshotRequestCallback} from 'homebridge';
 import {ImageUtils} from "../utils/image-utils";
 import {Canvas} from "canvas";
 import {UnifiCamera} from "../unifi/unifi";
@@ -28,13 +28,13 @@ export class UnifiStreamingDelegate extends StreamingDelegate {
     }
 
     //This is called by Homekit!
-    public handleSnapshotRequest(request: any, callback: Function): void {
+    public handleSnapshotRequest(request: SnapshotRequest, callback: SnapshotRequestCallback): void {
         this.log.debug('Handling snapshot request for Camera: ' + this.cameraName);
 
         if (!this.camera || !this.camera.lastDetectionSnapshot) {
             this.log.debug('Getting new snapshot');
 
-            UnifiStreamingDelegate.uFlows.getCameraSnapshot(this.camera)
+            UnifiStreamingDelegate.uFlows.getCameraSnapshot(this.camera, request.width, request.height)
                 .then((snapshot: Buffer) => {
                     callback(undefined, snapshot);
                 })
