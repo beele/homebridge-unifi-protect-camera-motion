@@ -5,17 +5,14 @@ export interface VideoConfig {
     maxWidth?: number;
     maxHeight?: number;
     maxFPS?: number;
-    minBitrate?: number;
     maxBitrate?: number;
-    preserveRatio?: string;
+    forceMax?: boolean;
     vcodec?: string;
     audio?: string;
     packetSize?: number;
-    vflip?: boolean;
-    hflip?: boolean;
     mapvideo?: string;
     mapaudio?: string;
     videoFilter?: string;
-    additionalCommandline?: string;
+    encoderOptions?: string;
     debug?: boolean;
 }
