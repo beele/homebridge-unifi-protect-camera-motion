@@ -25,8 +25,8 @@ export class MotionDetector {
     constructor(api: API, config: PlatformConfig, unifiFlows: UnifiFlows, cameras: UnifiCamera[], log: Logging) {
         this.api = api;
 
-        this.unifiConfig = config.unifi;
-        this.googlePhotosConfig = config.googlePhotos;
+        this.unifiConfig = config.unifi as UnifiConfig;
+        this.googlePhotosConfig = config.googlePhotos as GooglePhotosConfig;
         this.flows = unifiFlows;
         this.cameras = cameras;
 
@@ -37,7 +37,7 @@ export class MotionDetector {
 
         const userStoragePath: string = this.api.user.storagePath();
         ImageUtils.userStoragePath = userStoragePath;
-        this.gPhotos = this.googlePhotosConfig && this.googlePhotosConfig.upload_gphotos ? new GooglePhotos(config.googlePhotos, userStoragePath, log) : null;
+        this.gPhotos = this.googlePhotosConfig && this.googlePhotosConfig.upload_gphotos ? new GooglePhotos(config.googlePhotos as GooglePhotosConfig, userStoragePath, log) : null;
     }
 
     public async setupMotionChecking(configuredAccessories: PlatformAccessory[]): Promise<any> {

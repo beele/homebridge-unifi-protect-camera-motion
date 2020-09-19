@@ -8,7 +8,7 @@ import {
     PlatformAccessoryEvent,
     PlatformConfig
 } from 'homebridge';
-import {Unifi, UnifiCamera} from "./unifi/unifi";
+import {Unifi, UnifiCamera, UnifiConfig} from "./unifi/unifi";
 import {UnifiFlows} from "./unifi/unifi-flows";
 import {PLATFORM_NAME, PLUGIN_NAME} from "./settings";
 import {MotionDetector} from "./motion/motion";
@@ -37,16 +37,16 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         }
 
         //Set config defaults
-        this.config.unifi.excluded_cameras = this.config.unifi.excluded_cameras ? this.config.unifi.excluded_cameras : [];
+        (this.config.unifi as UnifiConfig).excluded_cameras = (this.config.unifi as UnifiConfig).excluded_cameras ? (this.config.unifi as UnifiConfig).excluded_cameras : [];
 
-        log.info('VIDEO PROCESSOR: ' + (this.config.videoConfig.videoProcessor || pathToFfmpeg || 'ffmpeg'));
+        log.info('VIDEO PROCESSOR: ' + ((this.config.videoConfig as any).videoProcessor || pathToFfmpeg || 'ffmpeg'));
 
         this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
             //Hack to get async functions!
             setTimeout(async () => {
                 try {
-                    const unifi = new Unifi(this.config.unifi, 500, 2, this.log);
-                    this.uFlows = new UnifiFlows(unifi, this.config.unifi, await Unifi.determineEndpointStyle(this.config.unifi.controller, this.log), this.log);
+                    const unifi = new Unifi(this.config.unifi as UnifiConfig, 500, 2, this.log);
+                    this.uFlows = new UnifiFlows(unifi, this.config.unifi as UnifiConfig, await Unifi.determineEndpointStyle((this.config.unifi as UnifiConfig).controller, this.log), this.log);
                     UnifiStreamingDelegate.uFlows = this.uFlows;
 
                     await this.didFinishLaunching();
@@ -137,10 +137,10 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
     private async filterValidCameras(): Promise<UnifiCamera[]> {
         return (await this.uFlows.enumerateCameras()).filter((camera: UnifiCamera) => {
-            if (!this.config.unifi.excluded_cameras.includes(camera.id) && camera.streams.length >= 1) {
+            if (!(this.config.unifi as UnifiConfig).excluded_cameras.includes(camera.id) && camera.streams.length >= 1) {
                 return camera;
             } else {
-                if (this.config.unifi.excluded_cameras.includes(camera.id)) {
+                if ((this.config.unifi as UnifiConfig).excluded_cameras.includes(camera.id)) {
                     this.log.info('Camera (' + camera.name + ') excluded by config!');
                 } else if (camera.streams.length < 1) {
                     this.log.info('Camera (' + camera.name + ') excluded because is has no available RTSP stream!');
