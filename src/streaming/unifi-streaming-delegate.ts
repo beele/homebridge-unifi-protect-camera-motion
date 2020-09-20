@@ -75,6 +75,7 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
         this.ongoingSessions = {};
         this.pendingSessions = {};
         this.videoProcessor = videoProcessor || ffmpegPath || "ffmpeg";
+        log.info('VIDEO PROCESSOR: ' + this.videoProcessor);
 
         this.cameraConfig = cameraConfig;
 

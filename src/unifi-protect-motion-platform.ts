@@ -31,15 +31,13 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
     private uFlows: UnifiFlows;
 
     constructor(private readonly log: Logging, private readonly config: PlatformConfig, private readonly api: API) {
-        if (!config || !this.config.unifi || !this.config.videoConfig) {
+        if (!config || !this.config.unifi) {
             this.log.info('Incorrect plugin configuration!');
             return;
         }
 
         //Set config defaults
         (this.config.unifi as UnifiConfig).excluded_cameras = (this.config.unifi as UnifiConfig).excluded_cameras ? (this.config.unifi as UnifiConfig).excluded_cameras : [];
-
-        log.info('VIDEO PROCESSOR: ' + ((this.config.videoConfig as any).videoProcessor || pathToFfmpeg || 'ffmpeg'));
 
         this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
             //Hack to get async functions!
