@@ -22,7 +22,7 @@ export class UnifiCameraStreaming {
             videoConfigCopy.packetSize = 564;
         }
 
-        videoConfigCopy.source = '-re -rtsp_transport tcp -i ' + config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(cameraConfig.camera.streams);
+        videoConfigCopy.source = '-rtsp_transport tcp -i ' + config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(cameraConfig.camera.streams);
         videoConfigCopy.debug = config.unifi.debug;
         cameraConfig.videoConfig = videoConfigCopy;
 

@@ -1,6 +1,6 @@
 {
     "name": "homebridge-unifi-protect-camera-motion",
-    "version": "0.4.3-beta.6",
+    "version": "0.4.3-beta.7",
     "description": "Unifi Protect cameras & motion sensors for Homekit with Homebridge",
     "main": "src/index.js",
     "scripts": {
