@@ -43,32 +43,12 @@ export class MotionDetector {
     public async setupMotionChecking(configuredAccessories: PlatformAccessory[]): Promise<any> {
         this.configuredAccessories = configuredAccessories;
 
-        this.cameras.forEach((camera: UnifiCamera) => {
-            const matchingStreamingDelegate: UnifiStreamingDelegate = UnifiStreamingDelegate.instances.find((streamingDelegate: UnifiStreamingDelegate) => {
-                return camera.id === streamingDelegate.cameraId;
-            });
-            if (matchingStreamingDelegate) {
-                matchingStreamingDelegate.setCamera(camera);
-            } else {
-                this.log.debug('Cannot update camera for snapshot handling: ' + camera.name);
-            }
-        });
-
         let intervalFunction: Function;
         if (this.unifiConfig.enhanced_motion) {
             this.detector = await this.modelLoader.loadCoco();
             intervalFunction = this.checkMotionEnhanced.bind(this);
         } else {
             intervalFunction = this.checkMotion.bind(this);
-        }
-
-        outer: for (const camera of this.cameras) {
-            for (const configuredAccessory of this.configuredAccessories) {
-                if (configuredAccessory.context.id === camera.id) {
-                    //configuredAccessory.context.streamingDelegate.setCamera(camera);
-                    continue outer;
-                }
-            }
         }
 
         setInterval(() => {

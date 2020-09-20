@@ -243,6 +243,7 @@ export interface UnifiCamera {
     mac: string;
     type: string;
     firmware: string;
+    supportsTwoWayAudio: boolean;
     streams: UnifiCameraStream[];
     lastMotionEvent?: UnifiMotionEvent;
     lastDetectionSnapshot?: Canvas;

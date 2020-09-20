@@ -212,7 +212,7 @@ Tap on a camera preview to open the camera feed, click the settings icon and scr
 # Plugin development:  
 - Checkout the git repo  
 - Run `npm install` in the project root folder
-- Adjust the dummy config under `resources/test-config/config.json`  
+- Create a dummy config.json file under `resources/test-config/`  
 - use `npm run watch` to automatically watch for changes and restart Homebridge if needed, you can also add a remote debugger on port 4444 to debug the code.
 - use `npm run homebridge` to start a Homebridge instance that points to the local config that does not auto-reload when changes are saved.
 
