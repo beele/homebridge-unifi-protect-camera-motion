@@ -19,8 +19,6 @@ import {UnifiCameraDoorbell} from "./characteristics/unifi-camera-doorbell";
 import {UnifiCameraStreaming} from "./streaming/unifi-camera-streaming";
 import {UnifiStreamingDelegate} from "./streaming/unifi-streaming-delegate";
 
-const pathToFfmpeg = require('ffmpeg-for-homebridge');
-
 export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
     public readonly hap: HAP = this.api.hap;
@@ -66,6 +64,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
         cameras
             .map((camera: UnifiCamera) => {
+                this.log.info(JSON.stringify(camera, null, 4));
                 camera.uuid = this.hap.uuid.generate(camera.id);
                 const accessory: PlatformAccessory = this.accessories.find((existingAccessory: PlatformAccessory) => existingAccessory.UUID === camera.uuid);
                 return {camera, accessory}

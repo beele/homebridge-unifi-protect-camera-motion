@@ -149,7 +149,9 @@ export class Unifi {
                 mac: cam.mac,
                 type: cam.type,
                 firmware: cam.firmwareVersion,
-                streams: streams
+                streams: streams,
+                supportsTwoWayAudio: cam.hasSpeaker &&  cam.speakerSettings.isEnabled,
+                talkbackSettings: cam.talkbackSettings
             }
         });
     }
@@ -207,8 +209,7 @@ export class Unifi {
         );
 
         if (!response?.ok) {
-            // TODO: Remove log, for debug only!
-            console.log(JSON.stringify(response, null, 4));
+            this.log.debug(JSON.stringify(response, null, 4));
             throw new Error('Could not get snapshot for ' + camera.name);
         }
         return response.buffer();
@@ -244,9 +245,23 @@ export interface UnifiCamera {
     type: string;
     firmware: string;
     supportsTwoWayAudio: boolean;
+    talkbackSettings: UnifiTalkbackSettings;
     streams: UnifiCameraStream[];
     lastMotionEvent?: UnifiMotionEvent;
     lastDetectionSnapshot?: Canvas;
+}
+
+export interface UnifiTalkbackSettings {
+    typeFmt: string;
+    typeIn: string;
+    bindAddr: string;
+    bindPort: number;
+    filterAddr: string;
+    filterPort: number;
+    channels: number;
+    samplingRate: number;
+    bitsPerSample: number;
+    quality: number;
 }
 
 export interface UnifiCameraStream {

@@ -86,7 +86,6 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
                 supportedCryptoSuites: [this.hap.SRTPCryptoSuites.AES_CM_128_HMAC_SHA1_80],
                 video: {
                     resolutions: [
-                        // Width, height, framerate.
                         [1920, 1080, 30],
                         [1280, 960, 30],
                         [1280, 720, 30],
@@ -118,7 +117,6 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
         this.controller = new this.hap.CameraController(options);
     }
 
-    //This is called by Homekit!
     public async handleSnapshotRequest(request: SnapshotRequest, callback: SnapshotRequestCallback): Promise<void> {
         this.log.debug('Handling snapshot request for Camera: ' + this.camera.name);
 
@@ -421,13 +419,13 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
             '-acodec', 'libfdk_aac',
             '-i', 'pipe:0',
             '-map', '0:a',
-            '-acodec', '',//camera.talkbackSettings.typeFmt, //TODO: Fix this for two way audio!
+            '-acodec', this.camera.talkbackSettings.typeFmt,
             '-flags', '+global_header',
-            '-ar', '',//camera.talkbackSettings.samplingRate.toString(), //TODO: Fix this for two way audio!
+            '-ar', this.camera.talkbackSettings.samplingRate.toString(),
             '-b:a', '64k',
-            '-ac', '',//camera.talkbackSettings.channels.toString(), //TODO: Fix this for two way audio!
+            '-ac', this.camera.talkbackSettings.channels.toString(),
             '-f', 'adts',
-            ''// 'udp://' + camera.host + ':' + camera.talkbackSettings.bindPort.toString() //TODO: Fix this for two way audio!
+            'udp://' + this.camera.ip + ':' + this.camera.talkbackSettings.bindPort.toString()
         ];
 
         const ffmpegReturnAudio = new FfmpegProcess(this, request.sessionID, ffmpegReturnAudioCmd);
