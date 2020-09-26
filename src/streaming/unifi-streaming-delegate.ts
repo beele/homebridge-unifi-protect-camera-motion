@@ -171,10 +171,8 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
         }
 
         // Setup the RTP splitter for two-way audio scenarios.
-        const rtpSplitter = (hasLibFdk && this.camera.supportsTwoWayAudio) ?
-            new RtpSplitter(this, request.addressVersion, audioServerPort, audioReturnPort, audioTwoWayPort) : null;
+        const rtpSplitter = (hasLibFdk && this.camera.supportsTwoWayAudio) ? new RtpSplitter(this, request.addressVersion, audioServerPort, audioReturnPort, audioTwoWayPort) : null;
 
-        // Setup our video plumbing.
         const videoReturnPort = (await RtpUtils.reservePorts())[0];
         const videoSSRC = this.hap.CameraController.generateSynchronisationSource();
 
@@ -198,9 +196,7 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
             audioSSRC: audioSSRC
         };
 
-        // Prepare the response stream.
         const response: PrepareStreamResponse = {
-
             video: {
                 port: videoReturnPort,
                 ssrc: videoSSRC,
@@ -208,7 +204,6 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
                 srtp_key: request.video.srtp_key,
                 srtp_salt: request.video.srtp_salt
             },
-
             audio: {
                 port: (hasLibFdk && this.camera.supportsTwoWayAudio) ? audioServerPort : audioReturnPort,
                 ssrc: audioSSRC,
@@ -217,17 +212,11 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
             }
         };
 
-        // Figure out if we have the ability to deal with audio. If we do, we next have to figure out
-        // if we're doing two-way audio or not. For two-way audio, we need to use a splitter to bring all
-        // the pieces together. For traditional video/audio streaming, we want to keep it simple and don't
-        // use a splitter.
-
         // Add it to the pending session queue so we're ready to start when we're called upon.
         this.pendingSessions[request.sessionID] = sessionInfo;
         callback(undefined, response);
     }
 
-    // Launch the Protect video (and audio) stream.
     private startStream(request: StartStreamRequest, callback: StreamRequestCallback): void {
 
         const sessionInfo = this.pendingSessions[request.sessionID];

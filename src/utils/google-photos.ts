@@ -147,7 +147,7 @@ export class GooglePhotos {
                 }
             };
 
-            const server = http.createServer(requestHandler).listen(8080);
+            const server = http.createServer(requestHandler).listen(8888);
         });
     }
 
