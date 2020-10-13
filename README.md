@@ -136,14 +136,12 @@ To enable the upload to Google Photos functionality please [read the relevant wi
 
 ### Camera Configuration:
 
-- Make sure each of your Unifi cameras has anonymous snapshots enabled, this is needed to perform the object detection.
-  - To enable anonymous snapshots: Login on the camera itself (visit the camera's ip address)    
-      ![Anonymous snapshot](resources/images/readme/anonymous_snapshot.jpg?raw=true "CloudKey Gen2 Plus")  
+- Make sure each of your Unifi cameras has at least one RTSP stream enabled.
+  However I suggest enabling all available qualities for the best user experience as the plugin will choose the most appropriate one based on the request coming from Homekit.
   - To enable an RTSP stream: Login on the Protect web UI and go the settings of the camera and open the 'manage' tab   
-      Make sure that all your cameras have the same port for the RTSP stream!  
+      Make sure all your cameras have the same port for the RTSP stream!  
       For optimal results it is best to assign a static ip to your cameras  
       ![Enable RTSP stream](resources/images/readme/enable_rtsp.jpg?raw=true "CloudKey Gen2 Plus")  
-- Make sure each of your Unifi cameras has at least one RTSP stream enabled, I suggest enabling the 1080P one in the Protect web interface, this is needed to view the livestream from the camera.
   
 ## How to add the cameras to your Homekit setup:  
 

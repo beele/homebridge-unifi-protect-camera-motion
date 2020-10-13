@@ -1,3 +1,13 @@
+/* Copyright(C) 2017-2020, HJD (https://github.com/hjdhjd). All rights reserved.
+ *
+ * protect-ffmpeg.ts: FFmpeg capability validation and process control.
+ *
+ * This module is heavily inspired by the homebridge and homebridge-camera-ffmpeg source code and
+ * borrows heavily from both. Thank you for your contributions to the HomeKit world.
+ *
+ * Adjusted by Kevin Van den Abeele
+ */
+
 import {createSocket} from 'dgram';
 import execa, {ExecaChildProcess, ExecaError} from 'execa';
 import {Logging, StreamRequestCallback} from 'homebridge';
@@ -16,6 +26,7 @@ export class FfmpegProcess {
     private readonly name: string;
     private process!: ExecaChildProcess;
     private readonly sessionId: string;
+    private streamTimeout?: NodeJS.Timeout;
 
     constructor(delegate: UnifiStreamingDelegate, sessionId: string, command: string[], returnPort?: PortInterface, callback?: StreamRequestCallback) {
         this.command = command.join(' ');
@@ -43,6 +54,23 @@ export class FfmpegProcess {
         socket.on('error', (error: Error) => {
             this.log.error('%s: Socket error: %s.', this.name, error.name);
             this.delegate.stopStream(this.sessionId);
+        });
+
+        // Manage our video streams in case we haven't received a stop request, but we're in fact dead zombies.
+        socket.on('message', () => {
+            // Clear our last canary.
+            if (this.streamTimeout) {
+                clearTimeout(this.streamTimeout);
+            }
+
+            // Set our new canary.
+            this.streamTimeout = setTimeout(() => {
+
+                this.log.debug('%s: video stream appears to be inactive for 5 seconds. Stopping stream.', this.name);
+                this.delegate.controller.forceStopStreamingSession(this.sessionId);
+                this.delegate.stopStream(this.sessionId);
+
+            }, 5000);
         });
         socket.bind(portInfo.port);
     }
@@ -101,9 +129,7 @@ export class FfmpegProcess {
             // FFmpeg ended for another reason.
             const errorMessage = logPrefix + '(Error).' + (code === null ? '' : ' Exit code: ' + code.toString() + '.') + (signal === null ? '' : ' Signal: ' + signal + '.');
             this.log.error('%s: %s', this.name, execError.message);
-
             this.delegate.stopStream(this.sessionId);
-
             // Let homebridge know what happened and stop the stream if we've already started.
             if (!started && callback) {
                 callback(new Error(errorMessage));
@@ -116,6 +142,7 @@ export class FfmpegProcess {
 
     // Cleanup after we're done.
     public stop(): void {
+        // Cancel our process.
         this.process.cancel();
     }
 
@@ -131,7 +158,7 @@ export class FfmpegProcess {
 
     // Validate whether or not we have a specific codec available to us in FFmpeg.
     public static async codecEnabled(videoProcessor: string, codec: string): Promise<boolean> {
-        console.log(videoProcessor);
+
         const output = await execa(videoProcessor, ['-codecs']);
         return output.stdout.includes(codec);
     }

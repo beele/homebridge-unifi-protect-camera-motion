@@ -215,8 +215,9 @@ export class Unifi {
         return response.buffer();
     }
 
-    public static pickHighestQualityAlias(streams: UnifiCameraStream[]): string {
-        return streams
+    public static generateStreamingUrlForBestMatchingResolution(baseSourceUrl: string, streams: UnifiCameraStream[], requestedWidth: number, requestedHeight: number): string {
+        const targetResolution: number = requestedWidth * requestedHeight;
+        const selectedAlias: string = streams
             .map(((stream: UnifiCameraStream) => {
                 return {
                     resolution: stream.width * stream.height,
@@ -224,9 +225,10 @@ export class Unifi {
                 };
             }))
             .sort((a, b) => {
-                return a.resolution - b.resolution;
+                return Math.abs(a.resolution - targetResolution) - Math.abs(b.resolution - targetResolution)
             })
             .shift().alias;
+        return baseSourceUrl + selectedAlias;
     }
 }
 

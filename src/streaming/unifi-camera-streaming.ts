@@ -7,7 +7,7 @@ export class UnifiCameraStreaming {
 
     public static setupStreaming(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, api: API, log: Logging): void {
         // Update the camera config
-        cameraConfig.source = config.unifi.controller_rtsp + '/' + Unifi.pickHighestQualityAlias(cameraConfig.camera.streams);
+        cameraConfig.source = config.unifi.controller_rtsp + '/';
         cameraConfig.debug = config.unifi.debug;
 
         const streamingDelegate = new UnifiStreamingDelegate(cameraConfig.camera, log, api, cameraConfig, config.videoProcessor);
