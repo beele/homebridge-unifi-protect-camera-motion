@@ -1,7 +1,7 @@
 import {Unifi, UnifiCameraStream} from "./unifi";
 
 test('Unifi-generateStreamingUrlForBestMatchingResolution', async () => {
-    const baseUrl: string = 'http://localhost:7447';
+    const baseUrl: string = 'http://localhost:7447/';
     const streams: UnifiCameraStream[] = [
         {
             name: 'test1-name',
@@ -28,27 +28,27 @@ test('Unifi-generateStreamingUrlForBestMatchingResolution', async () => {
 
     let matchingResolutionUrl = Unifi.generateStreamingUrlForBestMatchingResolution(baseUrl, streams, 1280, 720);
     expect(matchingResolutionUrl).not.toBeNull();
-    expect(matchingResolutionUrl).toEqual('http://localhost:7447test2-alias');
+    expect(matchingResolutionUrl).toEqual('http://localhost:7447/test2-alias');
 
     matchingResolutionUrl = Unifi.generateStreamingUrlForBestMatchingResolution(baseUrl, streams, 1024, 576);
     expect(matchingResolutionUrl).not.toBeNull();
-    expect(matchingResolutionUrl).toEqual('http://localhost:7447test2-alias');
+    expect(matchingResolutionUrl).toEqual('http://localhost:7447/test2-alias');
 
     matchingResolutionUrl = Unifi.generateStreamingUrlForBestMatchingResolution(baseUrl, streams, 1920, 1080);
     expect(matchingResolutionUrl).not.toBeNull();
-    expect(matchingResolutionUrl).toEqual('http://localhost:7447test3-alias');
+    expect(matchingResolutionUrl).toEqual('http://localhost:7447/test3-alias');
 
     matchingResolutionUrl = Unifi.generateStreamingUrlForBestMatchingResolution(baseUrl, streams, 3840, 2160);
     expect(matchingResolutionUrl).not.toBeNull();
-    expect(matchingResolutionUrl).toEqual('http://localhost:7447test3-alias');
+    expect(matchingResolutionUrl).toEqual('http://localhost:7447/test3-alias');
 
     matchingResolutionUrl = Unifi.generateStreamingUrlForBestMatchingResolution(baseUrl, streams, 858, 480);
     expect(matchingResolutionUrl).not.toBeNull();
-    expect(matchingResolutionUrl).toEqual('http://localhost:7447test1-alias');
+    expect(matchingResolutionUrl).toEqual('http://localhost:7447/test1-alias');
 
     matchingResolutionUrl = Unifi.generateStreamingUrlForBestMatchingResolution(baseUrl, streams, 640, 360);
     expect(matchingResolutionUrl).not.toBeNull();
-    expect(matchingResolutionUrl).toEqual('http://localhost:7447test1-alias');
+    expect(matchingResolutionUrl).toEqual('http://localhost:7447/test1-alias');
 
     return;
 });
