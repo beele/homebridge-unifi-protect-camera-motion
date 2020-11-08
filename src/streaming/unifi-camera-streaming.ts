@@ -1,7 +1,6 @@
 import {UnifiStreamingDelegate} from "./unifi-streaming-delegate";
 import {API, Logging, PlatformAccessory} from "homebridge";
 import {CameraConfig} from "./camera-config";
-import {Unifi} from "../unifi/unifi";
 
 export class UnifiCameraStreaming {
 

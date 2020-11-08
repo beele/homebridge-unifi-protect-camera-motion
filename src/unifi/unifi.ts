@@ -224,8 +224,11 @@ export class Unifi {
                     alias: stream.alias
                 };
             }))
+            .filter((data: { alias: string; resolution: number }) => {
+                return data.resolution <= targetResolution;
+            })
             .sort((a, b) => {
-                return Math.abs(a.resolution - targetResolution) - Math.abs(b.resolution - targetResolution)
+                return b.resolution - a.resolution;
             })
             .shift().alias;
         return baseSourceUrl + selectedAlias;

@@ -108,10 +108,15 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
 
                 video: {
                     codec: {
+                        // Through admittedly anecdotal testing on various G3 and G4 models, UniFi Protect seems to support
+                        // only the H.264 Main profile, though it does support various H.264 levels, ranging from Level 3
+                        // through Level 5.1 (G4 Pro at maximum resolution). However, HomeKit only supports Level 3.1, 3.2,
+                        // and 4.0 currently.
                         levels: [this.hap.H264Level.LEVEL3_1, this.hap.H264Level.LEVEL3_2, this.hap.H264Level.LEVEL4_0],
-                        profiles: [this.hap.H264Profile.BASELINE, this.hap.H264Profile.MAIN, this.hap.H264Profile.HIGH]
+                        profiles: [ this.hap.H264Profile.MAIN ]
                     },
 
+                    //TODO: Rework this!
                     resolutions: [
                         // Width, height, framerate.
                         [1920, 1080, 30],
