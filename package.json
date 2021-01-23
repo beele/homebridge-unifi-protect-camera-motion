@@ -34,14 +34,14 @@
         "homebridge": ">=1.0.0"
     },
     "dependencies": {
-        "ffmpeg-for-homebridge": "^0.0.9",
-        "execa": "^4.0.3",
-        "get-port": "^5.1.1",
-        "@tensorflow/tfjs-node": "^1.7.4",
-        "node-fetch": "^2.6.1",
+        "@tensorflow/tfjs-node": "^2.8.5",
         "canvas": "^2.6.1",
+        "execa": "^4.0.3",
+        "ffmpeg-for-homebridge": "^0.0.9",
+        "get-port": "^5.1.1",
         "googleapis": ">=39.1.0",
-        "googlephotos": "^0.3.3"
+        "googlephotos": "^0.3.3",
+        "node-fetch": "^2.6.1"
     },
     "devDependencies": {
         "@types/jest": "^25.2.3",
