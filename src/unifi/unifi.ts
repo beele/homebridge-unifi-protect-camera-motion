@@ -86,9 +86,9 @@ export class Unifi {
     }
 
     public isSessionStillValid(session: UnifiSession): boolean {
-        // Validity duration for now set at 12 hours!
+        // Validity duration for Unifi OS is 1 hour
         if (session) {
-            if ((session.timestamp + (12 * 3600 * 1000)) >= Date.now()) {
+            if ((session.timestamp + (1 * 3600 * 1000)) >= Date.now()) {
                 return true;
             } else {
                 this.log.debug('WARNING: Session expired, a new session must be created!');
