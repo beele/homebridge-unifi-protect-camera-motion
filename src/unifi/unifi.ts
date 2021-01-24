@@ -85,10 +85,10 @@ export class Unifi {
         }
     }
 
-    public isSessionStillValid(session: UnifiSession): boolean {
-        // Validity duration for Unifi OS is 1 hour
+    public isSessionStillValid(session: UnifiSession, endpointStyle: UnifiEndPointStyle): boolean {
+        // Validity duration for Unifi OS is 1 hour for legacy unifi protect 12 hours will work fine
         if (session) {
-            if ((session.timestamp + (1 * 3600 * 1000)) >= Date.now()) {
+            if ((session.timestamp + ((endpointStyle.isUnifiOS ? 1 : 12) * 3600 * 1000)) >= Date.now()) {
                 return true;
             } else {
                 this.log.debug('WARNING: Session expired, a new session must be created!');

@@ -64,7 +64,7 @@ export class UnifiFlows {
 
     private async ensureSessionIsValid(): Promise<UnifiSession> {
         try {
-            if (!this.unifi.isSessionStillValid(this.session)) {
+            if (!this.unifi.isSessionStillValid(this.session, this.endpointStyle)) {
                 this.session = await this.unifi.authenticate(this.config.username, this.config.password, this.endpointStyle);
             }
             return this.session;
