@@ -144,11 +144,11 @@ To enable the upload to Google Photos functionality please [read the relevant wi
 
 |Field|Type|Required|Default value|Description|
 |-----|----|--------|-------------|-----------|
-|enabled|boolean|no|false||
-|broker|string|no|/||
-|username|string|no|/||
-|password|string|no|/||
-|topicPrefix|string|no|/||
+|enabled|boolean|no|false|Set this to true to enable MQTT support|
+|broker|string|no|/|This field is required when the enabled field is set to true. Fill in your MQTT broker url, without the port|
+|username|string|no|/|This field contains the username for the MQTT broker connection, if any|
+|password|string|no|/|This field contains the password for the MQTT broker connection, if any|
+|topicPrefix|string|no|/|This field contains the optional topic prefix. Each motion event will be dispatched under `topicPrefix/cameraName`|
 
 ### Camera configuration:
 

@@ -5,7 +5,6 @@ import {Canvas, Image} from "canvas";
 import {ImageUtils} from "../utils/image-utils";
 import {GooglePhotos, GooglePhotosConfig} from "../utils/google-photos";
 import type {API, Logging, PlatformAccessory, PlatformConfig} from 'homebridge';
-import {UnifiStreamingDelegate} from "../streaming/unifi-streaming-delegate";
 import {Mqtt, MqttConfig} from "../utils/mqtt";
 
 export class MotionDetector {
