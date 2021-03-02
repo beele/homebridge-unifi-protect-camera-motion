@@ -53,9 +53,18 @@ export class UnifiFlows {
         }
     }
 
+    public async getCameraSnapshot(camera: UnifiCamera, width: number, height: number): Promise<Buffer> {
+        try {
+            await this.ensureSessionIsValid();
+            return this.unifi.getSnapshotForCamera(this.session, this.endpointStyle, camera, width, height);
+        } catch (error) {
+            throw new Error('Could not get camera snapshot: ' + error);
+        }
+    }
+
     private async ensureSessionIsValid(): Promise<UnifiSession> {
         try {
-            if (!this.unifi.isSessionStillValid(this.session)) {
+            if (!this.unifi.isSessionStillValid(this.session, this.endpointStyle)) {
                 this.session = await this.unifi.authenticate(this.config.username, this.config.password, this.endpointStyle);
             }
             return this.session;

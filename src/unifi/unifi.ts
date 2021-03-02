@@ -68,7 +68,7 @@ export class Unifi {
             method: 'POST'},
             headers, this.networkLogger
         );
-        const response: Response = await Utils.backOff(this.maxRetries, loginPromise, this.initialBackoffDelay);
+        const response: Response = await Utils.retry(this.maxRetries, () => { return loginPromise }, this.initialBackoffDelay);
 
         this.log.debug('Authenticated, returning session');
         if (endpointStyle.isUnifiOS) {
@@ -85,10 +85,10 @@ export class Unifi {
         }
     }
 
-    public isSessionStillValid(session: UnifiSession): boolean {
-        // Validity duration for now set at 12 hours!
+    public isSessionStillValid(session: UnifiSession, endpointStyle: UnifiEndPointStyle): boolean {
+        // Validity duration for Unifi OS is 1 hour for legacy unifi protect 12 hours will work fine
         if (session) {
-            if ((session.timestamp + (12 * 3600 * 1000)) >= Date.now()) {
+            if ((session.timestamp + ((endpointStyle.isUnifiOS ? 1 : 12) * 3600 * 1000)) >= Date.now()) {
                 return true;
             } else {
                 this.log.debug('WARNING: Session expired, a new session must be created!');
@@ -113,7 +113,7 @@ export class Unifi {
             {method: 'GET'},
             headers, this.networkLogger
         );
-        const response: Response = await Utils.backOff(this.maxRetries, bootstrapPromise, this.initialBackoffDelay);
+        const response: Response = await Utils.retry(this.maxRetries, () => { return bootstrapPromise }, this.initialBackoffDelay);
         const cams = (await response.json()).cameras;
 
         this.log.debug('Cameras retrieved, enumerating motion sensors');
@@ -149,7 +149,9 @@ export class Unifi {
                 mac: cam.mac,
                 type: cam.type,
                 firmware: cam.firmwareVersion,
-                streams: streams
+                streams: streams,
+                supportsTwoWayAudio: cam.hasSpeaker &&  cam.speakerSettings.isEnabled,
+                talkbackSettings: cam.talkbackSettings
             }
         });
     }
@@ -170,7 +172,7 @@ export class Unifi {
             {method: 'GET'},
             headers, this.networkLogger
         );
-        const response: Response = await Utils.backOff(this.maxRetries, eventsPromise, this.initialBackoffDelay);
+        const response: Response = await Utils.retry(this.maxRetries, () => { return eventsPromise }, this.initialBackoffDelay);
 
         const events: any[] = await response.json();
         return events.map((event: any) => {
@@ -188,18 +190,48 @@ export class Unifi {
         });
     }
 
-    public static pickHighestQualityAlias(streams: UnifiCameraStream[]): string {
-        return streams
+    public async getSnapshotForCamera(session: UnifiSession, endPointStyle: UnifiEndPointStyle, camera: UnifiCamera, width: number, height: number): Promise<Buffer> {
+        const headers: Headers = new Headers();
+        headers.set('Content-Type', 'application/json');
+        if (endPointStyle.isUnifiOS) {
+            headers.set('Cookie', session.cookie);
+            headers.set('X-CSRF-Token', endPointStyle.csrfToken);
+        } else {
+            headers.set('Authorization', 'Bearer ' + session.authorization)
+        }
+
+        const params = new URLSearchParams({ force: "true", width: width as any, height: height as any });
+        const response: Response = await Utils.fetch(endPointStyle.apiURL + '/cameras/' + camera.id + '/snapshot/?' + params,
+            {
+                method: 'GET'
+            },
+            headers, this.networkLogger
+        );
+
+        if (!response?.ok) {
+            this.log.debug(JSON.stringify(response, null, 4));
+            throw new Error('Could not get snapshot for ' + camera.name);
+        }
+        return response.buffer();
+    }
+
+    public static generateStreamingUrlForBestMatchingResolution(baseSourceUrl: string, streams: UnifiCameraStream[], requestedWidth: number, requestedHeight: number): string {
+        const targetResolution: number = requestedWidth * requestedHeight;
+        const selectedAlias: string = streams
             .map(((stream: UnifiCameraStream) => {
                 return {
                     resolution: stream.width * stream.height,
                     alias: stream.alias
                 };
             }))
+            .filter((data: { alias: string; resolution: number }) => {
+                return data.resolution <= targetResolution;
+            })
             .sort((a, b) => {
-                return a.resolution - b.resolution;
+                return b.resolution - a.resolution;
             })
             .shift().alias;
+        return baseSourceUrl + selectedAlias;
     }
 }
 
@@ -217,9 +249,24 @@ export interface UnifiCamera {
     mac: string;
     type: string;
     firmware: string;
+    supportsTwoWayAudio: boolean;
+    talkbackSettings: UnifiTalkbackSettings;
     streams: UnifiCameraStream[];
     lastMotionEvent?: UnifiMotionEvent;
     lastDetectionSnapshot?: Canvas;
+}
+
+export interface UnifiTalkbackSettings {
+    typeFmt: string;
+    typeIn: string;
+    bindAddr: string;
+    bindPort: number;
+    filterAddr: string;
+    filterPort: number;
+    channels: number;
+    samplingRate: number;
+    bitsPerSample: number;
+    quality: number;
 }
 
 export interface UnifiCameraStream {

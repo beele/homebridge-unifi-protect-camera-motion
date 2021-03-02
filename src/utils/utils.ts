@@ -9,19 +9,19 @@ export class Utils {
         rejectUnauthorized: false
     });
 
-    public static pause(duration: number): Promise<any> {
+    private static pause(duration: number): Promise<any> {
         return new Promise(res => setTimeout(res, duration));
     }
 
-    public static async backOff(retries: number, promise: Promise<any>, delay: number): Promise<any> {
-        delay = delay / 2;
-        for (let i = 0; i <= retries; i++) {
-            try {
-                return await promise;
-            } catch (err) {
-                delay = delay * 2;
-                await this.pause(delay);
-            }
+    public static async retry(retries: number, fn: () => Promise<any>, delay: number, retryCount: number = 0, lastError: any = null): Promise<any> {
+        if (retryCount === retries) {
+            throw lastError;
+        }
+        try {
+            return Promise.resolve(await fn());
+        } catch (e) {
+            await this.pause(delay);
+            return await this.retry(retries, fn, delay * 2, retryCount + 1, e);
         }
     }
 
