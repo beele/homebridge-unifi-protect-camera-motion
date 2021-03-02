@@ -6,6 +6,7 @@ import {ImageUtils} from "../utils/image-utils";
 import {GooglePhotos, GooglePhotosConfig} from "../utils/google-photos";
 import type {API, Logging, PlatformAccessory, PlatformConfig} from 'homebridge';
 import {UnifiStreamingDelegate} from "../streaming/unifi-streaming-delegate";
+import {Mqtt, MqttConfig} from "../utils/mqtt";
 
 export class MotionDetector {
 
@@ -20,6 +21,7 @@ export class MotionDetector {
     private modelLoader: Loader;
     private detector: Detector;
     private gPhotos: GooglePhotos;
+    private mqtt: Mqtt;
     private configuredAccessories: any[];
 
     constructor(api: API, config: PlatformConfig, unifiFlows: UnifiFlows, cameras: UnifiCamera[], log: Logging) {
@@ -38,6 +40,7 @@ export class MotionDetector {
         const userStoragePath: string = this.api.user.storagePath();
         ImageUtils.userStoragePath = userStoragePath;
         this.gPhotos = this.googlePhotosConfig && this.googlePhotosConfig.upload_gphotos ? new GooglePhotos(config.googlePhotos as GooglePhotosConfig, userStoragePath, log) : null;
+        this.mqtt = new Mqtt(config.mqtt as MqttConfig, log);
     }
 
     public async setupMotionChecking(configuredAccessories: PlatformAccessory[]): Promise<any> {
@@ -83,6 +86,7 @@ export class MotionDetector {
 
                     this.log.info('Motion detected (' + camera.lastMotionEvent.score + '%) by camera ' + camera.name + ' !!!!');
                     configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
+                    this.mqtt.sendMessageOnTopic(JSON.stringify({score: camera.lastMotionEvent.score, timestamp: new Date().toISOString()}), camera.name);
 
                     let snapshot: Image;
                     try {
@@ -136,9 +140,10 @@ export class MotionDetector {
 
                             const score: number = Math.round(detection.score * 100);
                             if (score >= this.unifiConfig.enhanced_motion_score) {
-                                this.log.info('Detected: ' + classToDetect + ' (' + score + '%) by camera ' + camera.name);
-                                camera.lastDetectionSnapshot = await this.persistSnapshot(snapshot, classToDetect + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
+                                this.log.info('Detected: ' + detection.class + ' (' + score + '%) by camera ' + camera.name);
+                                camera.lastDetectionSnapshot = await this.persistSnapshot(snapshot, detection.class + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
                                 configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
+                                this.mqtt.sendMessageOnTopic(JSON.stringify({class: detection.class, score, timestamp: new Date().toISOString()}), camera.name);
                                 continue outer;
                             } else {
                                 this.log.debug('Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.unifiConfig.enhanced_motion_score + '% or higher)');

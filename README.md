@@ -83,6 +83,13 @@ Next, open the `config.json` that contains your Homebridge configuration, and ad
         "auth_clientId": "CLIENT-ID",
         "auth_clientSecret": "CLIENT-SECRET",
         "auth_redirectUrl": "http://localhost:8888/oauth2-callback"
+    },
+    "mqtt": {
+        "enabled": false,
+        "broker": "mqtt://broker-ip",
+        "username": "MQTT-BROKER-USERNAME",
+        "password": "MQTT-BROKER-PASSWORD",
+        "topicPrefix": "motion/cameras"
     }
 }  
 ```  
@@ -91,7 +98,7 @@ You can verify the correctness of your config file by using [jsonlint](https://j
 The config must be valid or Homebridge will fail to restart correctly.
 If you are using Homebridge Config X, it will do its best to alert you to any syntax errors it finds.
 
-## Config fields:  
+## General configuration fields:  
 
 |Field|Type|Required|Default value|Description|
 |-----|----|--------|-------------|-----------|
@@ -101,7 +108,7 @@ If you are using Homebridge Config X, it will do its best to alert you to any sy
 |videoProcessor|string|no|ffmpeg|Contains the path to an custom FFmpeg binary|
 
 
-### Unifi config fields:
+### Unifi configuration fields:
 |Field|Type|Required|Default value|Description|
 |-----|----|--------|-------------|-----------|
 |controller|string|yes|/|Contains the URL to the CloudKey or UDM with UnifiOS, or as legacy the URL to the Unifi Protect web UI, including port (no / or  /protect/ at the end!)|
@@ -122,7 +129,7 @@ If you are using Homebridge Config X, it will do its best to alert you to any sy
 |debug|boolean|no|false|Contains a boolean indicating whether or not to enable debug logging for the plugin and FFmpeg|
 |debug_network_traffic|boolean|no|false|Contains a boolean indication whether or not to enable logging of all network requests|
 
-### Google Photos config:
+### Google Photos configuration:
 
 |Field|Type|Required|Default value|Description|
 |-----|----|--------|-------------|-----------|
@@ -133,11 +140,20 @@ If you are using Homebridge Config X, it will do its best to alert you to any sy
 
 To enable the upload to Google Photos functionality please [read the relevant wiki article](https://github.com/beele/homebridge-unifi-protect-camera-motion/wiki/Google-Photos:-setting-up-automatic-upload)
 
+### MQTT configuration:
 
-### Camera Configuration:
+|Field|Type|Required|Default value|Description|
+|-----|----|--------|-------------|-----------|
+|enabled|boolean|no|false||
+|broker|string|no|/||
+|username|string|no|/||
+|password|string|no|/||
+|topicPrefix|string|no|/||
+
+### Camera configuration:
 
 - Make sure each of your Unifi cameras has at least one RTSP stream enabled.
-  However I suggest enabling all available qualities for the best user experience as the plugin will choose the most appropriate one based on the request coming from Homekit.
+  However, I suggest enabling all available qualities for the best user experience as the plugin will choose the most appropriate one based on the request coming from Homekit.
   - To enable an RTSP stream: Login on the Protect web UI and go the settings of the camera and open the 'manage' tab   
       Make sure all your cameras have the same port for the RTSP stream!  
       For optimal results it is best to assign a static ip to your cameras  
@@ -163,7 +179,7 @@ Tap on a camera preview to open the camera feed, click the settings icon and scr
 ## Tested with:  
   
 - Raspberry Pi 3B with Node 11.15.0 as Homebridge host  
-- Raspberry Pi 4B 4GB with Node 12.14.0 as Homebridge host  
+- Raspberry Pi 4B 4 GiB with Node 12.14.0 as Homebridge host  
 - Macbook Pro with Node 12.18.0 as Homebridge host  
 - Windows 10 with Node 12.13.0 as Homebridge host
 - Ubiquiti UniFi CloudKey Gen2 Plus - Cloud Key with Unifi Protect functionality  
@@ -179,10 +195,10 @@ Tap on a camera preview to open the camera feed, click the settings icon and scr
  
 - Running this plugin on CPUs that do not support AVX (Celerons in NAS systems, ...) is not supported because there are no prebuilt Tensorflow binaries. 
   Compiling Tensorflow from scratch is out of scope for this project!
-  - Run it on a RBPI or machine with MacOS / Windows / Linux (Debian based)
+  - Run it on a Raspberry Pi or machine with macOS / Windows / Linux (Debian based)
 - ~~Previews in notifications are requested by the Home app, and can thus be "after the fact" and show an image with nothing of interest on it.~~   
   - ~~The actual motion detection is done with the snapshot that is requested internally.~~  
-- Unifi Protect has a snapshot saved for every event, and there is an API to get these (with Width & Height), but the actual saved image is pretty low res and is upscaled to 1080p. 
+- Unifi Protect has a snapshot saved for every event, and there is an API to get these (with Width & Height), but the actual saved image is pretty low res and is scaled up to 1080p. 
   Using the Anonymous snapshot actually gets a full resolution snapshot which is better for object detection.  
 - There is no way to know what motion zone (from Unifi) a motion has occurred in. 
   This information is not present is the response from their API.  
@@ -191,13 +207,13 @@ Tap on a camera preview to open the camera feed, click the settings icon and scr
   
 ### TODOs:  
 
-- Add more unit and integration tests 
-- Upgrade tfjs-node, now held back because newer versions (Upgrade to 2.x.x in future release)
-- Add support for MQTT (coming in future release)
+- Add more unit and integration tests (Ongoing)
+- Add support for MQTT (Ongoing)
+- ~~Upgrade tfjs-node, now held back because newer versions (Upgrade to 2.x.x in future release)~~ (Done)
 - ~~Implement required changes to make this work with Unifi OS~~
 - ~~Figure out how to get higher res streams on iPhone (only iPad seems to request 720p streams)~~ (Done)
 - ~~Extend documentation & wiki~~ (Done)
-- ~~Add support for two way audio~~ (Done)
+- ~~Add support for two-way audio~~ (Done)
   
 # Plugin development  
 

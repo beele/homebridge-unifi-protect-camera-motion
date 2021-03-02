@@ -1,7 +1,7 @@
 {
     "name": "homebridge-unifi-protect-camera-motion",
     "version": "0.4.3-beta.12",
-    "description": "Unifi Protect cameras & motion sensors for Homekit with Homebridge",
+    "description": "Unifi Protect cameras & motion sensors for Homebridge. AI enabled Motion detection for Unifi Protect cameras.",
     "main": "src/index.js",
     "scripts": {
         "postinstall": "node scripts/postinstall.js",
