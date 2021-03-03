@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * =============================================================================
+ *
+ * Edited for use in Node by Kevin Van den Abeele
  */
 
 import * as tfconv from '@tensorflow/tfjs-converter';
@@ -49,9 +51,7 @@ export interface ModelConfig {
 
 export async function load(config: ModelConfig = {}) {
     if (tf == null) {
-        throw new Error(
-            `Cannot find TensorFlow.js. If you are using a <script> tag, please ` +
-            `also include @tensorflow/tfjs on the page before using this model.`);
+        throw new Error('TensorFlow not loaded correctly!');
     }
     const base = config.base || 'lite_mobilenet_v2';
     const modelUrl = config.modelUrl;

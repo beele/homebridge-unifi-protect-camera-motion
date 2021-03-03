@@ -9,7 +9,7 @@
         "compile": "node --max-old-space-size=1024 ./node_modules/typescript/lib/tsc.js",
         "homebridge": "tsc && homebridge -C -D -P . -U ./resources/test-config/",
         "watch": "nodemon",
-        "test": "jest --config jest.config.js --collect-coverage"
+        "test": "npm run compile && jest --config jest.config.js --collect-coverage && cd src/integration-tests && node detection-integration-test.js"
     },
     "config": {
         "unsafe-perm": true

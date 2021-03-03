@@ -8,7 +8,7 @@ export class Loader {
     constructor(private readonly log: Logging) {
     }
 
-    public async loadCoco(): Promise<Detector> {
+    public async loadCoco(useFullModel: boolean = false): Promise<Detector> {
         const printProcessDuration: Function = (name: string, start: number) => {
             this.log.debug(name + ' processing took: ' + (Date.now() - start) + 'ms');
         };
@@ -22,7 +22,7 @@ export class Loader {
             }
         };
 
-        const model: ObjectDetection = await load();
+        const model: ObjectDetection = await load({base: useFullModel ? 'mobilenet_v2' : 'lite_mobilenet_v2'});
         return {
             async detect(image: Image): Promise<Detection[]> {
                 const start = Date.now();
