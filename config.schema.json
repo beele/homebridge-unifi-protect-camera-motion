@@ -628,17 +628,17 @@
                     }
                 }
             },
+            "upload_gphotos": {
+                "title": "Enable upload to Google Photos?",
+                "type": "boolean",
+                "default": false,
+                "description": "If enabled every time a motion event is generated the snapshot used for detection will be uploaded to Google Photos",
+                "required": false
+            },
             "googlePhotos": {
                 "type": "object",
                 "title": "Google Photos specific configuration",
                 "properties": {
-                    "upload_gphotos": {
-                        "title": "Enable upload to Google Photos?",
-                        "type": "boolean",
-                        "default": false,
-                        "description": "If enabled every time a motion event is generated the snapshot used for detection will be uploaded to Google Photos",
-                        "required": true
-                    },
                     "auth_clientId": {
                         "title": "Google OAuth2 Client ID",
                         "type": "string",
@@ -662,76 +662,44 @@
                     }
                 }
             },
-            "videoConfig": {
+            "mqtt_enabled": {
+                "title": "Enable MQTT broker connection?",
+                "type": "boolean",
+                "default": false,
+                "description": "If enabled every time a motion event is generated a new message will be sent over MQTT",
+                "required": false
+            },
+            "mqtt": {
                 "type": "object",
-                "title": "FFmpeg specific configuration",
+                "title": "MQTT specific configuration",
                 "properties": {
-                    "maxStreams": {
-                        "title": "Maximum Number of Streams",
-                        "type": "integer",
-                        "default": 2,
-                        "minimum": 1,
-                        "description": "The maximum number of streams that will be generated for this camera",
-                        "required": true
-                    },
-                    "maxWidth": {
-                        "title": "Maximum Width",
-                        "type": "integer",
-                        "default": 1024,
-                        "minimum": 1,
-                        "description": "The maximum width reported to HomeKit",
-                        "required": true
-                    },
-                    "maxHeight": {
-                        "title": "Maximum Height",
-                        "type": "integer",
-                        "default": 576,
-                        "minimum": 1,
-                        "description": "The maximum height reported to HomeKit",
-                        "required": true
-                    },
-                    "maxFPS": {
-                        "title": "Maximum FPS",
-                        "type": "integer",
-                        "default": 15,
-                        "minimum": 1,
-                        "description": "The maximum frame rate of the stream",
-                        "required": true
-                    },
-                    "maxBitrate": {
-                        "title": "Maximum Bitrate",
-                        "type": "integer",
-                        "default": 3000,
-                        "minimum": 1,
-                        "description": "The maximum bit rate of the stream",
-                        "required": true
-                    },
-                    "vcodec": {
-                        "title": "Video Codec",
+                    "broker": {
+                        "title": "URL for the MQTT broker",
                         "type": "string",
-                        "default": "libx264",
-                        "description": "The codec to use, use h264_omx on Raspberry Pi",
+                        "default": "",
+                        "description": "must include the mqtt:// protocol prefix, port is optional.",
                         "required": true
                     },
-                    "packetSize": {
-                        "title": "Packet Size",
-                        "type": "number",
-                        "default": 376,
-                        "multipleOf": 188.0
-                    },
-                    "audio": {
-                        "title": "Enable Audio?",
-                        "type": "boolean",
-                        "default": false,
-                        "description": "Only enable when your installed FFmpeg supports audio!",
-                        "required": true
-                    },
-                    "additionalCommandline": {
-                        "title": "Additional commandline parameters",
+                    "username": {
+                        "title": "MQTT username",
                         "type": "string",
-                        "default": "-protocol_whitelist https,crypto,srtp,rtp,udp",
-                        "description": "Any additional commandline parameters to pass to FFmpeg",
-                        "required": true
+                        "default": "",
+                        "description": "Enter the username to connect to the MQTT broker with, if any.",
+                        "required": false
+                    },
+                    "password": {
+                        "title": "MQTT password",
+                        "type": "string",
+                        "default": "",
+                        "description": "Enter the password to connect to the MQTT broker with, if any.!",
+                        "required": false
+                    },
+                    "topicPrefix": {
+                        "title": "MQTT topic prefix",
+                        "type": "string",
+                        "default": "",
+                        "description": "Prefix that is added before every topic.",
+                        "required": false
                     }
                 }
             },

@@ -161,7 +161,6 @@ export class GooglePhotos {
 }
 
 export interface GooglePhotosConfig {
-    upload_gphotos: boolean;
     auth_clientId: string;
     auth_clientSecret: string;
     auth_redirectUrl: string;

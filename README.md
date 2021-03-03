@@ -5,9 +5,7 @@
 [![donate](https://img.shields.io/badge/donate-paypal-green)](https://paypal.me/MrBeele?locale.x=nl_NL)
   
 This Homebridge plugin allows you to add your Unifi Protect Cameras (and their Motion Sensors) to Homekit.
-
-It is based on the very popular [FFmpeg Homebridge plugin](https://github.com/KhaosT/homebridge-camera-ffmpeg#readme) plugin, with Unifi-specific conveniences added to it. 
-It is not necessary to have that plugin installed alongside this one, though they can be installed at the same time if you have non-Unifi Protect cameras as well.
+It adds smart detection by using a machine learning model to detect specific classes of objects in the camera view.
 
 # How it Works
 This plugin will automatically discover all the Unifi cameras from your Protect installation, and provide the following sensors for each one it finds:
@@ -18,11 +16,11 @@ This plugin will automatically discover all the Unifi cameras from your Protect 
 * A Switch, to trigger a motion event manually, forcing a rich notification
 * (if enabled) A switch, that acts as a doorbell trigger, to manually trigger a rich doorbell notification
 
-# Motion Events
+# Motion Events and object detection
 The plugin uses the Unifi Protect API to get motion events on a per camera basis.
 When motion has been detected one of the two methods below will be used to generate a motion notification in Homekit:  
-- The basic method: The "score" of the Unifi Protect motion event (which currently has a bug and is 0 as long as the motion is ongoing!)
-- The advanced method: Object detection by use of a Tensorflow model. 
+- The basic method: The "score" of the Unifi Protect motion event. (Which currently has a bug and is 0 as long as the motion is ongoing.)
+- The advanced method: Object detection by use of a Tensorflow model. (recommended)
   This logic/model runs on-device, and no data will be sent to any online/external/cloud source or service. 
   It is based on the [coco ssd](https://github.com/tensorflow/tfjs-models/tree/master/coco-ssd) project.
   
@@ -74,18 +72,17 @@ Next, open the `config.json` that contains your Homebridge configuration, and ad
             "id-of-camera-to-act-as-doorbell-1"
         ],
         "save_snapshot": true,
-        "upload_gphotos": false,
         "debug": false, 
         "debug_network_traffic": false,
     },
+    "upload_gphotos": false,
     "googlePhotos": {
-        "upload_gphotos": false,
         "auth_clientId": "CLIENT-ID",
         "auth_clientSecret": "CLIENT-SECRET",
         "auth_redirectUrl": "http://localhost:8888/oauth2-callback"
     },
+    "mqtt_enabled": false,
     "mqtt": {
-        "enabled": false,
         "broker": "mqtt://broker-ip",
         "username": "MQTT-BROKER-USERNAME",
         "password": "MQTT-BROKER-PASSWORD",
@@ -104,7 +101,9 @@ If you are using Homebridge Config X, it will do its best to alert you to any sy
 |-----|----|--------|-------------|-----------|
 |platform|string|yes|/|UnifiProtectMotion|
 |name|string|yes|/|Name of the plugin that shows up in the Homebridge logs|
-|[unifi](https://github.com/beele/homebridge-unifi-protect-camera-motion#unifi-config-fields)|object|yes|/|Wrapper object containing the unifi configuration|
+|[unifi](https://github.com/beele/homebridge-unifi-protect-camera-motion#unifi-configuration-fields)|object|yes|/|Wrapper object containing the unifi configuration|
+|[upload_gphotos](https://github.com/beele/homebridge-unifi-protect-camera-motion#google-photos-configuration)|boolean|no|false|Contains a boolean indicating whether or not to upload each detection to a google photos album. When using enhanced mode the image is annotated with the class/score that was detected.|
+|[mqtt_enabled](https://github.com/beele/homebridge-unifi-protect-camera-motion#mqtt-configuration)|boolean|no|false|Set this to true to enable MQTT support. Additional configuration required!|
 |videoProcessor|string|no|ffmpeg|Contains the path to an custom FFmpeg binary|
 
 
@@ -125,7 +124,6 @@ If you are using Homebridge Config X, it will do its best to alert you to any sy
 |enable_motion_trigger|boolean|no|false|Contains a boolean that when set to true will enable an extra button for each camera to manually trigger a motion notification|
 |enable_doorbell_for|string[]|no|[]|Contains the id of the cameras for which the doorbell functionality should be enabled, all available IDs are printed during startup|
 |save_snapshot|boolean|no|false|Contains a boolean indicating whether or not to save each detection to a jpg file in the `.homebridge` directory. When using enhanced mode the image is annotated with the class/score that was detected.|
-|upload_gphotos|boolean|no|false|Contains a boolean indicating whether or not to upload each detection to a google photos album. When using enhanced mode the image is annotated with the class/score that was detected.|
 |debug|boolean|no|false|Contains a boolean indicating whether or not to enable debug logging for the plugin and FFmpeg|
 |debug_network_traffic|boolean|no|false|Contains a boolean indication whether or not to enable logging of all network requests|
 
@@ -133,7 +131,6 @@ If you are using Homebridge Config X, it will do its best to alert you to any sy
 
 |Field|Type|Required|Default value|Description|
 |-----|----|--------|-------------|-----------|
-|upload_gphotos|boolean|no|false|Set this to true to enable uploading of snapshots to Google Photos|
 |auth_clientId|string|sometimes|/|This field is required when the `upload_gphotos` is set to true. Fill in the Client ID you generated for OAuth2 authentication|
 |auth_clientSecret|string|sometimes|/|This field is required when the `upload_gphotos` is set to true. Fill in the Client Secret you generated for OAuth2 authentication|
 |auth_redirectUrl|string|sometimes|/|Fill in 'http://localhost:8888/oauth2-callback' as a default, if you change this value to something else, also change it when creating the OAuth2 credentials! The port should always be 8888!|
@@ -144,7 +141,6 @@ To enable the upload to Google Photos functionality please [read the relevant wi
 
 |Field|Type|Required|Default value|Description|
 |-----|----|--------|-------------|-----------|
-|enabled|boolean|no|false|Set this to true to enable MQTT support|
 |broker|string|no|/|This field is required when the enabled field is set to true. Fill in your MQTT broker url, without the port|
 |username|string|no|/|This field contains the username for the MQTT broker connection, if any|
 |password|string|no|/|This field contains the password for the MQTT broker connection, if any|
@@ -196,8 +192,6 @@ Tap on a camera preview to open the camera feed, click the settings icon and scr
 - Running this plugin on CPUs that do not support AVX (Celerons in NAS systems, ...) is not supported because there are no prebuilt Tensorflow binaries. 
   Compiling Tensorflow from scratch is out of scope for this project!
   - Run it on a Raspberry Pi or machine with macOS / Windows / Linux (Debian based)
-- ~~Previews in notifications are requested by the Home app, and can thus be "after the fact" and show an image with nothing of interest on it.~~   
-  - ~~The actual motion detection is done with the snapshot that is requested internally.~~  
 - Unifi Protect has a snapshot saved for every event, and there is an API to get these (with Width & Height), but the actual saved image is pretty low res and is scaled up to 1080p. 
   Using the Anonymous snapshot actually gets a full resolution snapshot which is better for object detection.  
 - There is no way to know what motion zone (from Unifi) a motion has occurred in. 

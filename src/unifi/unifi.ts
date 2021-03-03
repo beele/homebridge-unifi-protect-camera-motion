@@ -306,7 +306,6 @@ export interface UnifiConfig {
     enable_motion_trigger: boolean;
     enable_doorbell_for: string[];
     save_snapshot: boolean;
-    upload_gphotos: boolean;
     debug: boolean;
     debug_network_traffic: boolean;
 }

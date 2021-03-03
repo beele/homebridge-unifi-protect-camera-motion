@@ -13,11 +13,20 @@ export class Mqtt {
         this.log = log;
         this.config = config;
 
-        if (!config || !config.enabled) {
+        if (!config || !config.broker) {
             return;
         }
 
-        this.client = mqtt.connect(config.broker, {username: config.username, password: config.password});
+        const options: {username?: string, password?: string} = {};
+        if (config.username) {
+            options.username = config.username;
+
+            if (config.password) {
+                options.password = config.password;
+            }
+        }
+
+        this.client = mqtt.connect(config.broker, options);
         this.client.on('connect', () => {
             this.log.debug('Connected to MQTT broker');
         });
@@ -34,7 +43,6 @@ export class Mqtt {
 }
 
 export interface MqttConfig {
-    enabled: boolean;
     broker: string;
     username: string;
     password: string;

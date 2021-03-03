@@ -5,12 +5,13 @@ import {Canvas, Image} from "canvas";
 import {ImageUtils} from "../utils/image-utils";
 import {GooglePhotos, GooglePhotosConfig} from "../utils/google-photos";
 import type {API, Logging, PlatformAccessory, PlatformConfig} from 'homebridge';
-import {Mqtt, MqttConfig} from "../utils/mqtt";
+import {Mqtt} from "../utils/mqtt";
 
 export class MotionDetector {
 
     private readonly api: API;
 
+    private readonly config: PlatformConfig;
     private readonly unifiConfig: UnifiConfig;
     private readonly googlePhotosConfig: GooglePhotosConfig;
     private readonly flows: UnifiFlows;
@@ -26,6 +27,7 @@ export class MotionDetector {
     constructor(api: API, config: PlatformConfig, unifiFlows: UnifiFlows, cameras: UnifiCamera[], log: Logging) {
         this.api = api;
 
+        this.config = config;
         this.unifiConfig = config.unifi as UnifiConfig;
         this.googlePhotosConfig = config.googlePhotos as GooglePhotosConfig;
         this.flows = unifiFlows;
@@ -38,8 +40,8 @@ export class MotionDetector {
 
         const userStoragePath: string = this.api.user.storagePath();
         ImageUtils.userStoragePath = userStoragePath;
-        this.gPhotos = this.googlePhotosConfig && this.googlePhotosConfig.upload_gphotos ? new GooglePhotos(config.googlePhotos as GooglePhotosConfig, userStoragePath, log) : null;
-        this.mqtt = new Mqtt(config.mqtt as MqttConfig, log);
+        this.gPhotos = config.upload_gphotos && this.googlePhotosConfig ? new GooglePhotos(config.googlePhotos as GooglePhotosConfig, userStoragePath, log) : null;
+        this.mqtt = new Mqtt(config.mqtt_enabled ? config.mqtt : null , log);
     }
 
     public async setupMotionChecking(configuredAccessories: PlatformAccessory[]): Promise<any> {
@@ -161,11 +163,11 @@ export class MotionDetector {
             let annotatedImage: Canvas = await ImageUtils.generateAnnotatedImage(snapshot, detections);
 
             //Save image locally
-            if ((this.unifiConfig.save_snapshot || this.googlePhotosConfig.upload_gphotos) && annotatedImage) {
+            if ((this.unifiConfig.save_snapshot || this.config.upload_gphotos) && annotatedImage) {
                 const fileLocation: string = await ImageUtils.saveCanvasToFile(annotatedImage);
                 this.log.debug('The snapshot has been saved to: ' + fileLocation);
 
-                if (this.googlePhotosConfig.upload_gphotos) {
+                if (this.config.upload_gphotos) {
                     const fileName: string = fileLocation.split('/').pop();
 
                     this.gPhotos
