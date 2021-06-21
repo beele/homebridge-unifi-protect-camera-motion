@@ -1,6 +1,6 @@
 {
     "name": "homebridge-unifi-protect-camera-motion",
-    "version": "0.4.3",
+    "version": "0.4.4",
     "description": "Unifi Protect cameras & motion sensors for Homebridge. AI enabled Motion detection for Unifi Protect cameras.",
     "main": "src/index.js",
     "scripts": {
@@ -30,26 +30,26 @@
         "url": "https://paypal.me/MrBeele?locale.x=nl_NL"
     },
     "engines": {
-        "node": ">=10.17.0",
+        "node": ">=12",
         "homebridge": ">=1.2.0"
     },
     "dependencies": {
         "@tensorflow/tfjs-node": "^2.8.6",
-        "canvas": "^2.6.1",
-        "execa": "^5.0.0",
+        "canvas": "^2.8.0",
+        "execa": "^5.1.1",
         "ffmpeg-for-homebridge": "^0.0.9",
         "get-port": "^5.1.1",
-        "googleapis": "67.1.0",
+        "googleapis": "77.0.0",
         "googlephotos": "^0.3.4",
-        "mqtt": "^4.2.6",
+        "mqtt": "4.2.6",
         "node-fetch": "^2.6.1"
     },
     "devDependencies": {
         "@types/jest": "^26.0.20",
         "@types/node": "^14.14.31",
-        "homebridge": "^1.3.1",
+        "homebridge": "^1.3.4",
         "nodemon": "^2.0.7",
-        "typescript": "^4.2.2",
+        "typescript": "^4.3.4",
         "jest": "^26.6.3",
         "ts-jest": "^26.5.2"
     }

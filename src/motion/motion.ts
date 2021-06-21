@@ -87,7 +87,7 @@ export class MotionDetector {
 
                     this.log.info('Motion detected (' + camera.lastMotionEvent.score + '%) by camera ' + camera.name + ' !!!!');
                     configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
-                    this.mqtt.sendMessageOnTopic(JSON.stringify({score: camera.lastMotionEvent.score, timestamp: new Date().toISOString()}), camera.name);
+                    this.mqtt.sendMessageOnTopic(JSON.stringify({score: camera.lastMotionEvent.score, timestamp: new Date().toISOString(), snapshot: ImageUtils.resizeCanvas(camera.lastDetectionSnapshot, 480, 270).toBuffer('image/jpeg', {quality: 0.5}).toString('base64')}),  camera.name);
 
                     let snapshot: Image;
                     try {
@@ -144,7 +144,7 @@ export class MotionDetector {
                                 this.log.info('Detected: ' + detection.class + ' (' + score + '%) by camera ' + camera.name);
                                 camera.lastDetectionSnapshot = await this.persistSnapshot(snapshot, detection.class + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
                                 configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
-                                this.mqtt.sendMessageOnTopic(JSON.stringify({class: detection.class, score, timestamp: new Date().toISOString()}), camera.name);
+                                this.mqtt.sendMessageOnTopic(JSON.stringify({class: detection.class, score, timestamp: new Date().toISOString(), snapshot: ImageUtils.resizeCanvas(camera.lastDetectionSnapshot, 480, 270).toBuffer('image/jpeg', {quality: 0.5}).toString('base64')}), camera.name);
                                 continue outer;
                             } else {
                                 this.log.debug('Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.unifiConfig.enhanced_motion_score + '% or higher)');
