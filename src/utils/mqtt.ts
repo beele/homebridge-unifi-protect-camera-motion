@@ -35,10 +35,39 @@ export class Mqtt {
         });
     }
 
-    public sendMessageOnTopic(message: string, topic: string) {
+    public sendMessageOnTopic(message: string, topic: string): void {
         if (this.client && this.client.connected) {
             this.client.publish(this.config.topicPrefix + '/' + topic, message);
         }
+    }
+
+    private onConnection(): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            let interval = setInterval(() => {
+                if (this.client.connected) {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, 10);
+        });
+    }
+
+    public subscribeToTopic(topic: string, callback: (payload: {enabled: boolean}) => void): void {
+        this.onConnection().then(() => {
+            this.log.debug('Subscribing to: ' + this.config.topicPrefix + '/' + topic);
+            this.client.subscribe(this.config.topicPrefix + '/' + topic, (err, granted) => {
+                console.log(granted);
+                if (!err) {
+                    if (granted && granted.length === 1) {
+                        this.client.on('message', (messageTopic, messagePayload, packet) => {
+                            if (messageTopic === this.config.topicPrefix + '/' + topic) { 
+                                callback(JSON.parse(messagePayload.toString()) as any);
+                            }
+                        });
+                    }
+                }
+            });
+        });
     }
 }
 

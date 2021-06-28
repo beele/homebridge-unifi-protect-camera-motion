@@ -18,12 +18,14 @@ import {UnifiCameraMotionSensor} from "./characteristics/unifi-camera-motion-sen
 import {UnifiCameraDoorbell} from "./characteristics/unifi-camera-doorbell";
 import {UnifiCameraStreaming} from "./streaming/unifi-camera-streaming";
 import {UnifiStreamingDelegate} from "./streaming/unifi-streaming-delegate";
+import { Mqtt } from './utils/mqtt';
 
 export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
     public readonly hap: HAP = this.api.hap;
     public readonly Accessory: typeof PlatformAccessory = this.api.platformAccessory;
 
+    private mqtt: Mqtt;
     private accessories: Array<PlatformAccessory> = [];
 
     private uFlows: UnifiFlows;
@@ -103,17 +105,18 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
         // Set up the motion detection for all valid accessories
         try {
+            this.mqtt = new Mqtt(this.config.mqtt_enabled ? this.config.mqtt : null , this.log);
             this.accessories.forEach((accessory) => {
                 const cameraConfig: CameraConfig = accessory.context.cameraConfig;
                 // Update the camera object
                 cameraConfig.camera = cameras.find((cam: UnifiCamera) => cam.id === accessory.context.cameraConfig.camera.id);
 
-                UnifiCameraMotionSensor.setupMotionSensor(cameraConfig, accessory, this.config, this.hap, this.log);
+                UnifiCameraMotionSensor.setupMotionSensor(cameraConfig, accessory, this.config, this.mqtt, this.hap, this.log);
                 UnifiCameraDoorbell.setupDoorbell(cameraConfig, accessory, this.config, this.hap, this.log);
                 UnifiCameraStreaming.setupStreaming(cameraConfig, accessory, this.config, this.api, this.log);
             });
 
-            const motionDetector: MotionDetector = new MotionDetector(this.api, this.config, this.uFlows, cameras, this.log);
+            const motionDetector: MotionDetector = new MotionDetector(this.api, this.config, this.mqtt, this.uFlows, cameras, this.log);
             await motionDetector.setupMotionChecking(this.accessories);
             this.log.info('Motion checking setup done!');
         } catch (error) {

@@ -7,10 +7,11 @@ import {
     PlatformAccessory,
 } from "homebridge";
 import {CameraConfig} from "../streaming/camera-config";
+import { Mqtt } from "../utils/mqtt";
 
 export class UnifiCameraMotionSensor {
 
-    public static setupMotionSensor(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, hap: HAP, log: Logging): void {
+    public static setupMotionSensor(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, mqtt: Mqtt, hap: HAP, log: Logging): void {
         const Service = hap.Service;
 
         const motion = accessory.getService(hap.Service.MotionSensor);
@@ -30,6 +31,13 @@ export class UnifiCameraMotionSensor {
         accessory.addService(new Service.MotionSensor(cameraConfig.name + ' Motion sensor'));
         accessory.addService(motionSwitch);
 
+        mqtt.subscribeToTopic(cameraConfig.name + '/set', (payload: {enabled: boolean}) => {
+            if (payload && payload.enabled !== undefined) {
+                accessory.context.motionEnabled = payload.enabled;
+                log.info('Motion detection for ' + cameraConfig.name + ' has been turned ' + (accessory.context.motionEnabled ? 'ON' : 'OFF'));
+            }
+        });
+
         motionSwitch
             .getCharacteristic(hap.Characteristic.On)
             .on(hap.CharacteristicEventTypes.GET, (callback: CharacteristicSetCallback) => {
@@ -37,6 +45,7 @@ export class UnifiCameraMotionSensor {
             })
             .on(hap.CharacteristicEventTypes.SET, (state: CharacteristicValue, callback: CharacteristicSetCallback) => {
                 accessory.context.motionEnabled = state;
+                mqtt.sendMessageOnTopic(JSON.stringify({enabled: accessory.context.motionEnabled}), cameraConfig.name + '/set');
                 log.info('Motion detection for ' + cameraConfig.name + ' has been turned ' + (accessory.context.motionEnabled ? 'ON' : 'OFF'));
                 callback();
             });
