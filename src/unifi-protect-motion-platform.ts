@@ -105,7 +105,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
         // Set up the motion detection for all valid accessories
         try {
-            this.mqtt = new Mqtt(this.config.mqtt_enabled !== true ? this.config.mqtt : null , this.log);
+            this.mqtt = new Mqtt(this.config.mqtt_enabled === true ? this.config.mqtt : null , this.log);
             this.accessories.forEach((accessory) => {
                 const cameraConfig: CameraConfig = accessory.context.cameraConfig;
                 // Update the camera object

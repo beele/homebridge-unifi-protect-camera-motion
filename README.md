@@ -31,6 +31,7 @@ Consult the readme and [the wiki](https://github.com/beele/homebridge-unifi-prot
 In short, the main dependencies are:
 - Raspberry Pi / Ubuntu / Debian Linux:
   - install: `sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev`
+  - I do not support Hoobs as they do funky things, just use the official Homebridge image!
 - Mac OS: 
   - install via Homebrew: `brew install pkg-config cairo pango libpng jpeg giflib librsvg`   
 - Linux:

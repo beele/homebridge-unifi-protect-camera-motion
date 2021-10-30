@@ -1,42 +1,46 @@
 import {Utils} from "./utils";
 
-test('Utils-backOff-fail', async (done: Function) => {
+test('Utils-backOff-fail', async (): Promise<void> => {
     const fn: () => Promise<any> = (): Promise<any> => {
         return new Promise((resolve, reject) => {
             reject('rejected');
         });
     }
 
-    Utils
+    return new Promise((resolve, reject) => {
+        Utils
         .retry(3, fn, 100)
         .then((result) => {
-            fail('Should not revolve! (' + result + ')');
+            reject('Should not revolve! (' + result + ')');
         })
         .catch((error) => {
             expect(error).toEqual('rejected');
-            done();
+            resolve();
         });
+    });
 });
 
-test('Utils-backOff-success-first-try', async (done: Function) => {
+test('Utils-backOff-success-first-try', async (): Promise<void> => {
     const fn: () => Promise<any> = (): Promise<any> => {
         return new Promise((resolve, reject) => {
             resolve('success');
         });
     };
 
-    Utils
+    return new Promise((resolve, reject) => {
+        Utils
         .retry(3, fn, 100)
         .then((result) => {
             expect(result).toEqual('success');
-            done();
+            resolve()
         })
         .catch((error) => {
-            fail('Should not reject! (' + error + ')');
+            reject('Should not reject! (' + error + ')');
         });
+    });
 });
 
-test('Utils-backOff-success-second-try', async (done: Function) => {
+test('Utils-backOff-success-second-try', async (): Promise<void> => {
     const counterWrapper: {count: number} = {count: 1};
 
     const fn: () => Promise<any> = (): Promise<any> => {
@@ -50,19 +54,21 @@ test('Utils-backOff-success-second-try', async (done: Function) => {
         });
     };
 
-    Utils
+    return new Promise((resolve, reject) => {
+        Utils
         .retry(3, fn, 100)
         .then((result) => {
             expect(result).toEqual('success');
             expect(counterWrapper.count).toEqual(2);
-            done();
+            resolve();
         })
         .catch((error) => {
-            fail('Should not reject! (' + error + ')');
+            reject('Should not reject! (' + error + ')');
         });
+    });
 });
 
-test('Utils-backOff-success-third-try', async (done: Function) => {
+test('Utils-backOff-success-third-try', async (): Promise<void> => {
     const counterWrapper: {count: number} = {count: 1};
 
     const fn: () => Promise<any> = (): Promise<any> => {
@@ -76,15 +82,17 @@ test('Utils-backOff-success-third-try', async (done: Function) => {
         });
     };
 
-    Utils
+    return new Promise((resolve, reject) => {
+        Utils
         .retry(3, fn, 100)
         .then((result) => {
             expect(result).toEqual('success');
             expect(counterWrapper.count).toEqual(3);
-            done();
+            resolve();
         })
         .catch((error) => {
-            fail('Should not reject! (' + error + ')');
+            reject('Should not reject! (' + error + ')');
         });
+    });
 });
 

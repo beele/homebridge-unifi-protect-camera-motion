@@ -114,7 +114,7 @@ export class Unifi {
             headers, this.networkLogger
         );
         const response: Response = await Utils.retry(this.maxRetries, () => { return bootstrapPromise }, this.initialBackoffDelay);
-        const cams = (await response.json()).cameras;
+        const cams = ((await response.json()) as any).cameras;
 
         this.log.debug('Cameras retrieved, enumerating motion sensors');
 
@@ -174,7 +174,7 @@ export class Unifi {
         );
         const response: Response = await Utils.retry(this.maxRetries, () => { return eventsPromise }, this.initialBackoffDelay);
 
-        const events: any[] = await response.json();
+        const events: any[] = await response.json() as any;
         return events.map((event: any) => {
             if (this.config.debug) {
                 this.log.debug(event);
