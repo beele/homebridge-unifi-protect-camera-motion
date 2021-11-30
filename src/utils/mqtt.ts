@@ -44,7 +44,7 @@ export class Mqtt {
     private onConnection(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             let interval = setInterval(() => {
-                if (this.client.connected) {
+                if (this.client && this.client.connected) {
                     clearInterval(interval);
                     resolve();
                 }
