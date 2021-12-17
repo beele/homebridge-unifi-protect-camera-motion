@@ -25,7 +25,9 @@ export class ImageUtils {
     public static resizeCanvas(inputCanvas: Canvas, targetWidth: number, targetHeight: number): Canvas {
         const canvas: Canvas = createCanvas(targetWidth, targetHeight);
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(inputCanvas, 0, 0, inputCanvas.width, inputCanvas.height, 0, 0, targetWidth, targetHeight);
+        if (inputCanvas) {
+            ctx.drawImage(inputCanvas, 0, 0, inputCanvas.width, inputCanvas.height, 0, 0, targetWidth, targetHeight);
+        }
         return canvas;
     }
 
