@@ -27,16 +27,16 @@ export class Mqtt {
         }
 
         this.client = mqtt.connect(config.broker, options);
-        this.client.on('connect', () => {
+        this.client?.on('connect', () => {
             this.log.debug('Connected to MQTT broker');
         });
-        this.client.on('error', (error: Error) => {
+        this.client?.on('error', (error: Error) => {
             this.log.error('MQTT error: ' + error.message);
         });
     }
 
     public sendMessageOnTopic(message: string, topic: string): void {
-        if (this.client && this.client.connected) {
+        if (this.client?.connected) {
             this.client.publish(this.config.topicPrefix + '/' + topic, message);
         }
     }
@@ -44,7 +44,7 @@ export class Mqtt {
     private onConnection(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             let interval = setInterval(() => {
-                if (this.client && this.client.connected) {
+                if (this.client?.connected) {
                     clearInterval(interval);
                     resolve();
                 }
@@ -55,11 +55,11 @@ export class Mqtt {
     public subscribeToTopic(topic: string, callback: (payload: {enabled: boolean}) => void): void {
         this.onConnection().then(() => {
             this.log.debug('Subscribing to: ' + this.config.topicPrefix + '/' + topic);
-            this.client.subscribe(this.config.topicPrefix + '/' + topic, (err, granted) => {
+            this.client?.subscribe(this.config.topicPrefix + '/' + topic, (err, granted) => {
                 console.log(granted);
                 if (!err) {
                     if (granted && granted.length === 1) {
-                        this.client.on('message', (messageTopic, messagePayload, packet) => {
+                        this.client?.on('message', (messageTopic, messagePayload, packet) => {
                             if (messageTopic === this.config.topicPrefix + '/' + topic) { 
                                 callback(JSON.parse(messagePayload.toString()) as any);
                             }
