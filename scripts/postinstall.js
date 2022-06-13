@@ -17,6 +17,14 @@ switch (process.arch) {
         // console.log('ARM64 architecture, tfjs-lib not precompiled, downloading external precompiled lib...');
         // createCustomBinaryJson('https://s3.us.cloud-object-storage.appdomain.cloud/tfjs-cos/libtensorflow-gpu-linux-arm64-1.15.0.tar.gz');
         break;
+    case 'cpu-darwin-arm64':
+        console.log('Supported architecture, tfjs-lib should be available!');
+        console.log('Specific ARM version: ' + process.config.variables.arm_version);
+        break;
+    case 'cpu-linux-arm64':
+        console.log('Supported architecture, tfjs-lib should be available!');
+        console.log('Specific ARM version: ' + process.config.variables.arm_version);
+        break;
     case 'x32':
     case 'x64':
         console.log('Supported architecture, tfjs-lib should be available!');
