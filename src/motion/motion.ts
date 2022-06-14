@@ -1,11 +1,14 @@
-import {UnifiCamera, UnifiConfig, UnifiMotionEvent} from "../unifi/unifi";
-import {Detection, Detector, Loader} from "./coco/loader";
-import {UnifiFlows} from "../unifi/unifi-flows";
-import {Canvas, Image} from "canvas";
-import {ImageUtils} from "../utils/image-utils";
-import {GooglePhotos, GooglePhotosConfig} from "../utils/google-photos";
-import type {API, Logging, PlatformAccessory, PlatformConfig} from 'homebridge';
-import {Mqtt} from "../utils/mqtt";
+import { UnifiCamera, UnifiConfig, UnifiMotionEvent } from "../unifi/unifi";
+import { UnifiFlows } from "../unifi/unifi-flows";
+import { Canvas, Image } from "canvas";
+import { ImageUtils } from "../utils/image-utils";
+import { GooglePhotos, GooglePhotosConfig } from "../utils/google-photos";
+import type { API, Logging, PlatformAccessory, PlatformConfig } from 'homebridge';
+import { Mqtt } from "../utils/mqtt";
+import fetch from "node-fetch";
+import FormData from "form-data";
+
+import { exec } from "child_process";
 
 export class MotionDetector {
 
@@ -18,8 +21,6 @@ export class MotionDetector {
     private readonly cameras: UnifiCamera[];
     private readonly log: Logging;
 
-    private modelLoader: Loader;
-    private detector: Detector;
     private gPhotos: GooglePhotos;
     private mqtt: Mqtt;
     private configuredAccessories: any[];
@@ -35,9 +36,6 @@ export class MotionDetector {
 
         this.log = log;
 
-        this.modelLoader = new Loader(log);
-        this.detector = null;
-
         const userStoragePath: string = this.api.user.storagePath();
         ImageUtils.userStoragePath = userStoragePath;
         this.gPhotos = config.upload_gphotos && this.googlePhotosConfig ? new GooglePhotos(config.googlePhotos as GooglePhotosConfig, userStoragePath, log) : null;
@@ -49,7 +47,22 @@ export class MotionDetector {
 
         let intervalFunction: Function;
         if (this.unifiConfig.enhanced_motion) {
-            this.detector = await this.modelLoader.loadCoco();
+            const pythonProcess = exec('python3 detector.py', {
+                cwd: './src/motion/detector/'
+            });
+            //pythonProcess.stdout.pipe(process.stdout);
+            //pythonProcess.stderr.pipe(process.stderr);
+            /*pythonProcess.on('exit', (code) => {
+                console.log(code.toString());
+            });*/
+            process.on('exit', () => {
+                try {
+                    pythonProcess.kill();
+                } catch (e) {
+                    // no-op, cannot kill Python process, likely already killed!
+                }
+            });
+
             intervalFunction = this.checkMotionEnhanced.bind(this);
         } else {
             intervalFunction = this.checkMotion.bind(this);
@@ -87,7 +100,7 @@ export class MotionDetector {
 
                     this.log.info('Motion detected (' + camera.lastMotionEvent.score + '%) by camera ' + camera.name + ' !!!!');
                     configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
-                    this.mqtt.sendMessageOnTopic(JSON.stringify({score: camera.lastMotionEvent.score, timestamp: new Date().toISOString(), snapshot: ImageUtils.resizeCanvas(camera.lastDetectionSnapshot, 480, 270).toBuffer('image/jpeg', {quality: 0.5}).toString('base64')}),  camera.name);
+                    this.mqtt.sendMessageOnTopic(JSON.stringify({ score: camera.lastMotionEvent.score, timestamp: new Date().toISOString(), snapshot: ImageUtils.resizeCanvas(camera.lastDetectionSnapshot, 480, 270).toBuffer('image/jpeg', { quality: 0.5 }).toString('base64') }), camera.name);
 
                     let snapshot: Image;
                     try {
@@ -124,12 +137,23 @@ export class MotionDetector {
                     }
 
                     let snapshot: Image;
+                    const form = new FormData();
                     try {
                         snapshot = await ImageUtils.createImage('http://' + camera.ip + '/snap.jpeg');
+                        let fimg = await fetch('http://' + camera.ip + '/snap.jpeg');
+                        const buffer = Buffer.from(await fimg.arrayBuffer());
+                        const fileName = 'detection-' + camera.name + 'jpg';
+
+                        form.append('imageFile', buffer, {
+                            contentType: 'text/plain',
+                            filename: fileName,
+                        });
                     } catch (error) {
                         continue outer;
                     }
-                    const detections: Detection[] = await this.detector.detect(snapshot, this.unifiConfig.debug);
+
+                    const data = await fetch('http://127.0.0.1:5000', { method: 'POST', body: form });
+                    const detections: Detection[] = this.mapDetectorJsonToDetections(await data.json());
 
                     for (const classToDetect of this.unifiConfig.enhanced_classes) {
                         const detection: Detection = this.getDetectionForClassName(classToDetect, detections);
@@ -144,7 +168,7 @@ export class MotionDetector {
                                 this.log.info('Detected: ' + detection.class + ' (' + score + '%) by camera ' + camera.name);
                                 camera.lastDetectionSnapshot = await this.persistSnapshot(snapshot, detection.class + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
                                 configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
-                                this.mqtt.sendMessageOnTopic(JSON.stringify({class: detection.class, score, timestamp: new Date().toISOString(), snapshot: ImageUtils.resizeCanvas(camera.lastDetectionSnapshot, 480, 270).toBuffer('image/jpeg', {quality: 0.5}).toString('base64')}), camera.name);
+                                this.mqtt.sendMessageOnTopic(JSON.stringify({ class: detection.class, score, timestamp: new Date().toISOString(), snapshot: ImageUtils.resizeCanvas(camera.lastDetectionSnapshot, 480, 270).toBuffer('image/jpeg', { quality: 0.5 }).toString('base64') }), camera.name);
                                 continue outer;
                             } else {
                                 this.log.debug('Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.unifiConfig.enhanced_motion_score + '% or higher)');
@@ -221,4 +245,35 @@ export class MotionDetector {
         }
         return null;
     }
+
+    private mapDetectorJsonToDetections(input: { xmin: any, ymin: any, xmax: any, ymax: any, class: any, name: any, confidence: any }): Detection[] {
+        const detectionKeys: string[] = Object.keys(input.xmin) || [];
+
+        const detections: Detection[] = [];
+        for (let i = 0; i < detectionKeys.length - 1; i++) {
+            detections.push({
+                class: input.name[detectionKeys[i]],
+                score: input.confidence[detectionKeys[i]],
+                bbox: [
+                    input.xmin[detectionKeys[i]],
+                    input.ymin[detectionKeys[i]],
+                    (input.xmax[detectionKeys[i]] - input.xmin[detectionKeys[i]]),
+                    (input.ymax[detectionKeys[i]] - input.ymin[detectionKeys[i]])
+                ]
+            });
+        }
+
+        return detections;
+    }
+}
+export interface Detection {
+    class: string;
+    score: number;
+    bbox: number[];
+    /*
+        bbox[0] = minX;
+        bbox[1] = minY;
+        bbox[2] = maxX - minX;
+        bbox[3] = maxY - minY;
+    */
 }

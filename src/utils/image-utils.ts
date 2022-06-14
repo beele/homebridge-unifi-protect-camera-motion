@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 import {Canvas, createCanvas, Image, loadImage} from "canvas";
-import {Detection} from "../motion/coco/loader";
+import { Detection } from "../motion/motion";
 
 export class ImageUtils {
 

@@ -1,0 +1,14 @@
+# Usage: pip install -r requirements.txt
+
+matplotlib>=3.2.2
+numpy>=1.18.5
+opencv-python>=4.1.1
+PyYAML>=5.3.1
+requests>=2.23.0
+scipy>=1.4.1  # Google Colab version
+torch>=1.7.0
+torchvision>=0.8.1
+tqdm>=4.41.0
+pandas>=1.1.4
+seaborn>=0.11.0
+flask>=2.1.2

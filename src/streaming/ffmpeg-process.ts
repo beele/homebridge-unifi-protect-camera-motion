@@ -9,7 +9,7 @@
  */
 
 import {createSocket} from 'dgram';
-import {execa, ExecaChildProcess, ExecaError} from 'execa';
+import execa, {ExecaChildProcess, ExecaError} from 'execa';
 import {Logging, StreamRequestCallback} from 'homebridge';
 import {Readable, Writable} from 'stream';
 import {UnifiStreamingDelegate} from './unifi-streaming-delegate';
