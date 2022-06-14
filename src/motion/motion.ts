@@ -7,7 +7,7 @@ import type { API, Logging, PlatformAccessory, PlatformConfig } from 'homebridge
 import { Mqtt } from "../utils/mqtt";
 import fetch from "node-fetch";
 import FormData from "form-data";
-import execa, {ExecaChildProcess, ExecaError} from 'execa';
+import execa from 'execa';
 
 export class MotionDetector {
 
@@ -46,7 +46,9 @@ export class MotionDetector {
 
         let intervalFunction: Function;
         if (this.unifiConfig.enhanced_motion) {
+            this.log.info("Starting python detector");
             await this.startDetector();
+            this.log.info("Python detector started");
             intervalFunction = this.checkMotionEnhanced.bind(this);
         } else {
             intervalFunction = this.checkMotion.bind(this);
@@ -231,12 +233,13 @@ export class MotionDetector {
     }
 
     private async startDetector(): Promise<void> {
-        try {
-            const temp: string = __filename.replace('motion.js', '');
-            await execa('python3', ['detector.py'], {cwd: temp + 'detector/'});
-        } catch (error) {
-            this.log.debug(error);
-        }
+        const temp: string = __filename.replace('motion.js', '');
+        execa('python3', ['detector.py'], { cwd: temp + 'detector/' })
+            .then(() => {
+                this.log.debug("Python detector has exited (no error)");
+            }).catch((err) => {
+                this.log.debug(err);
+            });
     }
 
     private mapDetectorJsonToDetections(input: { xmin: any, ymin: any, xmax: any, ymax: any, class: any, name: any, confidence: any }): Detection[] {
