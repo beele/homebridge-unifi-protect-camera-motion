@@ -7,8 +7,7 @@ import type { API, Logging, PlatformAccessory, PlatformConfig } from 'homebridge
 import { Mqtt } from "../utils/mqtt";
 import fetch from "node-fetch";
 import FormData from "form-data";
-
-import { exec } from "child_process";
+import execa, {ExecaChildProcess, ExecaError} from 'execa';
 
 export class MotionDetector {
 
@@ -47,22 +46,7 @@ export class MotionDetector {
 
         let intervalFunction: Function;
         if (this.unifiConfig.enhanced_motion) {
-            const pythonProcess = exec('python3 detector.py', {
-                cwd: './src/motion/detector/'
-            });
-            //pythonProcess.stdout.pipe(process.stdout);
-            //pythonProcess.stderr.pipe(process.stderr);
-            /*pythonProcess.on('exit', (code) => {
-                console.log(code.toString());
-            });*/
-            process.on('exit', () => {
-                try {
-                    pythonProcess.kill();
-                } catch (e) {
-                    // no-op, cannot kill Python process, likely already killed!
-                }
-            });
-
+            await this.startDetector();
             intervalFunction = this.checkMotionEnhanced.bind(this);
         } else {
             intervalFunction = this.checkMotion.bind(this);
@@ -152,7 +136,7 @@ export class MotionDetector {
                         continue outer;
                     }
 
-                    const data = await fetch('http://127.0.0.1:5000', { method: 'POST', body: form });
+                    const data = await fetch('http://127.0.0.1:5050', { method: 'POST', body: form });
                     const detections: Detection[] = this.mapDetectorJsonToDetections(await data.json());
 
                     for (const classToDetect of this.unifiConfig.enhanced_classes) {
@@ -244,6 +228,15 @@ export class MotionDetector {
             }
         }
         return null;
+    }
+
+    private async startDetector(): Promise<void> {
+        try {
+            const temp: string = __filename.replace('motion.js', '');
+            await execa('python3', ['detector.py'], {cwd: temp + 'detector/'});
+        } catch (error) {
+            this.log.debug(error);
+        }
     }
 
     private mapDetectorJsonToDetections(input: { xmin: any, ymin: any, xmax: any, ymax: any, class: any, name: any, confidence: any }): Detection[] {

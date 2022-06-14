@@ -16,3 +16,5 @@ resources/test-config
 resources/tfjs-arm
 resources/test.jpg
 src/experimental
+
+test.js

@@ -5,7 +5,7 @@ import torch
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
 
 app = Flask(__name__)
-app.config["UPLOAD_FOLDER"] = "./upload"
+app.config["UPLOAD_FOLDER"] = "/var/lib/homebridge"
 
 @app.route("/", methods=["POST"])
 def upload_file():
@@ -23,7 +23,7 @@ def process_image(imgPath):
     return results.pandas().xyxy[0].to_json()
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0", port=5050)
 
 # Resources:
 # - https://www.section.io/engineering-education/object-detection-with-yolov5-and-pytorch/
