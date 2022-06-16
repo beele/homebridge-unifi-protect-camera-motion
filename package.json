@@ -42,7 +42,7 @@
         "googleapis": "98.0.0",
         "googlephotos": "^0.3.5",
         "mqtt": "4.3.7",
-        "node-fetch": "2.6.6"
+        "node-fetch": "2.6.7"
     },
     "devDependencies": {
         "@tsconfig/node16": "^1.0.3",
