@@ -27,13 +27,13 @@ import {
     StreamRequestCallback,
     StreamRequestTypes
 } from 'homebridge';
-import {ImageUtils} from '../utils/image-utils';
-import {Canvas} from 'canvas';
-import {Unifi, UnifiCamera} from '../unifi/unifi';
-import {UnifiFlows} from '../unifi/unifi-flows';
-import {FfmpegProcess} from './ffmpeg-process';
-import {RtpDemuxer, RtpUtils} from './rtp-splitter';
-import {CameraConfig} from './camera-config';
+import { ImageUtils } from '../utils/image-utils';
+import { Canvas } from 'canvas';
+import { Unifi, UnifiCamera } from '../unifi/unifi';
+import { UnifiFlows } from '../unifi/unifi-flows';
+import { FfmpegProcess } from './ffmpeg-process';
+import { RtpDemuxer, RtpUtils } from './rtp-splitter';
+import { CameraConfig } from './camera-config';
 import ffmpegPath from 'ffmpeg-for-homebridge';
 
 type SessionInfo = {
@@ -113,7 +113,7 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
                         // through Level 5.1 (G4 Pro at maximum resolution). However, HomeKit only supports Level 3.1, 3.2,
                         // and 4.0 currently.
                         levels: [this.hap.H264Level.LEVEL3_1, this.hap.H264Level.LEVEL3_2, this.hap.H264Level.LEVEL4_0],
-                        profiles: [ this.hap.H264Profile.MAIN ]
+                        profiles: [this.hap.H264Profile.MAIN]
                     },
 
                     //TODO: Rework this!
@@ -206,104 +206,134 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
 
         // -rtsp_transport tcp: tell the RTSP stream handler that we're looking for a TCP connection.
         const streamingUrl: string = Unifi.generateStreamingUrlForBestMatchingResolution(this.cameraConfig.source, this.camera.streams, request.video.width, request.video.height);
-        const ffmpegArgs: string[] = ['-hide_banner', '-rtsp_transport', 'tcp', '-i', streamingUrl];
+
+        // -hide_banner                     Suppress printing the startup banner in FFmpeg.
+        // -probesize 2048                  How many bytes should be analyzed for stream information. We default to to analyze time should be spent analyzing
+        //                                  the input stream, in microseconds.
+        // -max_delay 500000                Set an upper limit on how much time FFmpeg can take in demuxing packets.
+        // -r fps                           Set the input frame rate for the video stream.
+        // -rtsp_transport tcp              Tell the RTSP stream handler that we're looking for a TCP connection.
+        // -i this.rtspEntry.url            RTSPS URL to get our input stream from.
+        // -map 0:v:0                       selects the first available video track from the stream. Protect actually maps audio
+        //                                  and video tracks in opposite locations from where FFmpeg typically expects them. This
+        //                                  setting is a more general solution than naming the track locations directly in case
+        //                                  Protect changes this in the future.
+        //                                  Yes, we included these above as well: they need to be included for every I/O stream to maximize effectiveness it seems.
+        const ffmpegArgs: string[] = [
+            "-hide_banner",
+            "-probesize", "16384",
+            "-max_delay", "500000",
+            "-r", request.video.fps.toString(),
+            "-rtsp_transport", "tcp",
+            "-i", streamingUrl,
+            "-map", "0:v:0"
+        ];
 
         this.log.info('%s: HomeKit video stream request received: %sx%s, %s fps, %s kbps.', this.camera.name, request.video.width, request.video.height, request.video.fps, request.video.max_bit_rate);
         this.log.info('%s: Selected stream: %s for playback', this.camera.name, streamingUrl);
 
-        // Configure our video parameters:
-        // -map 0:v           selects the first available video track from the stream. Protect actually maps audio
-        //                    and video tracks in opposite locations from where ffmpeg typically expects them. This
-        //                    setting is a more general solution than naming the track locations directly in case
-        //                    Protect changes this in n the future.
-        // -vcodec copy       copy the stream withour reencoding it.
-        // -f rawvideo        specify that we're using raw video.
-        // -pix_fmt yuvj420p  use the yuvj420p pixel format, which is what Protect uses.
-        // -r fps             frame rate to use for this stream. This is specified by HomeKit.
-        // -b:v bitrate       the average bitrate to use for this stream. This is specified by HomeKit.
-        // -bufsize size      this is the decoder buffer size, which drives the variability / quality of the output bitrate.
-        // -maxrate bitrate   the maximum bitrate tolerance, used with -bufsize. We set this to max_bit_rate to effectively
-        //                    create a constant bitrate.
-        // -payload_type num  payload type for the RTP stream. This is negotiated by HomeKit and is usually 99 for H.264 video.
-        // -ssrc                   synchronization source stream identifier. Random number negotiated by HomeKit to identify this stream.
-        // -f rtp                  specify that we're using the RTP protocol.
-        // -srtp_out_suite enc     specify the output encryption encoding suites.
-        // -srtp_out_params params specify the output encoding parameters. This is negotiated by HomeKit.
         ffmpegArgs.push(
-            '-map', '0:v',
-            '-vcodec', 'copy',
-            '-f', 'rawvideo',
-            '-pix_fmt', 'yuvj420p',
-            '-r', request.video.fps.toString(),
-            //...this.platform.config.ffmpegOptions.split(' '),
-            '-b:v', request.video.max_bit_rate.toString() + 'k',
-            '-bufsize', (2 * request.video.max_bit_rate).toString() + 'k',
-            '-maxrate', request.video.max_bit_rate.toString() + 'k',
-            '-payload_type', request.video.pt.toString(),
-            '-ssrc', sessionInfo.videoSSRC.toString(),
-            '-f', 'rtp',
-            '-srtp_out_suite', 'AES_CM_128_HMAC_SHA1_80',
-            '-srtp_out_params', sessionInfo.videoSRTP.toString('base64'),
-            'srtp://' + sessionInfo.address + ':' + sessionInfo.videoPort.toString() + '?rtcpport=' + sessionInfo.videoPort.toString() +
-            '&localrtcpport=' + sessionInfo.videoPort.toString() + '&pkt_size=' + videomtu.toString()
+            "-vcodec", "copy"
+        );
+
+        // Configure our video parameters for transcoding:
+        //
+        // -vcodec libx264     Copy the stream without reencoding it.
+        // -pix_fmt yuvj420p   Use the yuvj420p pixel format, which is what Protect uses.
+        // -profile:v high     Use the H.264 high profile when encoding, which provides for better stream quality and size efficiency.
+        // -preset veryfast    Use the veryfast encoding preset in libx264, which provides a good balance of encoding speed and quality.
+        // -bf 0               Disable B-frames when encoding to increase compatibility against occasionally finicky HomeKit clients.
+        // -b:v bitrate        The average bitrate to use for this stream. This is specified by HomeKit.
+        // -bufsize size       This is the decoder buffer size, which drives the variability / quality of the output bitrate.
+        // -maxrate bitrate    The maximum bitrate tolerance, used with -bufsize. We set this to max_bit_rate to effectively
+        //                     create a constant bitrate.
+        // -filter:v fps=fps=  Use the fps filter to get to the frame rate requested by HomeKit. This has better performance characteristics
+        //                     for Protect rather than using "-r".
+        // TODO: Add option to switch to transcoding!
+        /*ffmpegArgs.push(
+            "-vcodec", 'libx264',
+            "-pix_fmt", "yuvj420p",
+            "-profile:v", "high",
+            "-preset", "veryfast",
+            "-bf", "0",
+            "-b:v", request.video.max_bit_rate.toString() + "k",
+            "-bufsize", (2 * request.video.max_bit_rate).toString() + "k",
+            "-maxrate", request.video.max_bit_rate.toString() + "k",
+            "-filter:v", "fps=fps=" + request.video.fps.toString()
+        );*/
+
+
+        // Configure our video parameters for SRTP streaming:
+        //
+        // -payload_type num                Payload type for the RTP stream. This is negotiated by HomeKit and is usually 99 for H.264 video.
+        // -ssrc                            Synchronization source stream identifier. Random number negotiated by HomeKit to identify this stream.
+        // -f rtp                           Specify that we're using the RTP protocol.
+        // -srtp_out_suite enc              Specify the output encryption encoding suites.
+        // -srtp_out_params params          Specify the output encoding parameters. This is negotiated by HomeKit.
+        ffmpegArgs.push(
+            "-payload_type", request.video.pt.toString(),
+            "-ssrc", sessionInfo.videoSSRC.toString(),
+            "-f", "rtp",
+            "-srtp_out_suite", "AES_CM_128_HMAC_SHA1_80",
+            "-srtp_out_params", sessionInfo.videoSRTP.toString("base64"),
+            "srtp://" + sessionInfo.address + ":" + sessionInfo.videoPort.toString() + "?rtcpport=" + sessionInfo.videoPort.toString() +
+            "&localrtcpport=" + sessionInfo.videoPort.toString() + "&pkt_size=" + videomtu.toString()
         );
 
         // Configure the audio portion of the command line, if we have a version of FFmpeg supports libfdk_aac. Options we use are:
         //
-        // -map 0:a              selects the first available audio track from the stream. Protect actually maps audio
-        //                       and video tracks in opposite locations from where ffmpeg typically expects them. This
-        //                       setting is a more general solution than naming the track locations directly in case
-        //                       Protect changes this in the future.
-        // -acodec libfdk_aac    encode to AAC.
-        // -profile:a aac_eld    specify enhanced, low-delay AAC for HomeKit.
-        // -flags +global_header sets the global header in the bitstream.
-        // -f null               null filter to pass the audio unchanged without running through a muxing operation.
-        // -ar samplerate        sample rate to use for this audio. This is specified by HomeKit.
-        // -b:a bitrate          bitrate to use for this audio. This is specified by HomeKit.
-        // -bufsize size         this is the decoder buffer size, which drives the variability / quality of the output bitrate.
-        // -ac 1                 set the number of audio channels to 1.
+        // -map 0:a:0                       Selects the first available audio track from the stream. Protect actually maps audio
+        //                                  and video tracks in opposite locations from where FFmpeg typically expects them. This
+        //                                  setting is a more general solution than naming the track locations directly in case
+        //                                  Protect changes this in the future.
+        // -acodec libfdk_aac               Encode to AAC.
+        // -profile:a aac_eld               Specify enhanced, low-delay AAC for HomeKit.
+        // -flags +global_header            Sets the global header in the bit stream.
+        // -f null                          Null filter to pass the audio unchanged without running through a muxing operation.
+        // -ar sample rate                  Sample rate to use for this audio. This is specified by HomeKit.
+        // -b:a bitrate                     Bitrate to use for this audio. This is specified by HomeKit.
+        // -bufsize size                    This is the decoder buffer size, which drives the variability / quality of the output bitrate.
+        // -ac 1                            Set the number of audio channels to 1.
         if (sessionInfo.hasLibFdk) {
 
             // Configure our audio parameters.
             ffmpegArgs.push(
-                '-map', '0:a',
-                '-acodec', 'libfdk_aac',
-                '-profile:a', 'aac_eld',
-                '-flags', '+global_header',
-                '-f', 'null',
-                '-ar', request.audio.sample_rate.toString() + 'k',
-                '-b:a', request.audio.max_bit_rate.toString() + 'k',
-                '-bufsize', (2 * request.audio.max_bit_rate).toString() + 'k',
-                '-ac', '1'
+                "-map", "0:a:0",
+                "-acodec", "libfdk_aac",
+                "-profile:a", "aac_eld",
+                "-flags", "+global_header",
+                "-f", "null",
+                "-ar", request.audio.sample_rate.toString() + "k",
+                "-b:a", request.audio.max_bit_rate.toString() + "k",
+                "-bufsize", (2 * request.audio.max_bit_rate).toString() + "k",
+                "-ac", "1"
             );
 
             // Add the required RTP settings and encryption for the stream:
-            // -payload_type num       payload type for the RTP stream. This is negotiated by HomeKit and is usually 110 for AAC-ELD audio.
-            // -ssrc                   synchronization source stream identifier. Random number negotiated by HomeKit to identify this stream.
-            // -f rtp                  specify that we're using the RTP protocol.
-            // -srtp_out_suite enc     specify the output encryption encoding suites.
-            // -srtp_out_params params specify the output encoding parameters. This is negotiated by HomeKit.
+            //
+            // -payload_type num                Payload type for the RTP stream. This is negotiated by HomeKit and is usually 110 for AAC-ELD audio.
+            // -ssrc                            synchronization source stream identifier. Random number negotiated by HomeKit to identify this stream.
+            // -f rtp                           Specify that we're using the RTP protocol.
+            // -srtp_out_suite enc              Specify the output encryption encoding suites.
+            // -srtp_out_params params          Specify the output encoding parameters. This is negotiated by HomeKit.
             ffmpegArgs.push(
-                '-payload_type', request.audio.pt.toString(),
-                '-ssrc', sessionInfo.audioSSRC.toString(),
-                '-f', 'rtp',
-                '-srtp_out_suite', 'AES_CM_128_HMAC_SHA1_80',
-                '-srtp_out_params', sessionInfo.audioSRTP.toString('base64'),
-                'srtp://' + sessionInfo.address + ':' + sessionInfo.audioPort.toString() + '?rtcpport=' + sessionInfo.audioPort.toString() +
-                '&localrtcpport=' + sessionInfo.audioPort.toString() + '&pkt_size=' + audiomtu.toString()
+                "-payload_type", request.audio.pt.toString(),
+                "-ssrc", sessionInfo.audioSSRC.toString(),
+                "-f", "rtp",
+                "-srtp_out_suite", "AES_CM_128_HMAC_SHA1_80",
+                "-srtp_out_params", sessionInfo.audioSRTP.toString("base64"),
+                "srtp://" + sessionInfo.address + ":" + sessionInfo.audioPort.toString() + "?rtcpport=" + sessionInfo.audioPort.toString() +
+                "&localrtcpport=" + sessionInfo.audioPort.toString() + "&pkt_size=" + audiomtu.toString()
             );
         }
 
         // Combine everything and start an instance of FFmpeg.
-        const ffmpeg = new FfmpegProcess(this, request.sessionID, ffmpegArgs,
-            (sessionInfo.hasLibFdk && this.camera.supportsTwoWayAudio) ? undefined : {
-                addressVersion: sessionInfo.addressVersion,
-                port: sessionInfo.videoReturnPort
-            },
+        const ffmpegStream = new FfmpegProcess(this, request.sessionID, ffmpegArgs,
+            (sessionInfo.hasLibFdk && this.camera.supportsTwoWayAudio) ? undefined : { addressVersion: sessionInfo.addressVersion, port: sessionInfo.videoReturnPort },
             callback);
 
         // Some housekeeping for our FFmpeg and demuxer sessions.
-        this.ongoingSessions[request.sessionID] = {ffmpeg: [ffmpeg], rtpDemuxer: sessionInfo.rtpDemuxer};
+        this.ongoingSessions[request.sessionID] = { ffmpeg: [ffmpegStream], rtpDemuxer: sessionInfo.rtpDemuxer };
         delete this.pendingSessions[request.sessionID];
 
         // If we aren't doing two-way audio, we're done here. For two-way audio...we have some more plumbing to do.
@@ -315,56 +345,57 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
         // SDP messages tell the other side of the connection what we're expecting to receive.
         //
         // Parameters are:
-        // v             protocol version - always 0.
-        // o             originator and session identifier.
-        // s             session description.
-        // c             connection information.
-        // t             timestamps for the start and end of the session.
-        // m             media type - audio, adhering to RTP/AVP, payload type 110.
-        // b             bandwidth information - application specific, 24k.
-        // a=rtpmap      payload type 110 corresponds to an MP4 stream.
-        // a=fmtp        for payload type 110, use these format parameters.
-        // a=crypto      crypto suite to use for this session.
+        //
+        // v             Protocol version - always 0.
+        // o             Originator and session identifier.
+        // s             Session description.
+        // c             Connection information.
+        // t             Timestamps for the start and end of the session.
+        // m             Media type - audio, adhering to RTP/AVP, payload type 110.
+        // b             Bandwidth information - application specific, 24k.
+        // a=rtpmap      Payload type 110 corresponds to an MP4 stream.
+        // a=fmtp        For payload type 110, use these format parameters.
+        // a=crypto      Crypto suite to use for this session.
         const sdpReturnAudio = [
-            'v=0',
-            'o=- 0 0 IN ' + sdpIpVersion + ' 127.0.0.1',
-            's=' + this.camera.name + ' Audio Talkback',
-            'c=IN ' + sdpIpVersion + ' ' + sessionInfo.address,
-            't=0 0',
-            'm=audio ' + sessionInfo.audioIncomingRtpPort.toString() + ' RTP/AVP 110',
-            'b=AS:24',
-            'a=rtpmap:110 MPEG4-GENERIC/16000/1',
-            'a=fmtp:110 profile-level-id=1;mode=AAC-hbr;sizelength=13;indexlength=3;indexdeltalength=3; config=F8F0212C00BC00',
-            'a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:' + sessionInfo.audioSRTP.toString('base64')
-        ].join('\n');
-
+            "v=0",
+            "o=- 0 0 IN " + sdpIpVersion + " 127.0.0.1",
+            "s=" + this.camera.name + " Audio Talkback",
+            "c=IN " + sdpIpVersion + " " + sessionInfo.address,
+            "t=0 0",
+            "m=audio " + sessionInfo.audioIncomingRtpPort.toString() + " RTP/AVP 110",
+            "b=AS:24",
+            "a=rtpmap:110 MPEG4-GENERIC/16000/1",
+            "a=fmtp:110 profile-level-id=1;mode=AAC-hbr;sizelength=13;indexlength=3;indexdeltalength=3; config=F8F0212C00BC00",
+            "a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:" + sessionInfo.audioSRTP.toString("base64")
+        ].join("\n");
 
         // Configure the audio portion of the command line, if we have a version of FFmpeg supports libfdk_aac. Options we use are:
         //
-        // -protocol_whitelist   set the list of allowed protocols for this ffmpeg session.
-        // -f sdp                specify that our input will be an SDP file.
-        // -acodec libfdk_aac    decode AAC input.
-        // -i pipe:0             read input from standard input.
-        // -map 0:a              selects the first available audio track from the stream.
-        // -acodec aac           encode to AAC. This is set by Protect.
-        // -flags +global_header sets the global header in the bitstream.
-        // -ar samplerate        sample rate to use for this audio. This is specified by Protect.
-        // -b:a bitrate          bitrate to use for this audio. This is specified by Protect.
-        // -ac 1                 set the number of audio channels to 1. This is specified by Protect.
-        // -f adts               transmit an ADTS stream.
+        // -hide_banner           Suppress printing the startup banner in FFmpeg.
+        // -protocol_whitelist    Set the list of allowed protocols for this FFmpeg session.
+        // -f sdp                 Specify that our input will be an SDP file.
+        // -acodec libfdk_aac     Decode AAC input.
+        // -i pipe:0              Read input from standard input.
+        // -acodec aac            Encode to AAC. This is set by Protect.
+        // -flags +global_header  Sets the global header in the bitstream.
+        // -ar samplerate         Sample rate to use for this audio. This is specified by Protect.
+        // -b:a bitrate           Bitrate to use for this audio. This is specified by Protect.
+        // -ac 1                  Set the number of audio channels to 1. This is specified by Protect.
+        // -f adts                Transmit an ADTS stream.
+        // pipe:1                 Output the ADTS stream to standard output.
         const ffmpegReturnAudioCmd = [
-            '-hide_banner',
-            '-protocol_whitelist', 'pipe,udp,rtp,file,crypto',
-            '-f', 'sdp',
-            '-acodec', 'libfdk_aac',
-            '-i', 'pipe:0',
-            '-acodec', this.camera.talkbackSettings.typeFmt,
-            '-flags', '+global_header',
-            '-ar', this.camera.talkbackSettings.samplingRate.toString(),
-            '-b:a', '64k',
-            '-ac', this.camera.talkbackSettings.channels.toString(),
-            '-f', 'adts',
-            'udp://' + this.camera.ip + ':' + this.camera.talkbackSettings.bindPort.toString()
+            "-hide_banner",
+            "-protocol_whitelist", "crypto,file,pipe,rtp,udp",
+            "-f", "sdp",
+            "-acodec", "libfdk_aac",
+            "-i", "pipe:0",
+            "-flags", "+global_header",
+            "-b:a", this.camera.talkbackSettings.bitsPerSample.toString() + "k",
+            "-ac", this.camera.talkbackSettings.channels.toString(),
+            "-ar", this.camera.talkbackSettings.samplingRate.toString(),
+            "-loglevel", "level+verbose",
+            "-f", "adts",
+            "pipe:1"
         ];
 
         const ffmpegReturnAudio = new FfmpegProcess(this, request.sessionID, ffmpegReturnAudioCmd);

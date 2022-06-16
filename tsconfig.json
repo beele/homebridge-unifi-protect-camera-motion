@@ -18,6 +18,7 @@
         "sourceMap": true,
         "preserveSymlinks": true,
         "strictFunctionTypes": false,
+	"skipLibCheck": true,
     },
     "include": [
         "src/**/*"

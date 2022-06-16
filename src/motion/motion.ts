@@ -138,7 +138,9 @@ export class MotionDetector {
                         continue outer;
                     }
 
+                    const start = Date.now();
                     const data = await fetch('http://127.0.0.1:5050', { method: 'POST', body: form });
+                    this.log.debug(camera.name + ' upload + yolo processing took: ' + (Date.now() - start) + 'ms');
                     const detections: Detection[] = this.mapDetectorJsonToDetections(await data.json());
 
                     for (const classToDetect of this.unifiConfig.enhanced_classes) {
