@@ -1,11 +1,11 @@
-import {Logging} from "homebridge";
+import { Logging } from "homebridge";
 import mqtt, { MqttClient } from "mqtt";
 
 export class Mqtt {
 
     private readonly log: Logging;
     private readonly config: MqttConfig;
-    private readonly client: MqttClient;
+    private readonly client: MqttClient | undefined;
 
     constructor(config: MqttConfig, log: Logging) {
         this.log = log;
@@ -15,7 +15,7 @@ export class Mqtt {
             return;
         }
 
-        const options: {username?: string, password?: string} = {};
+        const options: { username?: string, password?: string } = {};
         if (config.username) {
             options.username = config.username;
 
@@ -33,13 +33,13 @@ export class Mqtt {
         });
     }
 
-    public sendMessageOnTopic(message: string, topic: string): void {
+    public sendMessageOnTopic = (message: string, topic: string): void => {
         if (this.client?.connected) {
             this.client.publish(this.config.topicPrefix + '/' + topic, message);
         }
     }
 
-    private onConnection(): Promise<void> {
+    private onConnection = (): Promise<void> =>{
         return new Promise<void>((resolve, reject) => {
             let interval = setInterval(() => {
                 if (this.client?.connected) {
@@ -50,7 +50,7 @@ export class Mqtt {
         });
     }
 
-    public subscribeToTopic(topic: string, callback: (payload: {enabled: boolean}) => void): void {
+    public subscribeToTopic = (topic: string, callback: (payload: { enabled: boolean }) => void): void => {
         this.onConnection().then(() => {
             this.log.debug('Subscribing to: ' + this.config.topicPrefix + '/' + topic);
             this.client?.subscribe(this.config.topicPrefix + '/' + topic, (err, granted) => {
@@ -58,7 +58,7 @@ export class Mqtt {
                 if (!err) {
                     if (granted && granted.length === 1) {
                         this.client?.on('message', (messageTopic, messagePayload, packet) => {
-                            if (messageTopic === this.config.topicPrefix + '/' + topic) { 
+                            if (messageTopic === this.config.topicPrefix + '/' + topic) {
                                 callback(JSON.parse(messagePayload.toString()) as any);
                             }
                         });
@@ -69,7 +69,7 @@ export class Mqtt {
     }
 }
 
-export interface MqttConfig {
+export type MqttConfig = {
     broker: string;
     username: string;
     password: string;

@@ -7,6 +7,8 @@
  *
  * Adjusted by Kevin Van den Abeele
  */
+import { Canvas, loadImage } from 'canvas';
+import ffmpegPath from 'ffmpeg-for-homebridge';
 import {
     API,
     AudioStreamingCodecType,
@@ -27,14 +29,11 @@ import {
     StreamRequestCallback,
     StreamRequestTypes
 } from 'homebridge';
-import { ImageUtils } from '../utils/image-utils.js';
-import { Canvas, loadImage } from 'canvas';
 import { Unifi, UnifiCamera } from '../unifi/unifi.js';
-import { UnifiFlows } from '../unifi/unifi-flows.js';
+import { ImageUtils } from '../utils/image-utils.js';
+import { CameraConfig } from './camera-config.js';
 import { FfmpegProcess } from './ffmpeg-process.js';
 import { RtpDemuxer, RtpUtils } from './rtp-splitter.js';
-import { CameraConfig } from './camera-config.js';
-import ffmpegPath from 'ffmpeg-for-homebridge';
 
 type SessionInfo = {
     address: string; // Address of the HAP controller.
@@ -58,7 +57,7 @@ type SessionInfo = {
 
 export class UnifiStreamingDelegate implements CameraStreamingDelegate {
 
-    public static uFlows: UnifiFlows;
+    public static unifi: Unifi;
 
     private readonly api: API;
     private readonly hap: HAP;
@@ -146,10 +145,10 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
             this.log.debug('Getting new snapshot');
 
             try {
-                const snapshotData: Buffer = await UnifiStreamingDelegate.uFlows.getCameraSnapshot(this.camera, request.width, request.height)
+                const snapshotData = await UnifiStreamingDelegate.unifi.getSnapshotForCamera(this.camera, request.width, request.height)
                 callback(undefined, snapshotData);
             } catch (error) {
-                callback(undefined, null);
+                callback(undefined, undefined);
             }
         } else {
             this.log.debug('Returning annotated snapshot');

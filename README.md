@@ -36,7 +36,7 @@ In short, the main dependencies are:
 
 General:
 
-* Python 3 and pip3 must be installed and on the path!
+* Python 3 (lower than 3.12) and pip must be installed and on the path!
 
 * Raspberry Pi / Ubuntu / Debian Linux:
   * Install: `sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev`

@@ -63,7 +63,7 @@ export class UnifiCameraMotionSensor {
 
                             setTimeout(() => {
                                 log.debug('Motion trigger auto off');
-                                motionTrigger.getCharacteristic(hap.Characteristic.On).updateValue(false);
+                                motionTrigger?.getCharacteristic(hap.Characteristic.On).updateValue(false);
                             }, 1000);
                         }
                     }

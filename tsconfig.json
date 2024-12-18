@@ -16,6 +16,8 @@
         "sourceMap": true,
         "preserveSymlinks": true,
         "strictFunctionTypes": false,
+        "strict": true,
+        "strictNullChecks": true,
 	"skipLibCheck": true,
     },
     "include": [

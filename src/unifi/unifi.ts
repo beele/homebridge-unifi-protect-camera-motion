@@ -1,29 +1,28 @@
-import { Canvas } from "canvas";
 import { Logging } from "homebridge";
 
 import { ProtectApi, ProtectEventAdd, ProtectEventPacket, ProtectNvrBootstrap } from "unifi-protect";
 export class Unifi {
 
-    private readonly config: UnifiConfig;
     private readonly log: Logging;
+    private readonly config: UnifiConfig;
 
     private readonly unifiProtectApi: ProtectApi;
 
-    private motionEventCallback: (event: UnifiMotionEvent) => Promise<void> | undefined;
+    private motionEventCallback: ((event: UnifiMotionEvent) => Promise<void>) | undefined;
 
     constructor(config: UnifiConfig, log: Logging) {
-        this.config = config;
         this.log = log;
+        this.config = config;
 
         this.unifiProtectApi = new ProtectApi(log);
     }
 
-    public authenticate = async (username: string, password: string): Promise<void> => {
-        if (!username || !password) {
+    public authenticate = async (): Promise<void> => {
+        if (!this.config.username || !this.config.password) {
             throw new Error('Username and password should be filled in!');
         }
 
-        const bootstrapP = new Promise<void>(async (res, rej) => {
+        const loginAndBootstrap = new Promise<void>(async (res, rej) => {
             this.unifiProtectApi.once("login", async (successful: boolean) => {
                 if (!successful) {
                     rej(new Error('Could not log in!'));
@@ -37,37 +36,39 @@ export class Unifi {
                 res();
             });
 
-            if (!await this.unifiProtectApi.login(this.config.controller, username, password)) {
+            if (!await this.unifiProtectApi.login(this.config.controller, this.config.username, this.config.password)) {
                 rej(new Error('Could not log in!'));
             }
         });
 
-        await bootstrapP;
+        await loginAndBootstrap;
         this.log.debug('Authenticated, returning session');
     }
 
     public enumerateMotionCameras = async (): Promise<UnifiCamera[]> => {
         this.log.debug('Cameras retrieved, enumerating motion sensors');
 
-        const cams = this.unifiProtectApi.bootstrap.cameras;
+        const cams = this.unifiProtectApi.bootstrap?.cameras ?? [];
 
         return cams.map((cam) => {
             if (this.config.debug) {
-                //this.log.debug(JSON.stringify(cam, null, 4));
+                this.log.debug(JSON.stringify(cam, null, 4));
             }
 
             const streams: UnifiCameraStream[] = [];
-            for (const channel of cam.channels) {
-                if (channel.rtspAlias) {
-                    streams.push({
+            streams.push(
+                    ...cam.channels
+                    .filter((channel) => channel.rtspAlias)
+                    .map((channel) => {
+                    return {
                         name: channel.name,
                         alias: channel.rtspAlias,
                         width: channel.width,
                         height: channel.height,
                         fps: channel.fps
-                    });
-                }
-            }
+                    }
+                })
+            );
 
             // Sort streams on highest res!
             streams.sort((a: UnifiCameraStream, b: UnifiCameraStream): number => {
@@ -148,34 +149,45 @@ export class Unifi {
         this.unifiProtectApi.off('message', this.onMessage);
     }
 
-    public getSnapshotForCamera = async (camera: UnifiCamera, width: number, height: number): Promise<Buffer> => {
-        const unifCam = this.unifiProtectApi.bootstrap.cameras.find((cam) => cam.id === camera.id);
-        return await this.unifiProtectApi.getSnapshot(unifCam, { width, height });
+    public getSnapshotForCamera = async (camera: UnifiCamera, width: number, height: number): Promise<Buffer | undefined> => {
+        const unifCam = this.unifiProtectApi.bootstrap?.cameras.find((cam) => cam.id === camera.id);
+        if (!unifCam) {
+            return;
+        }
+
+        return (await this.unifiProtectApi.getSnapshot(unifCam, { width, height })) ?? undefined;
     }
 
     public static generateStreamingUrlForBestMatchingResolution(baseSourceUrl: string, streams: UnifiCameraStream[], requestedWidth: number, requestedHeight: number): string {
         const targetResolution: number = requestedWidth * requestedHeight;
-        const selectedAlias: string = streams
+
+        const sortedStreams = streams
             .map(((stream: UnifiCameraStream) => {
                 return {
                     resolution: stream.width * stream.height,
                     alias: stream.alias
                 };
             }))
+            .sort((a, b) => {
+                return b.resolution - a.resolution;
+            });
+
+        const bestMatchingStream = sortedStreams
             .filter((data: { alias: string; resolution: number }) => {
                 return data.resolution <= targetResolution;
             })
-            .sort((a, b) => {
-                return b.resolution - a.resolution;
-            })
-            .shift().alias;
+            .at(0);
+
+        // TODO: What if there is no alias available?
+        const selectedAlias: string = (bestMatchingStream ?? sortedStreams.at(0) ?? {alias: ''}).alias;
+
         return baseSourceUrl + selectedAlias;
     }
 }
 
 type ProtectEventPacketAddPayload = Exclude<ProtectEventPacket, 'payload'> & { payload: ProtectEventAdd };
 
-export interface UnifiCamera {
+export type UnifiCamera = {
     id: string;
     uuid?: string | undefined;
     name: string;
@@ -190,7 +202,7 @@ export interface UnifiCamera {
     lastDetectionSnapshot?: Buffer;
 }
 
-export interface UnifiTalkbackSettings {
+export type UnifiTalkbackSettings = {
     typeFmt: string;
     typeIn: string;
     bindAddr: string;
@@ -203,7 +215,7 @@ export interface UnifiTalkbackSettings {
     quality: number;
 }
 
-export interface UnifiCameraStream {
+export type UnifiCameraStream = {
     name: string;
     alias: string;
     width: number;
@@ -211,7 +223,7 @@ export interface UnifiCameraStream {
     fps: number;
 }
 
-export interface UnifiMotionEvent {
+export type UnifiMotionEvent = {
     id: string;
     cameraId: string;
     camera: UnifiCamera | undefined;
@@ -219,7 +231,7 @@ export interface UnifiMotionEvent {
     timestamp: number;
 }
 
-export interface UnifiConfig {
+export type UnifiConfig = {
     controller: string;
     controller_rtsp: string;
     username: string;
