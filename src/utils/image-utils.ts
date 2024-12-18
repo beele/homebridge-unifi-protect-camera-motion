@@ -1,5 +1,4 @@
-const fs = require('fs');
-
+import fs from 'fs';
 import {Canvas, createCanvas, Image, loadImage} from "canvas";
 import { Detection } from "../motion/motion.js";
 

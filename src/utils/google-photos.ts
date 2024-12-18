@@ -3,11 +3,12 @@ import {google} from "googleapis";
 import {OAuth2Client} from 'google-auth-library';
 import {Logging} from "homebridge";
 
-const http = require('http');
-const fs = require('fs');
-const {promisify} = require('util');
+import http from 'http';
+import fs from 'fs';
+import {promisify} from 'util';
 
-const Photos = require('googlephotos');
+//@ts-ignore
+import Photos from 'googlephotos';
 
 const readFileAsync = promisify(fs.readFile);
 const writeFileAsync = promisify(fs.writeFile);
@@ -152,7 +153,7 @@ export class GooglePhotos {
     }
 
     private async readConfig(): Promise<GooglePhotosPersistData> {
-        return JSON.parse(await readFileAsync(this.userStoragePath + '/unifi-protect-google-settings.json'));
+        return JSON.parse((await readFileAsync(this.userStoragePath + '/unifi-protect-google-settings.json')).toString());
     }
 
     private async writeConfig(config: GooglePhotosPersistData): Promise<void> {
