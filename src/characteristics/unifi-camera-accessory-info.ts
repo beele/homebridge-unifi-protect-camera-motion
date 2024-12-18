@@ -1,5 +1,5 @@
 import {HAP, PlatformAccessory, Service} from "homebridge";
-import {UnifiCamera} from "../unifi/unifi";
+import {UnifiCamera} from "../unifi/unifi.js";
 
 export class UnifiCameraAccessoryInfo {
 

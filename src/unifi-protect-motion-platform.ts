@@ -8,22 +8,22 @@ import {
     PlatformAccessoryEvent,
     PlatformConfig
 } from 'homebridge';
-import {Unifi, UnifiCamera, UnifiConfig} from "./unifi/unifi";
-import {UnifiFlows} from "./unifi/unifi-flows";
-import {PLATFORM_NAME, PLUGIN_NAME} from "./settings";
-import {MotionDetector} from "./motion/motion";
-import {UnifiCameraAccessoryInfo} from "./characteristics/unifi-camera-accessory-info";
-import {CameraConfig} from "./streaming/camera-config";
-import {UnifiCameraMotionSensor} from "./characteristics/unifi-camera-motion-sensor";
-import {UnifiCameraDoorbell} from "./characteristics/unifi-camera-doorbell";
-import {UnifiCameraStreaming} from "./streaming/unifi-camera-streaming";
-import {UnifiStreamingDelegate} from "./streaming/unifi-streaming-delegate";
-import { Mqtt } from './utils/mqtt';
+import {Unifi, UnifiCamera, UnifiConfig} from "./unifi/unifi.js";
+import {UnifiFlows} from "./unifi/unifi-flows.js";
+import {PLATFORM_NAME, PLUGIN_NAME} from "./settings.js";
+import {MotionDetector} from "./motion/motion.js";
+import {UnifiCameraAccessoryInfo} from "./characteristics/unifi-camera-accessory-info.js";
+import {CameraConfig} from "./streaming/camera-config.js";
+import {UnifiCameraMotionSensor} from "./characteristics/unifi-camera-motion-sensor.js";
+import {UnifiCameraDoorbell} from "./characteristics/unifi-camera-doorbell.js";
+import {UnifiCameraStreaming} from "./streaming/unifi-camera-streaming.js";
+import {UnifiStreamingDelegate} from "./streaming/unifi-streaming-delegate.js";
+import { Mqtt } from './utils/mqtt.js';
 
 export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
-    public readonly hap: HAP = this.api.hap;
-    public readonly Accessory: typeof PlatformAccessory = this.api.platformAccessory;
+    public readonly hap: HAP;
+    public readonly Accessory: typeof PlatformAccessory;
 
     private mqtt: Mqtt;
     private accessories: Array<PlatformAccessory> = [];
@@ -35,6 +35,9 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             this.log.info('Incorrect plugin configuration!');
             return;
         }
+
+        this.hap = this.api.hap;
+        this.Accessory = this.api.platformAccessory;
 
         //Set config defaults
         (this.config.unifi as UnifiConfig).excluded_cameras = (this.config.unifi as UnifiConfig).excluded_cameras ? (this.config.unifi as UnifiConfig).excluded_cameras : [];

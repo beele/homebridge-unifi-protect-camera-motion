@@ -1,5 +1,5 @@
-import {MqttClient} from "mqtt/types/lib/client";
 import {Logging} from "homebridge";
+import { MqttClient } from "mqtt";
 
 const mqtt = require('mqtt');
 

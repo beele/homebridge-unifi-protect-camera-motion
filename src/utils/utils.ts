@@ -1,6 +1,7 @@
 import * as https from "https";
-import fetch, { Headers, Response, RequestInfo, RequestInit } from "node-fetch";
 import {Logging, LogLevel} from "homebridge";
+
+import type { Headers, Response, RequestInfo, RequestInit } from "node-fetch";
 
 export class Utils {
 
@@ -36,7 +37,9 @@ export class Utils {
            networkLogger.debug('Body: ' + JSON.stringify(options.body, null, 4));
         }
 
-        let response: Response = await fetch(url, options);
+        const nFetch = (await import('node-fetch')).default;
+
+        let response: Response = await nFetch(url, options);
         networkLogger.debug('Response: \n'  + JSON.stringify(response, null, 4));
 
         if (response.status === 401) {

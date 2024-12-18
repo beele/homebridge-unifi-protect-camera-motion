@@ -9,8 +9,7 @@
  */
 import {Logging} from 'homebridge';
 import {createSocket} from 'dgram';
-import getPort from 'get-port';
-import {UnifiStreamingDelegate} from './unifi-streaming-delegate';
+import {UnifiStreamingDelegate} from './unifi-streaming-delegate.js';
 
 /*
  * Here's the problem this class solves: FFmpeg doesn't support multiplexing RTP and RTCP data on a single UDP port (RFC 5761).
@@ -109,6 +108,8 @@ export class RtpUtils {
     // ports for RTP (primarily for two-way audio) that we we are reserving consecutive ports only.
     public static async reservePorts(count = 1): Promise<number[]> {
 
+        const getPort = (await import('get-port')).default;
+        
         // Get the first port.
         const port = await getPort();
         const ports = [port];

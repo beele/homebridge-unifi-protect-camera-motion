@@ -1,14 +1,11 @@
-import { UnifiCamera, UnifiConfig, UnifiMotionEvent } from "../unifi/unifi";
-import { UnifiFlows } from "../unifi/unifi-flows";
+import { UnifiCamera, UnifiConfig, UnifiMotionEvent } from "../unifi/unifi.js";
+import { UnifiFlows } from "../unifi/unifi-flows.js";
 import { Canvas, Image } from "canvas";
-import { ImageUtils } from "../utils/image-utils";
-import { GooglePhotos, GooglePhotosConfig } from "../utils/google-photos";
+import { ImageUtils } from "../utils/image-utils.js";
+import { GooglePhotos, GooglePhotosConfig } from "../utils/google-photos.js";
 import type { API, Logging, PlatformAccessory, PlatformConfig } from 'homebridge';
-import { Mqtt } from "../utils/mqtt";
-import fetch from "node-fetch";
+import { Mqtt } from "../utils/mqtt.js";
 import FormData from "form-data";
-
-import {execa} from 'execa';
 
 export class MotionDetector {
 
@@ -139,8 +136,10 @@ export class MotionDetector {
                         continue outer;
                     }
 
+                    const nFetch = (await import('node-fetch')).default;
+
                     const start = Date.now();
-                    const data = await fetch('http://127.0.0.1:5050', { method: 'POST', body: form });
+                    const data = await nFetch('http://127.0.0.1:5050', { method: 'POST', body: form });
                     this.log.debug(camera.name + ' upload + yolo processing took: ' + (Date.now() - start) + 'ms');
                     const detections: Detection[] = this.mapDetectorJsonToDetections(await data.json() as RawDetection);
 
@@ -236,6 +235,9 @@ export class MotionDetector {
     }
 
     private async startDetector(): Promise<void> {
+
+        const execa = (await import('execa')).execa;
+
         const temp: string = __filename.replace('motion.js', '');
         execa('python3', ['detector.py'], { cwd: temp + 'detector/' })
             .then(() => {

@@ -1,6 +1,6 @@
-import {UnifiStreamingDelegate} from "./unifi-streaming-delegate";
+import {UnifiStreamingDelegate} from "./unifi-streaming-delegate.js";
 import {API, Logging, PlatformAccessory} from "homebridge";
-import {CameraConfig} from "./camera-config";
+import {CameraConfig} from "./camera-config.js";
 
 export class UnifiCameraStreaming {
 

@@ -1,5 +1,6 @@
-const fs = require('fs');
-const exec = require('child_process').exec;
+import child_process from 'child_process';
+
+const exec = child_process.exec;
 
 console.log('homebridge-unifi-protect-camera-motion post install script running on: ' + process.arch);
 

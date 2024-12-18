@@ -6,7 +6,7 @@ import {
     Logging,
     PlatformAccessory
 } from "homebridge";
-import {CameraConfig} from "../streaming/camera-config";
+import {CameraConfig} from "../streaming/camera-config.js";
 
 export class UnifiCameraDoorbell {
 

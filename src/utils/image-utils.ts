@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 import {Canvas, createCanvas, Image, loadImage} from "canvas";
-import { Detection } from "../motion/motion";
+import { Detection } from "../motion/motion.js";
 
 export class ImageUtils {
 

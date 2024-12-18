@@ -1,4 +1,4 @@
-import {Unifi, UnifiCameraStream} from "./unifi";
+import {Unifi, UnifiCameraStream} from "./unifi.js";
 
 test('Unifi-generateStreamingUrlForBestMatchingResolution', async () => {
     const baseUrl: string = 'http://localhost:7447/';

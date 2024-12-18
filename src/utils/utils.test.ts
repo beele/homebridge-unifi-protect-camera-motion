@@ -1,4 +1,4 @@
-import {Utils} from "./utils";
+import {Utils} from "./utils.js";
 
 test('Utils-backOff-fail', async (): Promise<void> => {
     const fn: () => Promise<any> = (): Promise<any> => {

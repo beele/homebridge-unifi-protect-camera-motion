@@ -1,9 +1,8 @@
-import {Utils} from "../utils/utils";
+import {Utils} from "../utils/utils.js";
 import {Canvas} from "canvas";
 import {Logging} from "homebridge";
 
-import {Headers, Response} from "node-fetch";
-
+import type {Headers, Response} from "node-fetch";
 export class Unifi {
 
     private readonly config: UnifiConfig;
@@ -26,7 +25,9 @@ export class Unifi {
             throw new Error('Controller URL should NOT end with a slash!');
         }
 
-        const headers: Headers = new Headers();
+        const fetchModule = (await import('node-fetch'));
+
+        const headers: Headers = new fetchModule.Headers();
         headers.set('Content-Type', 'application/json');
         const response: Response = await Utils.fetch(baseControllerUrl,
             {method: 'GET'},
@@ -57,7 +58,9 @@ export class Unifi {
             throw new Error('Username and password should be filled in!');
         }
 
-        const headers: Headers = new Headers();
+        const fetchModule = (await import('node-fetch'));
+
+        const headers: Headers = new fetchModule.Headers();
         headers.set('Content-Type', 'application/json');
         if (endpointStyle.isUnifiOS) {
             headers.set('X-CSRF-Token', endpointStyle.csrfToken);
@@ -100,7 +103,9 @@ export class Unifi {
     }
 
     public async enumerateMotionCameras(session: UnifiSession, endPointStyle: UnifiEndPointStyle): Promise<UnifiCamera[]> {
-        const headers: Headers = new Headers();
+        const fetchModule = (await import('node-fetch'));
+
+        const headers: Headers = new fetchModule.Headers();
         headers.set('Content-Type', 'application/json');
         if (endPointStyle.isUnifiOS) {
             headers.set('Cookie', session.cookie);
@@ -160,7 +165,8 @@ export class Unifi {
         const endEpoch = Date.now();
         const startEpoch = endEpoch - (this.config.motion_interval * 2);
 
-        const headers: Headers = new Headers();
+        const fetchModule = (await import('node-fetch'));
+        const headers: Headers = new fetchModule.Headers();
         headers.set('Content-Type', 'application/json');
         if (endPointStyle.isUnifiOS) {
             headers.set('Cookie', session.cookie);
@@ -194,7 +200,8 @@ export class Unifi {
     }
 
     public async getSnapshotForCamera(session: UnifiSession, endPointStyle: UnifiEndPointStyle, camera: UnifiCamera, width: number, height: number): Promise<Buffer> {
-        const headers: Headers = new Headers();
+        const fetchModule = (await import('node-fetch'));
+        const headers: Headers = new fetchModule.Headers();
         headers.set('Content-Type', 'application/json');
         if (endPointStyle.isUnifiOS) {
             headers.set('Cookie', session.cookie);

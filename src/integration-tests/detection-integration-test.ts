@@ -1,6 +1,6 @@
 import {Canvas, Image} from "canvas";
-import { Detection } from "../motion/motion";
-import {ImageUtils} from "../utils/image-utils";
+import { Detection } from "../motion/motion.js";
+import {ImageUtils} from "../utils/image-utils.js";
 
 const assert = require("assert");
 const path = require('path');

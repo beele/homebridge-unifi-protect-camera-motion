@@ -27,13 +27,13 @@ import {
     StreamRequestCallback,
     StreamRequestTypes
 } from 'homebridge';
-import { ImageUtils } from '../utils/image-utils';
+import { ImageUtils } from '../utils/image-utils.js';
 import { Canvas } from 'canvas';
-import { Unifi, UnifiCamera } from '../unifi/unifi';
-import { UnifiFlows } from '../unifi/unifi-flows';
-import { FfmpegProcess } from './ffmpeg-process';
-import { RtpDemuxer, RtpUtils } from './rtp-splitter';
-import { CameraConfig } from './camera-config';
+import { Unifi, UnifiCamera } from '../unifi/unifi.js';
+import { UnifiFlows } from '../unifi/unifi-flows.js';
+import { FfmpegProcess } from './ffmpeg-process.js';
+import { RtpDemuxer, RtpUtils } from './rtp-splitter.js';
+import { CameraConfig } from './camera-config.js';
 import ffmpegPath from 'ffmpeg-for-homebridge';
 
 type SessionInfo = {

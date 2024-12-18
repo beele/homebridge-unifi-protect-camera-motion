@@ -9,10 +9,10 @@
  */
 
 import {createSocket} from 'dgram';
-import {execa, ExecaError, Subprocess} from 'execa';
+import type {ExecaError, Subprocess} from 'execa';
 import {Logging, StreamRequestCallback} from 'homebridge';
 import {Readable, Writable} from 'stream';
-import {UnifiStreamingDelegate} from './unifi-streaming-delegate';
+import {UnifiStreamingDelegate} from './unifi-streaming-delegate.js';
 
 interface PortInterface {
     addressVersion: string,
@@ -78,6 +78,8 @@ export class FfmpegProcess {
     // Start our FFmpeg process.
     private async startFfmpeg(ffmpegCommandLine: string[], callback?: StreamRequestCallback): Promise<void> {
         let started = false;
+
+        const execa = (await import('execa')).execa;
 
         // Prepare the command line we want to execute.
         this.process = execa(this.delegate.videoProcessor, ffmpegCommandLine);
@@ -159,6 +161,8 @@ export class FfmpegProcess {
     // Validate whether or not we have a specific codec available to us in FFmpeg.
     public static async codecEnabled(videoProcessor: string, codec: string): Promise<boolean> {
 
+        const execa = (await import('execa')).execa;
+        
         const output = await execa(videoProcessor, ['-codecs']);
         return output.stdout.includes(codec);
     }

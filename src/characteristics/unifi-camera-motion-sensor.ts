@@ -6,8 +6,8 @@ import {
     Logging,
     PlatformAccessory,
 } from "homebridge";
-import {CameraConfig} from "../streaming/camera-config";
-import { Mqtt } from "../utils/mqtt";
+import {CameraConfig} from "../streaming/camera-config.js";
+import { Mqtt } from "../utils/mqtt.js";
 
 export class UnifiCameraMotionSensor {
 
