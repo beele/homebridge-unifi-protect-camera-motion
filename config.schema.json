@@ -60,7 +60,7 @@
                         "type": "integer",
                         "minimum": 2000,
                         "default": 5000,
-                        "description": "This interval describes the time between the checks for new motion. A lower value yields more detection but has a higher system load!",
+                        "description": "This is the time in milliseconds after which a motion sensor's state will be reset after detecting a motion.",
                         "required": true
                     },
                     "motion_repeat_interval": {

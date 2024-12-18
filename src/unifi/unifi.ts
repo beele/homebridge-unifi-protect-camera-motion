@@ -9,6 +9,8 @@ export class Unifi {
 
     private readonly unifiProtectApi: ProtectApi;
 
+    private motionEventCallback: (event: UnifiMotionEvent) => Promise<void> | undefined;
+
     constructor(config: UnifiConfig, log: Logging) {
         this.config = config;
         this.log = log;
@@ -16,7 +18,7 @@ export class Unifi {
         this.unifiProtectApi = new ProtectApi(log);
     }
 
-    public authenticate = async (username: string, password: string): Promise<UnifiSession> => {
+    public authenticate = async (username: string, password: string): Promise<void> => {
         if (!username || !password) {
             throw new Error('Username and password should be filled in!');
         }
@@ -42,11 +44,6 @@ export class Unifi {
 
         await bootstrapP;
         this.log.debug('Authenticated, returning session');
-
-        return {
-            cookie: this.unifiProtectApi.bootstrap.accessKey,
-            timestamp: Date.now()
-        };
     }
 
     public enumerateMotionCameras = async (): Promise<UnifiCamera[]> => {
@@ -93,39 +90,67 @@ export class Unifi {
     }
 
     public startMotionEventTracking = async (handler: (event: UnifiMotionEvent) => Promise<void>): Promise<void> => {
-        this.unifiProtectApi.on('message', async (event: ProtectEventPacket) => {
-            
-            if (event.header.action === 'add' && event.header.modelKey === 'event' && event.header.recordModel === 'camera') {
-                this.log.debug(JSON.stringify(event, null, 4));
-                
-                (event.payload as any) satisfies ProtectEventAdd;
-
-                //payload.type === smartDetectZone
-
-                const mappedEvent: UnifiMotionEvent = {
-                    id: event.header.id,
-                    cameraId: (event.payload as ProtectEventAdd).camera,
-                    camera: undefined,
-                    score: (event.payload as ProtectEventAdd).score,
-                    timestamp: (event.payload as ProtectEventAdd).start,
-                };
-    
-                await handler(mappedEvent);
-            }
-        });
+        this.motionEventCallback = handler;
+        this.unifiProtectApi.on('message', this.onMessage);
     }
 
     private onMessage = async (event: ProtectEventPacket): Promise<void> => {
+        switch (event.header.action) {
+            case 'add':
+                await this.onActionAdd(event as any satisfies ProtectEventPacketAddPayload);
+                break;
+            case 'update':
+                break;
+            case 'remove':
+                break;
+            default:
+                this.log.warn('Unknown unifi event action: ' + event.header.action);
+        }
+    }
 
+    private onActionAdd = async (event: ProtectEventPacketAddPayload): Promise<void> => {
+        if (event.header.modelKey === 'event' && event.header.recordModel === 'camera') {
+            this.log.debug(JSON.stringify(event, null, 4));
+
+            let mappedEvent: UnifiMotionEvent | undefined;
+            switch (event.payload.type) {
+                case 'smartDetectZone':
+                    mappedEvent = {
+                        id: event.header.id,
+                        cameraId: event.payload.camera,
+                        camera: undefined,
+                        score: event.payload.score,
+                        timestamp: event.payload.start,
+                    };
+                    break;
+                    case 'motion':
+                        mappedEvent = {
+                            id: event.header.id,
+                            cameraId: event.payload.camera,
+                            camera: undefined,
+                            score: undefined,
+                            timestamp: event.payload.start,
+                        };
+                        break;
+                default:
+                    // TODO: Implement other cases!
+                    this.log.warn('Unknown payload type: ' + event.payload.type);
+            }
+
+            if (mappedEvent && this.motionEventCallback) {
+                await this.motionEventCallback(mappedEvent);
+            }
+        }
     }
 
     public stopMotionEventTracking = (): void => {
+        this.motionEventCallback = undefined;
         this.unifiProtectApi.off('message', this.onMessage);
     }
 
     public getSnapshotForCamera = async (camera: UnifiCamera, width: number, height: number): Promise<Buffer> => {
         const unifCam = this.unifiProtectApi.bootstrap.cameras.find((cam) => cam.id === camera.id);
-        return await this.unifiProtectApi.getSnapshot(unifCam, {width, height});
+        return await this.unifiProtectApi.getSnapshot(unifCam, { width, height });
     }
 
     public static generateStreamingUrlForBestMatchingResolution(baseSourceUrl: string, streams: UnifiCameraStream[], requestedWidth: number, requestedHeight: number): string {
@@ -148,11 +173,7 @@ export class Unifi {
     }
 }
 
-export interface UnifiSession {
-    authorization?: string;
-    cookie?: string
-    timestamp: number;
-}
+type ProtectEventPacketAddPayload = Exclude<ProtectEventPacket, 'payload'> & { payload: ProtectEventAdd };
 
 export interface UnifiCamera {
     id: string;
@@ -193,8 +214,8 @@ export interface UnifiCameraStream {
 export interface UnifiMotionEvent {
     id: string;
     cameraId: string;
-    camera: UnifiCamera | null;
-    score: number;
+    camera: UnifiCamera | undefined;
+    score: number | undefined;
     timestamp: number;
 }
 

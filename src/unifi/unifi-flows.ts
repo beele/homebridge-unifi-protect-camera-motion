@@ -1,4 +1,4 @@
-import {Unifi, UnifiCamera, UnifiConfig, UnifiMotionEvent, UnifiSession} from "./unifi.js";
+import {Unifi, UnifiCamera, UnifiConfig, UnifiMotionEvent} from "./unifi.js";
 import {Logging} from "homebridge";
 
 export class UnifiFlows {

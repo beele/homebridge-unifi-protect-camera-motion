@@ -94,9 +94,15 @@ export class MotionDetector {
         camera.lastDetectionSnapshot = null;
 
         this.log.info('Motion detected (' + motionEvent.score + '%) by camera ' + camera.name + ' !!!!');
-        
-        // TODO: Set the motion back to 0 after the event is done or x amount of time!
+
         matchingAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
+        setTimeout(() => {
+            // If a new motion event has already been received we do not clear the sensors's state and leave it for the newer timeout to reset the state.
+            if (motionEvent.id !== camera.lastMotionEvent.id) {
+                return;
+            }
+            matchingAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 0);
+        }, this.unifiConfig.motion_interval);
         
         try {
             const snapshot = await ImageUtils.createImage('http://' + camera.ip + '/snap.jpeg');
@@ -111,69 +117,78 @@ export class MotionDetector {
     }
 
     private checkMotionEnhanced = async (motionEvent: UnifiMotionEvent): Promise<any> => {
-        outer: for (const configuredAccessory of this.configuredAccessories) {
-            configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 0);
-            if (!configuredAccessory.context.motionEnabled) {
-                continue;
+        const camera = this.cameras.find((camera) => camera.id === motionEvent.cameraId);
+        if (!camera) {
+            this.log.warn('WARNING: No matching camera found for motion event!');
+            return;
+        }
+        // TODO: Check is the motion event is already known!
+        camera.lastMotionEvent = motionEvent;
+
+        const enabledMotionAccessories = this.configuredAccessories.filter((accessory) => accessory.context.motionEnabled);
+
+        const matchingAccessory = enabledMotionAccessories.find((accessory) => accessory.context.id === camera.id);
+        if (!matchingAccessory) {
+            this.log.warn('WARNING: No accessory found that belongs to the camera that generated the motion event!');
+            return;
+        }
+       
+        if (this.isSkippableLongRunningMotion(matchingAccessory, motionEvent)) {
+            return
+        }
+
+        camera.lastDetectionSnapshot = null;
+
+        let snapshot: Image | undefined;
+        const form = new FormData();
+        try {
+            snapshot = await ImageUtils.createImage('http://' + camera.ip + '/snap.jpeg');
+            let fimg = await fetch('http://' + camera.ip + '/snap.jpeg');
+            const buffer = Buffer.from(await fimg.arrayBuffer());
+            const fileName = 'detection-' + camera.name + 'jpg';
+
+            form.append('imageFile', buffer, {
+                contentType: 'text/plain',
+                filename: fileName,
+            });
+        } catch (error) {
+            this.log.warn('Could not fetch snapshot for camera: ' + camera.name);
+        }
+
+        const nFetch = (await import('node-fetch')).default;
+
+        const start = Date.now();
+        const data = await nFetch('http://127.0.0.1:5050', { method: 'POST', body: form });
+        this.log.debug(camera.name + ' upload + yolo processing took: ' + (Date.now() - start) + 'ms');
+        const detections: Detection[] = this.mapDetectorJsonToDetections(await data.json() as RawDetection);
+
+        for (const classToDetect of this.unifiConfig.enhanced_classes) {
+            const detection = this.getDetectionForClassName(classToDetect, detections);
+            if (!detection) {
+                this.log.debug('None of the required classes found by enhanced motion detection, discarding!');
+                return;
             }
 
-            for (const camera of this.cameras) {
-                if (configuredAccessory.context.id === camera.id) {
-                    camera.lastDetectionSnapshot = null;
-                    if (!camera.lastMotionEvent) {
-                        continue outer;
-                    }
+            const score: number = Math.round(detection.score * 100);
+            if (score < this.unifiConfig.enhanced_motion_score) {
+                this.log.debug('Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.unifiConfig.enhanced_motion_score + '% or higher)');
+                return;  
+            }
+            this.log.info('Detected: ' + detection.class + ' (' + score + '%) by camera ' + camera.name);
 
-                    let snapshot: Image;
-                    const form = new FormData();
-                    try {
-                        snapshot = await ImageUtils.createImage('http://' + camera.ip + '/snap.jpeg');
-                        let fimg = await fetch('http://' + camera.ip + '/snap.jpeg');
-                        const buffer = Buffer.from(await fimg.arrayBuffer());
-                        const fileName = 'detection-' + camera.name + 'jpg';
+            const snapshotCanvas = await this.persistSnapshot(snapshot, detection.class + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
+            camera.lastDetectionSnapshot = snapshotCanvas.toBuffer('image/jpeg');
 
-                        form.append('imageFile', buffer, {
-                            contentType: 'text/plain',
-                            filename: fileName,
-                        });
-                    } catch (error) {
-                        continue outer;
-                    }
-
-                    const nFetch = (await import('node-fetch')).default;
-
-                    const start = Date.now();
-                    const data = await nFetch('http://127.0.0.1:5050', { method: 'POST', body: form });
-                    this.log.debug(camera.name + ' upload + yolo processing took: ' + (Date.now() - start) + 'ms');
-                    const detections: Detection[] = this.mapDetectorJsonToDetections(await data.json() as RawDetection);
-
-                    for (const classToDetect of this.unifiConfig.enhanced_classes) {
-                        const detection: Detection = this.getDetectionForClassName(classToDetect, detections);
-
-                        if (detection) {
-                            if (this.isSkippableLongRunningMotion(configuredAccessory, camera.lastMotionEvent)) {
-                                continue outer;
-                            }
-
-                            const score: number = Math.round(detection.score * 100);
-                            if (score >= this.unifiConfig.enhanced_motion_score) {
-                                this.log.info('Detected: ' + detection.class + ' (' + score + '%) by camera ' + camera.name);
-
-                                const snapshotCanvas = await this.persistSnapshot(snapshot, detection.class + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
-
-                                camera.lastDetectionSnapshot = snapshotCanvas.toBuffer('image/jpeg');
-                                configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
-                                this.mqtt.sendMessageOnTopic(JSON.stringify({ class: detection.class, score, timestamp: new Date().toISOString(), snapshot: ImageUtils.resizeCanvas(snapshotCanvas, 480, 270).toBuffer('image/jpeg', { quality: 0.5 }).toString('base64') }), camera.name);
-                                continue outer;
-                            } else {
-                                this.log.debug('Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.unifiConfig.enhanced_motion_score + '% or higher)');
-                            }
-                        } else {
-                            this.log.debug('None of the required classes found by enhanced motion detection, discarding!');
-                        }
-                    }
+            matchingAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
+            setTimeout(() => {
+                // If a new motion event has already been received we do not clear the sensors's state and leave it for the newer timeout to reset the state.
+                if (motionEvent.id !== camera.lastMotionEvent.id) {
+                    return;
                 }
-            }
+                matchingAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 0);
+            }, this.unifiConfig.motion_interval);
+
+            this.mqtt.sendMessageOnTopic(JSON.stringify({ class: detection.class, score, timestamp: new Date().toISOString(), snapshot: ImageUtils.resizeCanvas(snapshotCanvas, 480, 270).toBuffer('image/jpeg', { quality: 0.5 }).toString('base64') }), camera.name);
         }
     }
 
@@ -232,13 +247,13 @@ export class MotionDetector {
         return false;
     }
 
-    private getDetectionForClassName(className: string, detections: Detection[]): Detection | null {
+    private getDetectionForClassName(className: string, detections: Detection[]): Detection | undefined {
         for (const detection of detections) {
             if (detection.class.toLowerCase() === className.toLowerCase()) {
                 return detection;
             }
         }
-        return null;
+        return undefined;
     }
 
     private startDetector = async(): Promise<void> => {
@@ -246,7 +261,7 @@ export class MotionDetector {
         const execa = (await import('execa')).execa;
 
         const temp: string = fileURLToPath(import.meta.url).replace('motion.js', '');
-        await execa('python3', ['detector.py'], { cwd: temp + 'detector/' });
+        await execa('python3.11', ['detector.py'], { cwd: temp + 'detector/' });
     }
 
     private mapDetectorJsonToDetections(input: RawDetection): Detection[] {
