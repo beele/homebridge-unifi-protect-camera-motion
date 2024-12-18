@@ -166,7 +166,7 @@ export class MotionDetector {
                 return;
             }
             detections = this.mapDetectorJsonToDetections(await data.json() as RawDetection);
-            
+
         } catch (error) {
             this.log.warn(JSON.stringify(error, null, 4));
         }
@@ -266,11 +266,10 @@ export class MotionDetector {
     }
 
     private startDetector = async(): Promise<void> => {
-
         const execa = (await import('execa')).execa;
 
         const temp: string = fileURLToPath(import.meta.url).replace('motion.js', '');
-        execa('python3.11', ['detector.py'], { cwd: temp + 'detector/' }).then((result) => {
+        execa('python3', ['detector.py'], { cwd: temp + 'detector/' }).then((result) => {
             this.log.debug(result.stdout);
             this.log.warn(result.stderr);
         });
