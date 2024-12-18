@@ -42,7 +42,7 @@ General:
   * Install: `sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev`
   * Install libgl: `sudo apt install libgl1`
 * Mac OS:
-  * Install via Homebrew: `brew install pkg-config cairo pango libpng jpeg giflib librsvg`
+  * Install via Homebrew: `brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman`
 * Linux:
   * Install g++: `sudo apt install g++`
   * Install libgl: `sudo apt install libgl1`
