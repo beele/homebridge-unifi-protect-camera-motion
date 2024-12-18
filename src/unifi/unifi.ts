@@ -1,131 +1,62 @@
-import {Utils} from "../utils/utils.js";
-import {Canvas} from "canvas";
-import {Logging} from "homebridge";
+import { Canvas } from "canvas";
+import { Logging } from "homebridge";
 
-import type {Headers, Response} from "node-fetch";
+import { ProtectApi, ProtectEventAdd, ProtectEventPacket, ProtectNvrBootstrap } from "unifi-protect";
 export class Unifi {
 
     private readonly config: UnifiConfig;
-    private readonly initialBackoffDelay: number;
-    private readonly maxRetries: number;
     private readonly log: Logging;
-    private readonly networkLogger: Logging;
 
-    constructor(config: UnifiConfig, initialBackoffDelay: number, maxRetries: number, log: Logging) {
+    private readonly unifiProtectApi: ProtectApi;
+
+    constructor(config: UnifiConfig, log: Logging) {
         this.config = config;
-        this.initialBackoffDelay = initialBackoffDelay;
-        this.maxRetries = maxRetries;
-
         this.log = log;
-        this.networkLogger = this.config.debug_network_traffic ? this.log : undefined;
+
+        this.unifiProtectApi = new ProtectApi(log);
     }
 
-    public static async determineEndpointStyle(baseControllerUrl: string, log: Logging): Promise<UnifiEndPointStyle> {
-        if (baseControllerUrl && baseControllerUrl.endsWith('/')) {
-            throw new Error('Controller URL should NOT end with a slash!');
-        }
-
-        const fetchModule = (await import('node-fetch'));
-
-        const headers: Headers = new fetchModule.Headers();
-        headers.set('Content-Type', 'application/json');
-        const response: Response = await Utils.fetch(baseControllerUrl,
-            {method: 'GET'},
-            headers
-        );
-
-        const csrfToken = response.headers.get('X-CSRF-Token');
-        if (csrfToken) {
-            log.info('Endpoint Style: UnifiOS');
-            return {
-                authURL: baseControllerUrl + '/api/auth/login',
-                apiURL: baseControllerUrl + '/proxy/protect/api',
-                isUnifiOS: true,
-                csrfToken: csrfToken
-            }
-        } else {
-            log.info('Endpoint Style: Unifi Protect (Legacy)');
-            return {
-                authURL: baseControllerUrl + '/api/auth',
-                apiURL: baseControllerUrl + '/api',
-                isUnifiOS: false
-            }
-        }
-    }
-
-    public async authenticate(username: string, password: string, endpointStyle: UnifiEndPointStyle): Promise<UnifiSession> {
+    public authenticate = async (username: string, password: string): Promise<UnifiSession> => {
         if (!username || !password) {
             throw new Error('Username and password should be filled in!');
         }
 
-        const fetchModule = (await import('node-fetch'));
+        const bootstrapP = new Promise<void>(async (res, rej) => {
+            this.unifiProtectApi.once("login", async (successful: boolean) => {
+                if (!successful) {
+                    rej(new Error('Could not log in!'));
+                }
 
-        const headers: Headers = new fetchModule.Headers();
-        headers.set('Content-Type', 'application/json');
-        if (endpointStyle.isUnifiOS) {
-            headers.set('X-CSRF-Token', endpointStyle.csrfToken);
-        }
+                if (!await this.unifiProtectApi.getBootstrap()) {
+                    rej(new Error('Could not get bootstrap data!'));
+                }
+            });
+            this.unifiProtectApi.once("bootstrap", (bootstrapJSON: ProtectNvrBootstrap) => {
+                res();
+            });
 
-        const loginPromise: Promise<Response> = Utils.fetch(endpointStyle.authURL, {
-            body: JSON.stringify({username: username, password: password}),
-            method: 'POST'},
-            headers, this.networkLogger
-        );
-        const response: Response = await Utils.retry(this.maxRetries, () => { return loginPromise }, this.initialBackoffDelay);
+            if (!await this.unifiProtectApi.login(this.config.controller, username, password)) {
+                rej(new Error('Could not log in!'));
+            }
+        });
 
+        await bootstrapP;
         this.log.debug('Authenticated, returning session');
-        if (endpointStyle.isUnifiOS) {
-            endpointStyle.csrfToken = response.headers.get('X-CSRF-Token');
-            return {
-                cookie: response.headers.get('Set-Cookie'),
-                timestamp: Date.now()
-            }
-        } else {
-            return {
-                authorization: response.headers.get('Authorization'),
-                timestamp: Date.now()
-            }
-        }
+
+        return {
+            cookie: this.unifiProtectApi.bootstrap.accessKey,
+            timestamp: Date.now()
+        };
     }
 
-    public isSessionStillValid(session: UnifiSession, endpointStyle: UnifiEndPointStyle): boolean {
-        // Validity duration for Unifi OS is 1 hour for legacy unifi protect 12 hours will work fine
-        if (session) {
-            if ((session.timestamp + ((endpointStyle.isUnifiOS ? 1 : 12) * 3600 * 1000)) >= Date.now()) {
-                return true;
-            } else {
-                this.log.debug('WARNING: Session expired, a new session must be created!');
-            }
-        } else {
-            this.log.debug('WARNING: No previous session found, a new session must be created!');
-        }
-        return false;
-    }
-
-    public async enumerateMotionCameras(session: UnifiSession, endPointStyle: UnifiEndPointStyle): Promise<UnifiCamera[]> {
-        const fetchModule = (await import('node-fetch'));
-
-        const headers: Headers = new fetchModule.Headers();
-        headers.set('Content-Type', 'application/json');
-        if (endPointStyle.isUnifiOS) {
-            headers.set('Cookie', session.cookie);
-            headers.set('X-CSRF-Token', endPointStyle.csrfToken);
-        } else {
-            headers.set('Authorization', 'Bearer ' + session.authorization)
-        }
-
-        const bootstrapPromise: Promise<Response> = Utils.fetch(endPointStyle.apiURL + '/bootstrap',
-            {method: 'GET'},
-            headers, this.networkLogger
-        );
-        const response: Response = await Utils.retry(this.maxRetries, () => { return bootstrapPromise }, this.initialBackoffDelay);
-        const cams = ((await response.json()) as any).cameras;
-
+    public enumerateMotionCameras = async (): Promise<UnifiCamera[]> => {
         this.log.debug('Cameras retrieved, enumerating motion sensors');
 
-        return cams.map((cam: any) => {
+        const cams = this.unifiProtectApi.bootstrap.cameras;
+
+        return cams.map((cam) => {
             if (this.config.debug) {
-                this.log.debug(cam);
+                this.log.debug(JSON.stringify(cam, null, 4));
             }
 
             const streams: UnifiCameraStream[] = [];
@@ -155,74 +86,46 @@ export class Unifi {
                 type: cam.type,
                 firmware: cam.firmwareVersion,
                 streams: streams,
-                supportsTwoWayAudio: cam.hasSpeaker &&  cam.speakerSettings.isEnabled,
+                supportsTwoWayAudio: cam.hasSpeaker && cam.speakerSettings.isEnabled,
                 talkbackSettings: cam.talkbackSettings
             }
         });
     }
 
-    public async getMotionEvents(session: UnifiSession, endPointStyle: UnifiEndPointStyle): Promise<UnifiMotionEvent[]> {
-        const endEpoch = Date.now();
-        const startEpoch = endEpoch - (this.config.motion_interval * 2);
-
-        const fetchModule = (await import('node-fetch'));
-        const headers: Headers = new fetchModule.Headers();
-        headers.set('Content-Type', 'application/json');
-        if (endPointStyle.isUnifiOS) {
-            headers.set('Cookie', session.cookie);
-            headers.set('X-CSRF-Token', endPointStyle.csrfToken);
-        } else {
-            headers.set('Authorization', 'Bearer ' + session.authorization)
-        }
-        const eventsPromise: Promise<Response> = Utils.fetch(endPointStyle.apiURL + '/events?end=' + endEpoch + '&start=' + startEpoch + '&type=motion',
-            {method: 'GET'},
-            headers, this.networkLogger
-        );
-        const response: Response = await Utils.retry(this.maxRetries, () => { return eventsPromise }, this.initialBackoffDelay);
-
-        const events: Record<string, any>[] = await response.json() as Record<string, any>[];
-        const mappedEvents: UnifiMotionEvent[] = events.map((event: Record<string, any>) => {
-            if (this.config.debug) {
+    public startMotionEventTracking = async (handler: (event: UnifiMotionEvent) => Promise<void>): Promise<void> => {
+        this.unifiProtectApi.on('message', async (event: ProtectEventPacket) => {
+            
+            if (event.header.action === 'add' && event.header.modelKey === 'event' && event.header.recordModel === 'camera') {
                 this.log.debug(JSON.stringify(event, null, 4));
-            }
+                
+                (event.payload as any) satisfies ProtectEventAdd;
 
-            return {
-                id: event.id,
-                cameraId: event.camera,
-                ///@ts-ignore
-                camera: null,
-                score: event.score,
-                timestamp: event.start // event.end is null when the motion is still ongoing!
+                //payload.type === smartDetectZone
+
+                const mappedEvent: UnifiMotionEvent = {
+                    id: event.header.id,
+                    cameraId: (event.payload as ProtectEventAdd).camera,
+                    camera: undefined,
+                    score: (event.payload as ProtectEventAdd).score,
+                    timestamp: (event.payload as ProtectEventAdd).start,
+                };
+    
+                await handler(mappedEvent);
             }
         });
-
-        return mappedEvents;
     }
 
-    public async getSnapshotForCamera(session: UnifiSession, endPointStyle: UnifiEndPointStyle, camera: UnifiCamera, width: number, height: number): Promise<Buffer> {
-        const fetchModule = (await import('node-fetch'));
-        const headers: Headers = new fetchModule.Headers();
-        headers.set('Content-Type', 'application/json');
-        if (endPointStyle.isUnifiOS) {
-            headers.set('Cookie', session.cookie);
-            headers.set('X-CSRF-Token', endPointStyle.csrfToken);
-        } else {
-            headers.set('Authorization', 'Bearer ' + session.authorization)
-        }
+    private onMessage = async (event: ProtectEventPacket): Promise<void> => {
 
-        const params = new URLSearchParams({ force: "true", width: width as any, height: height as any });
-        const response: Response = await Utils.fetch(endPointStyle.apiURL + '/cameras/' + camera.id + '/snapshot/?' + params,
-            {
-                method: 'GET'
-            },
-            headers, this.networkLogger
-        );
+    }
 
-        if (!response?.ok) {
-            this.log.debug(JSON.stringify(response, null, 4));
-            throw new Error('Could not get snapshot for ' + camera.name);
-        }
-        return response.buffer();
+    public stopMotionEventTracking = (): void => {
+        this.unifiProtectApi.off('message', this.onMessage);
+    }
+
+    public getSnapshotForCamera = async (camera: UnifiCamera, width: number, height: number): Promise<Buffer> => {
+        const unifCam = this.unifiProtectApi.bootstrap.cameras.find((cam) => cam.id === camera.id);
+        return await this.unifiProtectApi.getSnapshot(unifCam, {width, height});
     }
 
     public static generateStreamingUrlForBestMatchingResolution(baseSourceUrl: string, streams: UnifiCameraStream[], requestedWidth: number, requestedHeight: number): string {
@@ -253,7 +156,7 @@ export interface UnifiSession {
 
 export interface UnifiCamera {
     id: string;
-    uuid: string;
+    uuid?: string | undefined;
     name: string;
     ip: string;
     mac: string;
@@ -263,7 +166,7 @@ export interface UnifiCamera {
     talkbackSettings: UnifiTalkbackSettings;
     streams: UnifiCameraStream[];
     lastMotionEvent?: UnifiMotionEvent;
-    lastDetectionSnapshot?: Canvas;
+    lastDetectionSnapshot?: Buffer;
 }
 
 export interface UnifiTalkbackSettings {
@@ -293,13 +196,6 @@ export interface UnifiMotionEvent {
     camera: UnifiCamera | null;
     score: number;
     timestamp: number;
-}
-
-export interface UnifiEndPointStyle {
-    authURL: string;
-    apiURL: string;
-    isUnifiOS: boolean;
-    csrfToken?: string;
 }
 
 export interface UnifiConfig {

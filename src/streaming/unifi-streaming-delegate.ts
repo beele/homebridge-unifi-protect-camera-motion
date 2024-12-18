@@ -28,7 +28,7 @@ import {
     StreamRequestTypes
 } from 'homebridge';
 import { ImageUtils } from '../utils/image-utils.js';
-import { Canvas } from 'canvas';
+import { Canvas, loadImage } from 'canvas';
 import { Unifi, UnifiCamera } from '../unifi/unifi.js';
 import { UnifiFlows } from '../unifi/unifi-flows.js';
 import { FfmpegProcess } from './ffmpeg-process.js';
@@ -83,7 +83,7 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
         this.log = log;
         this.ongoingSessions = {};
         this.pendingSessions = {};
-        this.videoProcessor = videoProcessor ?? ffmpegPath.ffmpeg_for_homebridge ?? 'ffmpeg';
+        this.videoProcessor = videoProcessor ?? ffmpegPath?.ffmpeg_for_homebridge ?? 'ffmpeg';
         log.info('VIDEO PROCESSOR: ' + this.videoProcessor);
 
         this.cameraConfig = cameraConfig;
@@ -153,7 +153,7 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
             }
         } else {
             this.log.debug('Returning annotated snapshot');
-            const canvas: Canvas = ImageUtils.resizeCanvas(this.camera.lastDetectionSnapshot, request.width, request.height);
+            const canvas: Canvas = ImageUtils.resizeCanvas(ImageUtils.createCanvasFromImage(await loadImage(this.camera.lastDetectionSnapshot)), request.width, request.height);
             callback(undefined, canvas.toBuffer('image/jpeg'));
         }
     }

@@ -6,6 +6,7 @@ import { GooglePhotos, GooglePhotosConfig } from "../utils/google-photos.js";
 import type { API, Logging, PlatformAccessory, PlatformConfig } from 'homebridge';
 import { Mqtt } from "../utils/mqtt.js";
 import FormData from "form-data";
+import { fileURLToPath } from "url";
 
 export class MotionDetector {
 
@@ -20,7 +21,9 @@ export class MotionDetector {
 
     private gPhotos: GooglePhotos;
     private mqtt: Mqtt;
-    private configuredAccessories: any[];
+    private configuredAccessories: PlatformAccessory[];
+
+    private intervalFunction: Function | undefined;
 
     constructor(api: API, config: PlatformConfig, mqtt: Mqtt, unifiFlows: UnifiFlows, cameras: UnifiCamera[], log: Logging) {
         this.api = api;
@@ -37,76 +40,77 @@ export class MotionDetector {
         ImageUtils.userStoragePath = userStoragePath;
         this.gPhotos = config.upload_gphotos && this.googlePhotosConfig ? new GooglePhotos(config.googlePhotos as GooglePhotosConfig, userStoragePath, log) : null;
         this.mqtt = mqtt;
+
+        this.intervalFunction = this.checkMotion;
     }
 
-    public async setupMotionChecking(configuredAccessories: PlatformAccessory[]): Promise<any> {
+    public setupMotionChecking = async (configuredAccessories: PlatformAccessory[]): Promise<void> => {
+        await this.flows.startMotionEventTracking(this.onMotionEvent);
+        
         this.configuredAccessories = configuredAccessories;
 
-        let intervalFunction: Function;
         if (this.unifiConfig.enhanced_motion) {
-            this.log.info("Starting python detector");
-            await this.startDetector();
-            this.log.info("Python detector started");
-            intervalFunction = this.checkMotionEnhanced.bind(this);
-        } else {
-            intervalFunction = this.checkMotion.bind(this);
-        }
-
-        setInterval(() => {
+            this.log.info("Starting enhanced python detector...");
             try {
-                intervalFunction();
+                await this.startDetector();
+                this.intervalFunction = this.checkMotionEnhanced;
+                this.log.info("Python detector started");
             } catch (error) {
-                this.log.debug('Error during motion interval loop: ' + error);
-            }
-        }, this.unifiConfig.motion_interval);
-        return;
-    }
-
-    private async checkMotion(): Promise<any> {
-        try {
-            await this.flows.assignMotionEventsToCameras(this.cameras);
-        } catch (error) {
-            this.log.debug('Cannot get latest motion info: ' + error);
-        }
-
-        outer: for (const configuredAccessory of this.configuredAccessories) {
-            configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 0);
-            if (!configuredAccessory.context.motionEnabled) {
-                continue;
-            }
-
-            for (const camera of this.cameras) {
-                if (configuredAccessory.context.id === camera.id) {
-                    camera.lastDetectionSnapshot = null;
-                    if (!camera.lastMotionEvent || this.isSkippableLongRunningMotion(configuredAccessory, camera.lastMotionEvent)) {
-                        continue outer;
-                    }
-
-                    this.log.info('Motion detected (' + camera.lastMotionEvent.score + '%) by camera ' + camera.name + ' !!!!');
-                    configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
-                    this.mqtt.sendMessageOnTopic(JSON.stringify({ score: camera.lastMotionEvent.score, timestamp: new Date().toISOString(), snapshot: ImageUtils.resizeCanvas(camera.lastDetectionSnapshot, 480, 270).toBuffer('image/jpeg', { quality: 0.5 }).toString('base64') }), camera.name);
-
-                    let snapshot: Image;
-                    try {
-                        snapshot = await ImageUtils.createImage('http://' + camera.ip + '/snap.jpeg');
-                        camera.lastDetectionSnapshot = await this.persistSnapshot(snapshot, 'Motion detected (' + camera.lastMotionEvent.score + '%) by camera ' + camera.name, []);
-                    } catch (error) {
-                        this.log.debug('Cannot save snapshot: ' + error);
-                    }
-
-                    continue outer;
-                }
+                this.log.warn(JSON.stringify(error, null, 4));
+                this.log.info("Python detector could not be started, falling back to regular checking!");
             }
         }
     }
 
-    private async checkMotionEnhanced(): Promise<any> {
-        try {
-            await this.flows.assignMotionEventsToCameras(this.cameras);
-        } catch (error) {
-            this.log.debug('Cannot get latest motion info: ' + error);
+    private onMotionEvent = async (motionEvent: UnifiMotionEvent): Promise<void> => {
+        if (this.intervalFunction) {
+            await this.intervalFunction(motionEvent);
+        } else {
+            this.log.warn('No motion handler function set!');
+        }
+    }
+
+    private checkMotion = async (motionEvent: UnifiMotionEvent): Promise<any> => {
+        const camera = this.cameras.find((camera) => camera.id === motionEvent.cameraId);
+        if (!camera) {
+            this.log.warn('WARNING: No matching camera found for motion event!');
+            return;
+        }
+        // TODO: Check is the motion event is already known!
+        camera.lastMotionEvent = motionEvent;
+
+        const enabledMotionAccessories = this.configuredAccessories.filter((accessory) => accessory.context.motionEnabled);
+
+        const matchingAccessory = enabledMotionAccessories.find((accessory) => accessory.context.id === camera.id);
+        if (!matchingAccessory) {
+            this.log.warn('WARNING: No accessory found that belongs to the camera that generated the motion event!');
+            return;
+        }
+       
+        if (this.isSkippableLongRunningMotion(matchingAccessory, motionEvent)) {
+            return
         }
 
+        camera.lastDetectionSnapshot = null;
+
+        this.log.info('Motion detected (' + motionEvent.score + '%) by camera ' + camera.name + ' !!!!');
+        
+        // TODO: Set the motion back to 0 after the event is done or x amount of time!
+        matchingAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
+        
+        try {
+            const snapshot = await ImageUtils.createImage('http://' + camera.ip + '/snap.jpeg');
+            const snapshotCanvas = await this.persistSnapshot(snapshot, 'Motion detected (' + motionEvent.score + '%) by camera ' + camera.name, []);
+            camera.lastDetectionSnapshot = snapshotCanvas.toBuffer('image/jpeg');
+
+            this.mqtt.sendMessageOnTopic(JSON.stringify({ score: motionEvent.score, timestamp: new Date().toISOString(), snapshot: ImageUtils.resizeCanvas(snapshotCanvas, 480, 270).toBuffer('image/jpeg', { quality: 0.5 }).toString('base64') }), camera.name);
+
+        } catch (error) {
+            this.log.debug('Cannot save snapshot: ' + error);
+        }
+    }
+
+    private checkMotionEnhanced = async (motionEvent: UnifiMotionEvent): Promise<any> => {
         outer: for (const configuredAccessory of this.configuredAccessories) {
             configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 0);
             if (!configuredAccessory.context.motionEnabled) {
@@ -154,9 +158,12 @@ export class MotionDetector {
                             const score: number = Math.round(detection.score * 100);
                             if (score >= this.unifiConfig.enhanced_motion_score) {
                                 this.log.info('Detected: ' + detection.class + ' (' + score + '%) by camera ' + camera.name);
-                                camera.lastDetectionSnapshot = await this.persistSnapshot(snapshot, detection.class + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
+
+                                const snapshotCanvas = await this.persistSnapshot(snapshot, detection.class + ' detected (' + score + '%) by camera ' + camera.name, [detection]);
+
+                                camera.lastDetectionSnapshot = snapshotCanvas.toBuffer('image/jpeg');
                                 configuredAccessory.getService(this.api.hap.Service.MotionSensor).setCharacteristic(this.api.hap.Characteristic.MotionDetected, 1);
-                                this.mqtt.sendMessageOnTopic(JSON.stringify({ class: detection.class, score, timestamp: new Date().toISOString(), snapshot: ImageUtils.resizeCanvas(camera.lastDetectionSnapshot, 480, 270).toBuffer('image/jpeg', { quality: 0.5 }).toString('base64') }), camera.name);
+                                this.mqtt.sendMessageOnTopic(JSON.stringify({ class: detection.class, score, timestamp: new Date().toISOString(), snapshot: ImageUtils.resizeCanvas(snapshotCanvas, 480, 270).toBuffer('image/jpeg', { quality: 0.5 }).toString('base64') }), camera.name);
                                 continue outer;
                             } else {
                                 this.log.debug('Detected class: ' + detection.class + ' rejected due to score: ' + score + '% (must be ' + this.unifiConfig.enhanced_motion_score + '% or higher)');
@@ -170,7 +177,7 @@ export class MotionDetector {
         }
     }
 
-    private async persistSnapshot(snapshot: Image, description: string, detections: Detection[]): Promise<Canvas> {
+    private persistSnapshot = async (snapshot: Image, description: string, detections: Detection[]): Promise<Canvas> => {
         try {
             let annotatedImage: Canvas = await ImageUtils.generateAnnotatedImage(snapshot, detections);
 
@@ -205,7 +212,7 @@ export class MotionDetector {
         }
     }
 
-    private isSkippableLongRunningMotion(accessory: any, motionEvent: UnifiMotionEvent): boolean {
+    private isSkippableLongRunningMotion = (accessory: any, motionEvent: UnifiMotionEvent): boolean => {
         //Prevent repeat motion notifications for motion events that are longer then the motion_interval unifiConfig setting!
         if (this.unifiConfig.motion_repeat_interval) {
             if (accessory.context.lastMotionId === motionEvent.id) {
@@ -225,7 +232,7 @@ export class MotionDetector {
         return false;
     }
 
-    private getDetectionForClassName(className: string, detections: Detection[]) {
+    private getDetectionForClassName(className: string, detections: Detection[]): Detection | null {
         for (const detection of detections) {
             if (detection.class.toLowerCase() === className.toLowerCase()) {
                 return detection;
@@ -234,17 +241,12 @@ export class MotionDetector {
         return null;
     }
 
-    private async startDetector(): Promise<void> {
+    private startDetector = async(): Promise<void> => {
 
         const execa = (await import('execa')).execa;
 
-        const temp: string = __filename.replace('motion.js', '');
-        execa('python3', ['detector.py'], { cwd: temp + 'detector/' })
-            .then(() => {
-                this.log.debug("Python detector has exited (no error)");
-            }).catch((err) => {
-                this.log.debug(err);
-            });
+        const temp: string = fileURLToPath(import.meta.url).replace('motion.js', '');
+        await execa('python3', ['detector.py'], { cwd: temp + 'detector/' });
     }
 
     private mapDetectorJsonToDetections(input: RawDetection): Detection[] {
@@ -267,6 +269,7 @@ export class MotionDetector {
         return detections;
     }
 }
+
 export type Detection = {
     class: string;
     score: number;

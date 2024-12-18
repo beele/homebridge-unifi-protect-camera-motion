@@ -46,8 +46,8 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
             //Hack to get async functions!
             setTimeout(async () => {
                 try {
-                    const unifi = new Unifi(this.config.unifi as UnifiConfig, 500, 2, this.log);
-                    this.uFlows = new UnifiFlows(unifi, this.config.unifi as UnifiConfig, await Unifi.determineEndpointStyle((this.config.unifi as UnifiConfig).controller, this.log), this.log);
+                    const unifi = new Unifi(this.config.unifi as UnifiConfig, this.log);
+                    this.uFlows = new UnifiFlows(unifi, this.config.unifi as UnifiConfig, this.log);
                     UnifiStreamingDelegate.uFlows = this.uFlows;
 
                     await this.didFinishLaunching();
