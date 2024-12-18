@@ -53,7 +53,7 @@ export class Unifi {
 
         return cams.map((cam) => {
             if (this.config.debug) {
-                this.log.debug(JSON.stringify(cam, null, 4));
+                //this.log.debug(JSON.stringify(cam, null, 4));
             }
 
             const streams: UnifiCameraStream[] = [];

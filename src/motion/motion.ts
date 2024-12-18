@@ -5,7 +5,6 @@ import { ImageUtils } from "../utils/image-utils.js";
 import { GooglePhotos, GooglePhotosConfig } from "../utils/google-photos.js";
 import type { API, Logging, PlatformAccessory, PlatformConfig } from 'homebridge';
 import { Mqtt } from "../utils/mqtt.js";
-import FormData from "form-data";
 import { fileURLToPath } from "url";
 
 export class MotionDetector {
@@ -142,25 +141,35 @@ export class MotionDetector {
         let snapshot: Image | undefined;
         const form = new FormData();
         try {
-            snapshot = await ImageUtils.createImage('http://' + camera.ip + '/snap.jpeg');
             let fimg = await fetch('http://' + camera.ip + '/snap.jpeg');
-            const buffer = Buffer.from(await fimg.arrayBuffer());
-            const fileName = 'detection-' + camera.name + 'jpg';
+            const imgRaw = await fimg.arrayBuffer();
+            snapshot = new Image();
+            snapshot.src = Buffer.from(imgRaw);
+         
+            const fileName = 'detection-' + camera.name + '.jpg';
 
-            form.append('imageFile', buffer, {
-                contentType: 'text/plain',
-                filename: fileName,
-            });
+            form.append('imageFile', new Blob([imgRaw]), fileName);
         } catch (error) {
             this.log.warn('Could not fetch snapshot for camera: ' + camera.name);
         }
 
-        const nFetch = (await import('node-fetch')).default;
-
         const start = Date.now();
-        const data = await nFetch('http://127.0.0.1:5050', { method: 'POST', body: form });
-        this.log.debug(camera.name + ' upload + yolo processing took: ' + (Date.now() - start) + 'ms');
-        const detections: Detection[] = this.mapDetectorJsonToDetections(await data.json() as RawDetection);
+       
+        let detections: Detection[] = [];
+        try {
+            const data = await fetch('http://127.0.0.1:5050', { method: 'POST', body: form });
+            this.log.debug(camera.name + ' upload + yolo processing took: ' + (Date.now() - start) + 'ms');
+
+            if (data.status !== 200) {
+                this.log.warn('Yolo failed: ' + data.statusText);
+                this.log.debug(JSON.stringify(data, null, 4));
+                return;
+            }
+            detections = this.mapDetectorJsonToDetections(await data.json() as RawDetection);
+            
+        } catch (error) {
+            this.log.warn(JSON.stringify(error, null, 4));
+        }
 
         for (const classToDetect of this.unifiConfig.enhanced_classes) {
             const detection = this.getDetectionForClassName(classToDetect, detections);
@@ -261,7 +270,10 @@ export class MotionDetector {
         const execa = (await import('execa')).execa;
 
         const temp: string = fileURLToPath(import.meta.url).replace('motion.js', '');
-        await execa('python3.11', ['detector.py'], { cwd: temp + 'detector/' });
+        execa('python3.11', ['detector.py'], { cwd: temp + 'detector/' }).then((result) => {
+            this.log.debug(result.stdout);
+            this.log.warn(result.stderr);
+        });
     }
 
     private mapDetectorJsonToDetections(input: RawDetection): Detection[] {
