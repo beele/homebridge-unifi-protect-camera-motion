@@ -74,7 +74,7 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
 
     public controller: CameraController;
 
-    constructor(camera: UnifiCamera, log: Logging, api: API, cameraConfig: CameraConfig, videoProcessor: string) {
+    constructor(camera: UnifiCamera, log: Logging, api: API, cameraConfig: CameraConfig, videoProcessor: string | undefined) {
         this.camera = camera;
         this.cameraName = camera.name;
 
@@ -83,7 +83,7 @@ export class UnifiStreamingDelegate implements CameraStreamingDelegate {
         this.log = log;
         this.ongoingSessions = {};
         this.pendingSessions = {};
-        this.videoProcessor = videoProcessor || ffmpegPath || 'ffmpeg';
+        this.videoProcessor = videoProcessor ?? ffmpegPath.ffmpeg_for_homebridge ?? 'ffmpeg';
         log.info('VIDEO PROCESSOR: ' + this.videoProcessor);
 
         this.cameraConfig = cameraConfig;

@@ -7,7 +7,8 @@ import type { API, Logging, PlatformAccessory, PlatformConfig } from 'homebridge
 import { Mqtt } from "../utils/mqtt";
 import fetch from "node-fetch";
 import FormData from "form-data";
-import execa from 'execa';
+
+import {execa} from 'execa';
 
 export class MotionDetector {
 
@@ -141,7 +142,7 @@ export class MotionDetector {
                     const start = Date.now();
                     const data = await fetch('http://127.0.0.1:5050', { method: 'POST', body: form });
                     this.log.debug(camera.name + ' upload + yolo processing took: ' + (Date.now() - start) + 'ms');
-                    const detections: Detection[] = this.mapDetectorJsonToDetections(await data.json());
+                    const detections: Detection[] = this.mapDetectorJsonToDetections(await data.json() as RawDetection);
 
                     for (const classToDetect of this.unifiConfig.enhanced_classes) {
                         const detection: Detection = this.getDetectionForClassName(classToDetect, detections);
@@ -244,7 +245,7 @@ export class MotionDetector {
             });
     }
 
-    private mapDetectorJsonToDetections(input: { xmin: any, ymin: any, xmax: any, ymax: any, class: any, name: any, confidence: any }): Detection[] {
+    private mapDetectorJsonToDetections(input: RawDetection): Detection[] {
         const detectionKeys: string[] = Object.keys(input.xmin) || [];
 
         const detections: Detection[] = [];
@@ -264,7 +265,7 @@ export class MotionDetector {
         return detections;
     }
 }
-export interface Detection {
+export type Detection = {
     class: string;
     score: number;
     bbox: number[];
@@ -274,4 +275,8 @@ export interface Detection {
         bbox[2] = maxX - minX;
         bbox[3] = maxY - minY;
     */
+}
+
+export type RawDetection = {
+    xmin: any, ymin: any, xmax: any, ymax: any, class: any, name: any, confidence: any
 }

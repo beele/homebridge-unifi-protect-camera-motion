@@ -174,20 +174,23 @@ export class Unifi {
         );
         const response: Response = await Utils.retry(this.maxRetries, () => { return eventsPromise }, this.initialBackoffDelay);
 
-        const events: any[] = await response.json() as any;
-        return events.map((event: any) => {
+        const events: Record<string, any>[] = await response.json() as Record<string, any>[];
+        const mappedEvents: UnifiMotionEvent[] = events.map((event: Record<string, any>) => {
             if (this.config.debug) {
-                this.log.debug(event);
+                this.log.debug(JSON.stringify(event, null, 4));
             }
 
             return {
                 id: event.id,
                 cameraId: event.camera,
+                ///@ts-ignore
                 camera: null,
                 score: event.score,
                 timestamp: event.start // event.end is null when the motion is still ongoing!
             }
         });
+
+        return mappedEvents;
     }
 
     public async getSnapshotForCamera(session: UnifiSession, endPointStyle: UnifiEndPointStyle, camera: UnifiCamera, width: number, height: number): Promise<Buffer> {
@@ -280,6 +283,7 @@ export interface UnifiCameraStream {
 export interface UnifiMotionEvent {
     id: string;
     cameraId: string;
+    camera: UnifiCamera | null;
     score: number;
     timestamp: number;
 }

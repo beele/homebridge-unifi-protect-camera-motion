@@ -9,7 +9,7 @@
  */
 
 import {createSocket} from 'dgram';
-import execa, {ExecaChildProcess, ExecaError} from 'execa';
+import {execa, ExecaError, Subprocess} from 'execa';
 import {Logging, StreamRequestCallback} from 'homebridge';
 import {Readable, Writable} from 'stream';
 import {UnifiStreamingDelegate} from './unifi-streaming-delegate';
@@ -24,7 +24,7 @@ export class FfmpegProcess {
     private delegate: UnifiStreamingDelegate;
     private readonly log: Logging;
     private readonly name: string;
-    private process!: ExecaChildProcess;
+    private process!: Subprocess;
     private readonly sessionId: string;
     private streamTimeout?: NodeJS.Timeout;
 
@@ -143,7 +143,7 @@ export class FfmpegProcess {
     // Cleanup after we're done.
     public stop(): void {
         // Cancel our process.
-        this.process.cancel();
+        this.process.kill();
     }
 
     // Grab the standard input.
