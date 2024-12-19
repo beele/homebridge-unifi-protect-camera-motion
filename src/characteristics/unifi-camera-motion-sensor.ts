@@ -6,8 +6,8 @@ import {
     Logging,
     PlatformAccessory,
 } from "homebridge";
-import {CameraConfig} from "../streaming/camera-config";
-import { Mqtt } from "../utils/mqtt";
+import {CameraConfig} from "../streaming/camera-config.js";
+import { Mqtt } from "../utils/mqtt.js";
 
 export class UnifiCameraMotionSensor {
 
@@ -61,10 +61,10 @@ export class UnifiCameraMotionSensor {
                         if (motionSensor) {
                             motionSensor.updateCharacteristic(hap.Characteristic.MotionDetected, 1);
 
-                            setTimeout(() => {
+                            /*setTimeout(() => {
                                 log.debug('Motion trigger auto off');
-                                motionTrigger.getCharacteristic(hap.Characteristic.On).updateValue(false);
-                            }, 1000);
+                                motionTrigger?.getCharacteristic(hap.Characteristic.On).updateValue(false);
+                            }, 1000);*/
                         }
                     }
                     callback(null, state);

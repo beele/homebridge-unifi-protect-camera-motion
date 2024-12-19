@@ -1,4 +1,4 @@
-import {UnifiCamera} from "../unifi/unifi";
+import {UnifiCamera} from "../unifi/unifi.js";
 
 export interface CameraConfig {
     uuid: string;

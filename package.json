@@ -1,7 +1,8 @@
 {
     "name": "homebridge-unifi-protect-camera-motion",
-    "version": "0.6.5",
+    "version": "0.7.6",
     "description": "Unifi Protect cameras & motion sensors for Homebridge. AI enabled Motion detection for Unifi Protect cameras.",
+    "type": "module",
     "main": "src/index.js",
     "scripts": {
         "postinstall": "node scripts/postinstall.js",
@@ -30,29 +31,30 @@
         "url": "https://paypal.me/MrBeele?locale.x=nl_NL"
     },
     "engines": {
-        "node": ">=16",
-        "homebridge": ">=1.4.0"
+        "node": ">=20",
+        "homebridge": ">=1.8.5"
     },
     "dependencies": {
-        "canvas": "^2.9.1",
-        "execa": "^5.1.1",
-        "ffmpeg-for-homebridge": "^0.1.4",
-        "form-data": "^4.0.0",
-        "get-port": "^5.1.1",
-        "googleapis": "^98.0.0",
+        "canvas": "^2.11.2",
+        "execa": "^9.5.2",
+        "ffmpeg-for-homebridge": "^2.1.7",
+        "get-port": "^7.1.0",
+        "googleapis": "^144.0.0",
         "googlephotos": "^0.3.5",
-        "mqtt": "^4.3.7",
-        "node-fetch": "^2.6.6"
+        "mqtt": "^5.10.3",
+        "homebridge-lib": "^7.1.0",
+        "homebridge-plugin-utils": "^1.11.3",
+        "unifi-protect": "^4.17.0",
+        "ws": "^8.18.0"
     },
     "devDependencies": {
-        "@tsconfig/node16": "^1.0.3",
-        "@types/jest": "^27.4.1",
-        "@types/node": "^17.0.42",
-        "@types/node-fetch": "^2.6.1",
-        "homebridge": "^1.4.1",
-        "jest": "^27.5.1",
-        "nodemon": "^2.0.16",
-        "ts-jest": "^27.1.4",
-        "typescript": "^4.7.3"
+        "eslint": "^9.14.0",
+        "@types/jest": "^29.5.14",
+        "@types/node": "^20.17.10",
+        "homebridge": "^1.8.5",
+        "jest": "^29.7.0",
+        "nodemon": "^3.1.9",
+        "ts-jest": "^29.2.5",
+        "typescript": "^5.7.2"
     }
 }

@@ -6,7 +6,7 @@ import {
     Logging,
     PlatformAccessory
 } from "homebridge";
-import {CameraConfig} from "../streaming/camera-config";
+import {CameraConfig} from "../streaming/camera-config.js";
 
 export class UnifiCameraDoorbell {
 
@@ -40,7 +40,7 @@ export class UnifiCameraDoorbell {
 
                             setTimeout(() => {
                                 log.debug('Doorbell trigger auto off');
-                                doorbellTrigger.getCharacteristic(hap.Characteristic.On).updateValue(false);
+                                doorbellTrigger?.getCharacteristic(hap.Characteristic.On).updateValue(false);
                             }, 1000);
                         }
                     }

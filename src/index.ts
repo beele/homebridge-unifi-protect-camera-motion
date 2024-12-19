@@ -1,7 +1,7 @@
 import {API} from "homebridge";
-import {UnifiProtectMotionPlatform} from "./unifi-protect-motion-platform";
-import {PLATFORM_NAME, PLUGIN_IDENTIFIER} from "./settings";
+import {PLATFORM_NAME, PLUGIN_IDENTIFIER} from "./settings.js";
+import { UnifiProtectMotionPlatform } from "./unifi-protect-motion-platform.js";
 
-export = (api: API) => {
+export default (api: API) => {
     api.registerPlatform(PLUGIN_IDENTIFIER, PLATFORM_NAME, UnifiProtectMotionPlatform);
 }
