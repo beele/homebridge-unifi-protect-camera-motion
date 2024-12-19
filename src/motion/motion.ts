@@ -167,9 +167,13 @@ export class MotionDetector {
                 //this.log.debug(JSON.stringify(data, null, 4));
                 throw new Error('YoLo request failed: ' + data.statusText);
             }
+
+            console.log('TEST');
             detections = this.mapDetectorJsonToDetections(await data.json() as RawDetection);
 
         } catch (error) {
+            this.log.warn('YoLo failure');
+            console.log(error);
             this.log.warn(JSON.stringify(error, null, 4));
             // TODO: Fall back to regular checking?
             return;
@@ -288,10 +292,18 @@ export class MotionDetector {
         const execa = (await import('execa')).execa;
 
         const temp: string = fileURLToPath(import.meta.url).replace('motion.js', '');
-        execa('python3', ['detector.py'], { cwd: temp + 'detector/' }).then((result) => {
-            this.log.debug(result.stdout);
-            this.log.warn(result.stderr);
-        });
+        try {
+            execa('python3.11', ['detector.py'], { cwd: temp + 'detector/' })
+            .then((result) => {
+                this.log.debug(result.stdout);
+                this.log.warn(result.stderr);
+            })
+            .catch((error) => {
+                this.log.warn(JSON.stringify(error, null, 4));
+            });
+        } catch (error) {
+            this.log.warn(JSON.stringify(error, null, 4));
+        }
     }
 
     private mapDetectorJsonToDetections = (input: RawDetection): Detection[] => {

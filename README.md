@@ -4,7 +4,7 @@
 [![npm](https://badge.fury.io/js/homebridge-unifi-protect-camera-motion.svg)](https://www.npmjs.com/package/homebridge-unifi-protect-camera-motion)
 [![donate](https://img.shields.io/badge/donate-paypal-green)](https://paypal.me/MrBeele?locale.x=nl_NL)
   
-This Homebridge plugin allows you to add your Unifi Protect Cameras (and their Motion Sensors) to Homekit.
+This Homebridge plugin allows you to add your Unifi Protect Cameras (and their Motion Sensors) to HomeKit.
 It adds smart detection by using a machine learning model to detect specific classes of objects in the camera view.
 
 ## How it Works
@@ -20,10 +20,10 @@ This plugin will automatically discover all the Unifi cameras from your Protect 
 ## Motion Events and object detection
 
 The plugin uses the Unifi Protect API to get motion events on a per camera basis.
-When motion has been detected one of the two methods below will be used to generate a motion notification in Homekit:
+When motion has been detected one of the two methods below will be used to generate a motion notification in HomeKit:
 
 * The basic method: The "score" of the Unifi Protect motion event. (Which currently has a bug and is 0 as long as the motion is ongoing.)
-* The advanced method: Object detection by use of yolov5. (recommended)
+* The advanced method: Object detection by use of YoLoV5. (recommended)
   This logic/model runs on-device, and no data will be sent to any online/external/cloud source or service.
   It is based on the [coco ssd](https://github.com/tensorflow/tfjs-models/tree/master/coco-ssd) project.
   
@@ -125,7 +125,7 @@ If you are using Homebridge Config X, it will do its best to alert you to any sy
 | controller_rtsp        | string   | yes       | /             | Contains the base URL to be used for playing back the RTSP streams, as seen in the RTSP configuration (no / at the end)                                                                                                                                                                                                                    |
 | username               | string   | yes       | /             | Contains the username that is used to login in the web UI                                                                                                                                                                                                                                                                                  |
 | password               | string   | yes       | /             | Contains the password that is used to login in the web UI                                                                                                                                                                                                                                                                                  |
-| excluded_cameras       | no       | string[]  | []            | An array that contains the IDs of the cameras which should be excluded from the enumeration in Homekit, all available IDs are printed during startup                                                                                                                                                                                       |
+| excluded_cameras       | no       | string[]  | []            | An array that contains the IDs of the cameras which should be excluded from the enumeration in HomeKit, all available IDs are printed during startup                                                                                                                                                                                       |
 | motion_interval        | number   | yes       | /             | Contains the interval in milliseconds used to check for motion, a good default is 5000 milliseconds                                                                                                                                                                                                                                        |
 | motion_repeat_interval | number   | no        | /             | Contains the repeat interval in milliseconds during which new motion events will not be triggered if they belong to the same ongoing motion, a good default is 30000 to 60000 milliseconds. This will prevent a bunch of notifications for events which are longer than the motion_interval! Omit this field to disable this functionality |
 | motion_score           | number   | yes       | /             | Contains the minimum score in % that a motion event has to have to be processed, a good default is 50%, set this to 0 when using enhanced motion!                                                                                                                                                                                          |
@@ -160,13 +160,13 @@ To enable the upload to Google Photos functionality please [read the relevant wi
 #### Camera configuration
 
 * Make sure each of your Unifi cameras has at least one RTSP stream enabled.
-  However, I suggest enabling all available qualities for the best user experience as the plugin will choose the most appropriate one based on the request coming from Homekit.
+  However, I suggest enabling all available qualities for the best user experience as the plugin will choose the most appropriate one based on the request coming from HomeKit.
   * To enable an RTSP stream: Login on the Protect web UI and go the settings of the camera and open the 'manage' tab   
       Make sure all your cameras have the same port for the RTSP stream!  
       For optimal results it is best to assign a static ip to your cameras  
       ![Enable RTSP stream](resources/images/readme/enable_rtsp.jpg?raw=true "CloudKey Gen2 Plus")  
   
-### How to add the cameras to your Homekit setup
+### How to add the cameras to your HomeKit setup
 
 As per 0.4.1 the enumerated cameras and accompanying switches/triggers will show up automatically, You don't need to add them in manually anymore!
 If you add your Homebridge instance to the Home app the cameras will automatically be there.
@@ -185,8 +185,8 @@ Tap on a camera preview to open the camera feed, click the settings icon and scr
   
 ### Tested with
   
-* Ubuntu VM with node 16
-* UDM Pro with Protect 2.0.x
+* Ubuntu VM with node 20/22
+* UDM Pro with Protect 4.x.y
   <br/><br/>![CloudKey Gen2 Plus](resources/images/readme/cloudkey-gen2plus.jpg?raw=true "CloudKey Gen2 Plus")  
 * 2x Ubiquiti UniFi Video UVC-G3-AF - PoE Camera  
   <br/><br/>![Camera UVC-G3-AF](resources/images/readme/camera.jpeg?raw=true "Camera UVC-G3-AF")  
@@ -197,8 +197,8 @@ Tap on a camera preview to open the camera feed, click the settings icon and scr
   
 #### Limitations
 
-* Running this plugin on CPUs that do not support AVX (Celerons in NAS systems, ...) is not supported because there are no prebuilt Tensorflow binaries.
-  Compiling Tensorflow from scratch is out of scope for this project!
+* Running this plugin on CPUs that do not support AVX (Celerons in NAS systems, ...) is not supported because there are no prebuilt TensorFlow binaries.
+  Compiling TensorFlow from scratch is out of scope for this project!
   * Run it on a Raspberry Pi or machine with macOS / Windows / Linux (Debian based)
 * Unifi Protect has a snapshot saved for every event, and there is an API to get these (with Width & Height), but the actual saved image is pretty low res and is scaled up to 1080p.
   Using the Anonymous snapshot actually gets a full resolution snapshot which is better for object detection.  
@@ -210,7 +210,7 @@ Tap on a camera preview to open the camera feed, click the settings icon and scr
 #### TODOs
 
 * Add more unit and integration tests (Ongoing)
-* Add support for MQTT (Ongoing)
+* ~~Add support for MQTT ~~ (Done)
 * ~~Upgrade tfjs-node, now held back because newer versions (Upgrade to 2.x.x in future release)~~ (Done)
 * ~~Implement required changes to make this work with Unifi OS~~
 * ~~Figure out how to get higher res streams on iPhone (only iPad seems to request 720p streams)~~ (Done)

@@ -5,7 +5,7 @@ import torch
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
 
 app = Flask(__name__)
-app.config["UPLOAD_FOLDER"] = "/var/lib/homebridge" # swap to ./ for testing locally
+app.config["UPLOAD_FOLDER"] = "./" #"/var/lib/homebridge" # swap to ./ for testing locally
 
 @app.route("/", methods=["POST"])
 def upload_file():

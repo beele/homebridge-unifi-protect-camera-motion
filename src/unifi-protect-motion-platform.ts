@@ -15,9 +15,9 @@ import { MotionDetector } from "./motion/motion.js";
 import { PLATFORM_NAME, PLUGIN_NAME } from "./settings.js";
 import { CameraConfig } from "./streaming/camera-config.js";
 import { UnifiCameraStreaming } from "./streaming/unifi-camera-streaming.js";
-import { UnifiStreamingDelegate } from "./streaming/unifi-streaming-delegate.js";
 import { Unifi, UnifiCamera, UnifiConfig } from "./unifi/unifi.js";
 import { Mqtt } from './utils/mqtt.js';
+import { ProtectStreamingDelegate } from './streaming/streaming-delegate.js';
 
 export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
 
@@ -53,7 +53,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
         if (!this.unifi) {
             this.unifi = new Unifi(this.config.unifi as UnifiConfig, this.log);
             this.unifi.authenticate();
-            UnifiStreamingDelegate.unifi = this.unifi;
+            ProtectStreamingDelegate.unifi = this.unifi;
         }
 
         let cameras: UnifiCamera[] = [];
@@ -135,7 +135,7 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
      * This is called manually by us for newly added accessories, and is called automatically by Homebridge for accessories that have already been added!
      * @param cameraAccessory 
      */
-    public configureAccessory(cameraAccessory: PlatformAccessory): void {
+    public configureAccessory = (cameraAccessory: PlatformAccessory): void => {
         this.log.info('Configuring accessory ' + cameraAccessory.displayName);
 
         cameraAccessory.on(PlatformAccessoryEvent.IDENTIFY, () => {
@@ -146,8 +146,9 @@ export class UnifiProtectMotionPlatform implements DynamicPlatformPlugin {
     }
 
     private filterValidCameras = async (): Promise<UnifiCamera[]> => {
-        return (await this.unifi?.enumerateMotionCameras() ?? [])
+        return ((await this.unifi?.enumerateMotionCameras()) ?? [])
             .filter((camera: UnifiCamera) => {
+                console.log(camera);
                 if (!(this.config.unifi as UnifiConfig).excluded_cameras.includes(camera.id) && camera.streams.length >= 1) {
                     return camera;
                 } else if ((this.config.unifi as UnifiConfig).excluded_cameras.includes(camera.id)) {

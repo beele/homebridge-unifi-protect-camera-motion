@@ -43,6 +43,7 @@
         "googlephotos": "^0.3.5",
         "mqtt": "^5.10.3",
         "homebridge-lib": "^7.1.0",
+        "homebridge-plugin-utils": "^1.11.3",
         "unifi-protect": "^4.17.0"
     },
     "devDependencies": {

@@ -8,11 +8,18 @@ export class Unifi {
 
     private readonly unifiProtectApi: ProtectApi;
 
+    private bootstrapData: Promise<ProtectNvrBootstrap>;
+    private bootstrapDataResolver!: Function;
+
     private motionEventCallback: ((event: UnifiMotionEvent) => Promise<void>) | undefined;
 
     constructor(config: UnifiConfig, log: Logging) {
         this.log = log;
         this.config = config;
+
+        this.bootstrapData = new Promise((res, rej) => {
+            this.bootstrapDataResolver = res;
+        });
 
         this.unifiProtectApi = new ProtectApi(log);
     }
@@ -33,6 +40,7 @@ export class Unifi {
                 }
             });
             this.unifiProtectApi.once("bootstrap", (bootstrapJSON: ProtectNvrBootstrap) => {
+                this.bootstrapDataResolver(bootstrapJSON);
                 res();
             });
 
@@ -48,6 +56,7 @@ export class Unifi {
     public enumerateMotionCameras = async (): Promise<UnifiCamera[]> => {
         this.log.debug('Cameras retrieved, enumerating motion sensors');
 
+        await this.bootstrapData;
         const cams = this.unifiProtectApi.bootstrap?.cameras ?? [];
 
         return cams.map((cam) => {
@@ -57,17 +66,20 @@ export class Unifi {
 
             const streams: UnifiCameraStream[] = [];
             streams.push(
-                    ...cam.channels
+                ...cam.channels
                     .filter((channel) => channel.rtspAlias)
                     .map((channel) => {
-                    return {
-                        name: channel.name,
-                        alias: channel.rtspAlias,
-                        width: channel.width,
-                        height: channel.height,
-                        fps: channel.fps
-                    }
-                })
+                        return {
+                            id: channel.id,
+                            name: channel.name,
+                            alias: channel.rtspAlias,
+                            width: channel.width,
+                            height: channel.height,
+                            fps: channel.fps,
+                            bitrate: channel.bitrate,
+                            url: this.config.controller_rtsp + '/' + channel.rtspAlias
+                        }
+                    })
             );
 
             // Sort streams on highest res!
@@ -79,14 +91,23 @@ export class Unifi {
             return {
                 id: cam.id,
                 name: cam.name,
+
                 ip: cam.host,
                 mac: cam.mac,
+                online: cam.isConnected,
+
                 type: cam.type,
                 firmware: cam.firmwareVersion,
-                streams: streams,
+   
+                videoCodec: cam.videoCodec,
+                audioCodec: cam.featureFlags.audioCodecs.at(0) ?? '', // TODO: Is this correct?
+            
+                audioRecordingEnabled: cam.featureFlags.hasMic && cam.isMicEnabled,
                 supportsTwoWayAudio: cam.hasSpeaker && cam.speakerSettings.isEnabled,
-                talkbackSettings: cam.talkbackSettings
-            }
+                talkbackSettings: cam.talkbackSettings,
+
+                streams: streams,
+            }    
         });
     }
 
@@ -124,15 +145,15 @@ export class Unifi {
                         timestamp: event.payload.start,
                     };
                     break;
-                    case 'motion':
-                        mappedEvent = {
-                            id: event.header.id,
-                            cameraId: event.payload.camera,
-                            camera: undefined,
-                            score: undefined,
-                            timestamp: event.payload.start,
-                        };
-                        break;
+                case 'motion':
+                    mappedEvent = {
+                        id: event.header.id,
+                        cameraId: event.payload.camera,
+                        camera: undefined,
+                        score: undefined,
+                        timestamp: event.payload.start,
+                    };
+                    break;
                 default:
                     // TODO: Implement other cases!
                     this.log.warn('Unknown payload type: ' + event.payload.type);
@@ -158,46 +179,50 @@ export class Unifi {
         return (await this.unifiProtectApi.getSnapshot(unifCam, { width, height })) ?? undefined;
     }
 
-    public static generateStreamingUrlForBestMatchingResolution(baseSourceUrl: string, streams: UnifiCameraStream[], requestedWidth: number, requestedHeight: number): string {
+    public getWsEndpoint = async (endpoint: "livestream" | "talkback", params: URLSearchParams): Promise<string | null> => {
+        return await this.unifiProtectApi.getWsEndpoint(endpoint, params)
+    }
+
+    public static getBestMatchingStream(streams: UnifiCameraStream[], requestedWidth: number, requestedHeight: number): UnifiCameraStream | undefined {
         const targetResolution: number = requestedWidth * requestedHeight;
 
         const sortedStreams = streams
-            .map(((stream: UnifiCameraStream) => {
-                return {
-                    resolution: stream.width * stream.height,
-                    alias: stream.alias
-                };
-            }))
             .sort((a, b) => {
-                return b.resolution - a.resolution;
+                return b.width * b.height - a.width * a.height;
             });
 
-        const bestMatchingStream = sortedStreams
-            .filter((data: { alias: string; resolution: number }) => {
-                return data.resolution <= targetResolution;
+        return sortedStreams
+            .filter((stream) => {
+                return stream.width * stream.height <= targetResolution;
             })
             .at(0);
-
-        // TODO: What if there is no alias available?
-        const selectedAlias: string = (bestMatchingStream ?? sortedStreams.at(0) ?? {alias: ''}).alias;
-
-        return baseSourceUrl + selectedAlias;
     }
 }
 
 type ProtectEventPacketAddPayload = Exclude<ProtectEventPacket, 'payload'> & { payload: ProtectEventAdd };
 
 export type UnifiCamera = {
-    id: string;
     uuid?: string | undefined;
+
+    id: string;
     name: string;
+
     ip: string;
     mac: string;
+    online: boolean;
+
     type: string;
     firmware: string;
+
+    videoCodec: string;
+    audioCodec: string;
+
+    audioRecordingEnabled: boolean;
     supportsTwoWayAudio: boolean;
     talkbackSettings: UnifiTalkbackSettings;
+
     streams: UnifiCameraStream[];
+
     lastMotionEvent?: UnifiMotionEvent;
     lastDetectionSnapshot?: Buffer;
 }
@@ -216,11 +241,14 @@ export type UnifiTalkbackSettings = {
 }
 
 export type UnifiCameraStream = {
+    id: number;
     name: string;
     alias: string;
     width: number;
     height: number;
     fps: number;
+    bitrate: number;
+    url: string;
 }
 
 export type UnifiMotionEvent = {

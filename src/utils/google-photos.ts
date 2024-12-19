@@ -1,11 +1,11 @@
-import {IncomingMessage, ServerResponse} from "http";
-import {google} from "googleapis";
-import {OAuth2Client} from 'google-auth-library';
-import {Logging} from "homebridge";
+import { OAuth2Client } from 'google-auth-library';
+import { google } from "googleapis";
+import { Logging } from "homebridge";
+import { IncomingMessage, ServerResponse } from "http";
 
-import http from 'http';
 import fs from 'fs';
-import {promisify} from 'util';
+import http from 'http';
+import { promisify } from 'util';
 
 //@ts-ignore
 import Photos from 'googlephotos';
@@ -20,6 +20,7 @@ export class GooglePhotos {
     private readonly userStoragePath: string;
 
     private oauth2Client: OAuth2Client | undefined;
+    private oauth2CallbackServer: http.Server | undefined;
     private gPhotosPersistData: GooglePhotosPersistData | undefined;
 
     private initPerformed: boolean = false;
@@ -110,7 +111,8 @@ export class GooglePhotos {
              //Open this url and follow the instructions!
              const url = oauth2Client.generateAuthUrl({
                 access_type: 'offline',
-                scope: [Photos.Scopes.READ_AND_APPEND]
+                scope: [Photos.Scopes.READ_AND_APPEND],
+                prompt: 'consent', // This is needed to always get a refresh token!
             });
             this.log.info('Please log in on Google Photos to allow for uploading: ' + url);
         }
@@ -125,7 +127,7 @@ export class GooglePhotos {
             } else {
                 this.log.debug('Fetching new access token');
 
-                const {tokens} = await oauth2Client.getToken(await this.getAuthCodeFromOauth2callback());
+                const { tokens } = await oauth2Client.getToken(await this.getAuthCodeFromOauth2callback());
                 oauth2Client.setCredentials(tokens);
 
                 if (tokens.refresh_token) {
@@ -163,7 +165,6 @@ export class GooglePhotos {
                 }
 
                 response.end('OAuth2 callback handled!');
-                server.close();
 
                 const code = url.searchParams.get('code');
                 if (!code) {
@@ -171,10 +172,15 @@ export class GooglePhotos {
                     return;
                 }
 
+                this.oauth2CallbackServer?.close();
+                this.oauth2CallbackServer = undefined;
+
                 res(code);
             };
 
-            const server = http.createServer(requestHandler).listen(8888);
+            if (!this.oauth2CallbackServer) {
+                this.oauth2CallbackServer = http.createServer(requestHandler).listen(8080);
+            }
         });
     }
 
