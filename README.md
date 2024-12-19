@@ -98,7 +98,8 @@ Next, open the `config.json` that contains your Homebridge configuration, and ad
         "username": "MQTT-BROKER-USERNAME",
         "password": "MQTT-BROKER-PASSWORD",
         "topicPrefix": "motion/cameras"
-    }
+    },
+    "hksv_enabled": false
 }  
 ```  
 
@@ -157,11 +158,17 @@ To enable the upload to Google Photos functionality please [read the relevant wi
 | password    | string | no       | /             | This field contains the password for the MQTT broker connection, if any                                            |
 | topicPrefix | string | no       | /             | This field contains the optional topic prefix. Each motion event will be dispatched under `topicPrefix/cameraName` |
 
+#### HKSV configuration
+
+| Field        | Type    | Required | Default value | Description                                                                                                        |
+| ------------ | ------- | -------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
+| hksv_enabled | boolean | no       | false         | When set to true should enable HomeKit Secure Video. This is experimental and not tested!                          |
+
 #### Camera configuration
 
 * Make sure each of your Unifi cameras has at least one RTSP stream enabled.
   However, I suggest enabling all available qualities for the best user experience as the plugin will choose the most appropriate one based on the request coming from HomeKit.
-  * To enable an RTSP stream: Login on the Protect web UI and go the settings of the camera and open the 'manage' tab   
+  * To enable an RTSP stream: Login on the Protect web UI and go the settings of the camera and open the 'manage' tab
       Make sure all your cameras have the same port for the RTSP stream!  
       For optimal results it is best to assign a static ip to your cameras  
       ![Enable RTSP stream](resources/images/readme/enable_rtsp.jpg?raw=true "CloudKey Gen2 Plus")  
