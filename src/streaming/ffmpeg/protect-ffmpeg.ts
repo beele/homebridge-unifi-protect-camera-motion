@@ -3,6 +3,9 @@
  * protect-ffmpeg.ts: Base class to provide FFmpeg process control and capability introspection.
  *
  * This module is heavily inspired by the homebridge and homebridge-camera-ffmpeg source code. Thank you for your contributions to the HomeKit world.
+ * 
+ * 
+ * Heavily modified by Beele for homebridge-unifi-protect-camera-motion
  */
 import { API, HAP, Logging, Nullable, StreamRequestCallback } from "homebridge";
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";

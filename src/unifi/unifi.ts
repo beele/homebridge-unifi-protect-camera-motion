@@ -1,6 +1,6 @@
 import { Logging } from "homebridge";
 
-import { ProtectApi, ProtectEventAdd, ProtectEventPacket, ProtectNvrBootstrap } from "unifi-protect";
+import { ProtectApi, ProtectEventAdd, ProtectEventPacket, ProtectLivestream, ProtectNvrBootstrap } from "unifi-protect";
 export class Unifi {
 
     private readonly log: Logging;
@@ -181,6 +181,10 @@ export class Unifi {
 
     public getWsEndpoint = async (endpoint: "livestream" | "talkback", params: URLSearchParams): Promise<string | null> => {
         return await this.unifiProtectApi.getWsEndpoint(endpoint, params)
+    }
+
+    public createLivestream = (): ProtectLivestream => {
+        return this.unifiProtectApi.createLivestream();
     }
 
     public static getBestMatchingStream(streams: UnifiCameraStream[], requestedWidth: number, requestedHeight: number): UnifiCameraStream | undefined {

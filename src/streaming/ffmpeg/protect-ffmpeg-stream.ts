@@ -2,6 +2,8 @@
  *
  * protect-ffmpeg-stream.ts: Provide FFmpeg process control to support HomeKit livestreaming.
  *
+ * 
+ *  * Heavily modified by Beele for homebridge-unifi-protect-camera-motion
  */
 import { ChildProcessWithoutNullStreams } from "child_process";
 import { Logging, Nullable, StreamRequestCallback } from "homebridge";

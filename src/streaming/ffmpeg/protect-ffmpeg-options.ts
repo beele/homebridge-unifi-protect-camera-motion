@@ -1,6 +1,9 @@
 /* Copyright(C) 2023-2024, HJD (https://github.com/hjdhjd). All rights reserved.
  *
  * protect-ffmpeg-options.ts: FFmpeg decoder and encoder options with hardware-accelerated codec support where available.
+ * 
+ * 
+ * Heavily modified by Beele for homebridge-unifi-protect-camera-motion
  */
 import { H264Level, H264Profile } from "homebridge";
 import { PROTECT_HOMEKIT_STREAMING_HEADROOM, PROTECT_RPI_GPU_MINIMUM } from "../../settings.js";

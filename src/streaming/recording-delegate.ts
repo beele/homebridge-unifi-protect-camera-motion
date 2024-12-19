@@ -1,4 +1,3 @@
-// @ts-nocheck
 /* Copyright(C) 2017-2024, HJD (https://github.com/hjdhjd). All rights reserved.
  *
  * protect-record.ts: Homebridge camera recording delegate implementation for UniFi Protect to support HomeKit Secure Video.
@@ -6,6 +5,9 @@
  * The author would like to acknowledge and thank Supereg (https://github.com/Supereg) and Sunoo (https://github.com/Sunoo)
  * for being sounding boards as I worked through several ideas and iterations of this work. Their camaraderie and support was
  * deeply appreciated.
+ * 
+ * 
+ * Heavily modified by Beele for homebridge-unifi-protect-camera-motion
  */
 import {
     API, CameraRecordingConfiguration, CameraRecordingDelegate, HAP, HDSProtocolSpecificErrorReason,
@@ -13,11 +15,12 @@ import {
     PlatformAccessory, RecordingPacket
 } from "homebridge";
 import { PROTECT_HKSV_TIMESHIFT_BUFFER_MAXDURATION } from "../settings.js";
-import { UnifiCamera, UnifiCameraStream } from "../unifi/unifi.js";
+import { Unifi, UnifiCamera, UnifiCameraStream } from "../unifi/unifi.js";
 import { FfmpegRecordingProcess } from "./ffmpeg/protect-ffmpeg-record.js";
 import { FakePlatform } from "./ffmpeg/protect-ffmpeg.js";
 import { FfmpegOptions } from "./ffmpeg/protect-ffmpeg-options.js";
 import { ProtectTimeshiftBuffer } from "./unifi-camera-recording.js";
+import { ProtectStreamingDelegate } from "./streaming-delegate.js";
 
 // Camera recording delegate implementation for Protect.
 export class ProtectRecordingDelegate implements CameraRecordingDelegate {
@@ -35,6 +38,8 @@ export class ProtectRecordingDelegate implements CameraRecordingDelegate {
     private readonly ffmpegOptions: FfmpegOptions;
     private ffmpegStream?: FfmpegRecordingProcess;
 
+    private readonly streaming: ProtectStreamingDelegate;
+
     private isInitialized: boolean;
     private isTransmitting: boolean;
     private transmitListener?: ((segment: Buffer) => void);
@@ -50,7 +55,7 @@ export class ProtectRecordingDelegate implements CameraRecordingDelegate {
     private timeshiftedSegments: number;
 
     // Create an instance of the HKSV recording delegate.
-    constructor(platform: FakePlatform, protectCamera: UnifiCamera, accessory: PlatformAccessory, ffmpegOptions: FfmpegOptions, logging: Logging) {
+    constructor(platform: FakePlatform, protectCamera: UnifiCamera, accessory: PlatformAccessory, ffmpegOptions: FfmpegOptions, streaming: ProtectStreamingDelegate, logging: Logging) {
 
         this.api = platform.api;
         this.hap = platform.hap;
@@ -63,6 +68,7 @@ export class ProtectRecordingDelegate implements CameraRecordingDelegate {
         this.rtspStream = null;
 
         this.ffmpegOptions = ffmpegOptions;
+        this.streaming = streaming;
 
         this.isInitialized = false;
         this.isTransmitting = false;
@@ -73,7 +79,7 @@ export class ProtectRecordingDelegate implements CameraRecordingDelegate {
 
         this._isRecording = false;
 
-        this.timeshift = new ProtectTimeshiftBuffer(platform, protectCamera, accessory, logging);
+        this.timeshift = new ProtectTimeshiftBuffer(platform, protectCamera, accessory, ffmpegOptions, streaming, logging);
         this.timeshiftedSegments = 0;
     }
 
@@ -228,7 +234,7 @@ export class ProtectRecordingDelegate implements CameraRecordingDelegate {
         const oldRtspEntry = this.rtspStream;
 
         // Figure out which camera channel we should use for the based on the HKSV-requested resolution.
-        this.rtspStream = this.camera.findRecordingRtsp(this.recordingConfig.videoCodec.resolution[0], this.recordingConfig.videoCodec.resolution[1]);
+        this.rtspStream = Unifi.getBestMatchingStream(this.camera.streams, this.recordingConfig.videoCodec.resolution[0], this.recordingConfig.videoCodec.resolution[1]) ?? null;
 
         if (!this.rtspStream) {
             this.log.error("%s: no valid RTSP stream profile was found for this camera.", timeshiftError);
@@ -241,13 +247,12 @@ export class ProtectRecordingDelegate implements CameraRecordingDelegate {
         }
 
         // If we haven't changed the camera channel or lens we're using, and we've already started timeshifting, we're done.
-        if (this.timeshift.isStarted && (this.rtspStream.id === oldRtspEntry?.id) &&
-            ((this.rtspStream.lens === undefined) || (this.rtspStream.lens === oldRtspEntry?.lens))) {
+        if (this.timeshift.isStarted && (this.rtspStream.id === oldRtspEntry?.id)) { // && ((this.rtspStream.lens === undefined) || (this.rtspStream.lens === oldRtspEntry?.lens))
             return true;
         }
 
         // Fire up the timeshift buffer. If we've got multiple lenses, we use the first channel and explicitly request the lens we want.
-        if (!(await this.timeshift.start(this.rtspStream.id, this.rtspStream.lens))) {
+        if (!(await this.timeshift.start(this.rtspStream.id))) { // this.rtspStream.lens
             this.log.error("%s: unable to connect to the livestream API on the Protect controller.", timeshiftError);
             return false;
         }
@@ -284,11 +289,11 @@ export class ProtectRecordingDelegate implements CameraRecordingDelegate {
 
         // Check to see if the user has audio enabled or disabled for recordings.
         const isAudioActive = (this.camera.audioRecordingEnabled &&
-            (this.camera.stream.controller.recordingManagement?.recordingManagementService
+            (this.streaming.controller.recordingManagement?.recordingManagementService
                 .getCharacteristic(this.api.hap.Characteristic.RecordingAudioActive).value === 1)) ? true : false;
 
         // Start a new FFmpeg instance to transcode using HomeKit's requirements.
-        this.ffmpegStream = new FfmpegRecordingProcess(this.platform, this.camera, this.recordingConfig, this.rtspStream, isAudioActive, this.log);
+        this.ffmpegStream = new FfmpegRecordingProcess(this.platform, this.camera, this.recordingConfig, this.rtspStream, this.ffmpegOptions, this.streaming, isAudioActive, this.log);
         this.closedReason = undefined;
         this.hksvRequestedClose = false;
         this.isTransmitting = true;

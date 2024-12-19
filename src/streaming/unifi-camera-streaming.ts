@@ -1,4 +1,4 @@
-import { API, Logging, PlatformAccessory } from "homebridge";
+import { API, Logging, PlatformAccessory, PlatformConfig } from "homebridge";
 import { RtpPortAllocator } from "homebridge-plugin-utils";
 import { readFileSync } from "node:fs";
 import os from "node:os";
@@ -13,7 +13,7 @@ export class UnifiCameraStreaming {
 
     private static _hostSystem: string = '';
 
-    public static setupStreaming(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: any, api: API, log: Logging): void {
+    public static setupStreaming(cameraConfig: CameraConfig, accessory: PlatformAccessory, config: PlatformConfig, api: API, log: Logging): void {
         this.probeHwOs();
 
         // Update the camera config
@@ -27,7 +27,7 @@ export class UnifiCameraStreaming {
             api: api,
             hap: api.hap,
             config: {
-                hksv: false,
+                hksv: config["hksv_enabled"] ?? false,
                 ffmpegOptions: PROTECT_FFMPEG_OPTIONS,
                 videoEncoder: 'libx264',
                 videoProcessor

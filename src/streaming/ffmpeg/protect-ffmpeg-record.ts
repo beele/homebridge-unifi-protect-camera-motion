@@ -1,29 +1,38 @@
-// @ts-nocheck
 /* Copyright(C) 2017-2024, HJD (https://github.com/hjdhjd). All rights reserved.
  *
  * protect-ffmpeg-record.ts: Provide FFmpeg process control to support HomeKit Secure Video.
  *
+ * 
+ * Heavily modified by Beele for homebridge-unifi-protect-camera-motion
  */
 import { CameraRecordingConfiguration, Logging } from "homebridge";
 import { once } from "node:events";
 import { PROTECT_HKSV_IDR_INTERVAL, PROTECT_HKSV_TIMEOUT } from "../../settings.js";
 import { UnifiCamera, UnifiCameraStream } from "../../unifi/unifi.js";
 import { FakePlatform, FfmpegProcess } from "./protect-ffmpeg.js";
+import { FfmpegOptions } from "./protect-ffmpeg-options.js";
+import { ProtectStreamingDelegate } from "../streaming-delegate.js";
 
 // FFmpeg HomeKit Streaming Video recording process management.
 export class FfmpegRecordingProcess extends FfmpegProcess {
 
-    public isTimedOut: boolean;
+    private readonly ffmpegOptions: FfmpegOptions;
+    private readonly streaming: ProtectStreamingDelegate;
 
     private isLoggingErrors: boolean;
 
     private recordingConfig: CameraRecordingConfiguration;
     private recordingBuffer: { data: Buffer, header: Buffer, length: number, type: string }[];
 
+    public isTimedOut: boolean;
+
     // Create a new FFmpeg process instance.
-    constructor(platform: FakePlatform, camera: UnifiCamera, recordingConfig: CameraRecordingConfiguration, rtspStream: UnifiCameraStream, isAudioActive: boolean, logging: Logging) {
+    constructor(platform: FakePlatform, camera: UnifiCamera, recordingConfig: CameraRecordingConfiguration, rtspStream: UnifiCameraStream, ffmpegOptions: FfmpegOptions, streaming: ProtectStreamingDelegate, isAudioActive: boolean, logging: Logging) {
         // Initialize our parent.
         super(platform, camera, logging);
+
+        this.ffmpegOptions = ffmpegOptions;
+        this.streaming = streaming;
 
         // Initialize our state.
         this.isTimedOut = false;
@@ -54,14 +63,14 @@ export class FfmpegRecordingProcess extends FfmpegProcess {
             "-nostats",
             "-fflags", "+discardcorrupt+flush_packets+genpts+igndts+nobuffer",
             "-err_detect", "ignore_err",
-            ...camera.stream.ffmpegOptions.videoDecoder,
+            ...this.ffmpegOptions.videoDecoder,
             "-max_delay", "500000",
             "-flags", "low_delay",
-            "-probesize", (camera.stream.hksv?.timeshift.buffer?.length ?? camera.stream.probesize).toString(),
+            "-probesize", (this.streaming.hksv?.timeshift.buffer?.length ?? this.streaming.probesize).toString(),
             "-r", rtspStream.fps.toString(),
             "-f", "mp4",
             "-i", "pipe:0",
-            "-ss", Math.max((camera.stream.hksv?.timeshift.time ?? 0) - recordingConfig.prebufferLength, 0).toString() + "ms"
+            "-ss", Math.max((this.streaming.hksv?.timeshift.time ?? 0) - recordingConfig.prebufferLength, 0).toString() + "ms"
         ];
 
         // Configure our recording options for the video stream:
@@ -77,7 +86,7 @@ export class FfmpegRecordingProcess extends FfmpegProcess {
         // -metadata                     Set the metadata to the name of the camera to distinguish between FFmpeg sessions.
         this.commandLineArgs.push(
             "-map", "0:v:0",
-            ...camera.stream.ffmpegOptions.recordEncoder({
+            ...this.streaming.ffmpegOptions.recordEncoder({
 
                 bitrate: recordingConfig.videoCodec.parameters.bitRate,
                 fps: recordingConfig.videoCodec.resolution[2],

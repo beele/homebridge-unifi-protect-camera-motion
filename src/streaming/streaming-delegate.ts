@@ -3,6 +3,9 @@
  * protect-stream.ts: Homebridge camera streaming delegate implementation for Protect.
  *
  * This module is heavily inspired by the homebridge and homebridge-camera-ffmpeg source code. Thank you for your contributions to the HomeKit world.
+ * 
+ * 
+ * Heavily modified by Beele for homebridge-unifi-protect-camera-motion
  */
 import {
     API, AudioRecordingCodecType, AudioRecordingSamplerate, AudioStreamingCodecType, AudioStreamingSamplerate, CameraController,
@@ -26,6 +29,7 @@ import { FfmpegOptions } from "./ffmpeg/protect-ffmpeg-options.js";
 import { ImageUtils } from "../utils/image-utils.js";
 import { Canvas, loadImage } from "canvas";
 import { ProtectRecordingDelegate } from "./recording-delegate.js";
+import { LivestreamManager } from "./unifi-camera-live.js";
 
 type OngoingSessionEntry = {
     ffmpeg: FfmpegStreamingProcess[],
@@ -82,22 +86,23 @@ export class ProtectStreamingDelegate implements CameraStreamingDelegate {
     private probesizeOverrideCount: number;
     private probesizeOverrideTimeout?: NodeJS.Timeout;
 
-    //public hksv: Nullable<ProtectRecordingDelegate>;
+    public hksv: Nullable<ProtectRecordingDelegate>;
+    public livestreamManager: Nullable<LivestreamManager>;
 
     public controller: CameraController;
 
     // Create an instance of a HomeKit streaming delegate.
-    constructor(platform: FakePlatform, protectCamera: UnifiCamera, accessory: PlatformAccessory, resolutions: [number, number, number][], logging: Logging) {
+    constructor(platform: FakePlatform, camera: UnifiCamera, accessory: PlatformAccessory, resolutions: [number, number, number][], logging: Logging) {
 
         this.api = platform.api;
         this.hap = platform.hap;
         this.log = logging;
 
         // Configure our hardware acceleration support.
-        this.ffmpegOptions = new FfmpegOptions(platform, protectCamera, logging);
+        this.ffmpegOptions = new FfmpegOptions(platform, camera, logging);
 
         this.platform = platform;
-        this.camera = protectCamera;  
+        this.camera = camera;  
 
         this.verboseFfmpeg = false;
 
@@ -107,10 +112,12 @@ export class ProtectStreamingDelegate implements CameraStreamingDelegate {
         this.probesizeOverride = 0;
         this.probesizeOverrideCount = 0;
 
-        //this.hksv = null;
+        this.hksv = null;
+        this.livestreamManager = null;
         // Setup for HKSV, if enabled.
         if (this.platform.config.hksv) {
-            //this.hksv = new ProtectRecordingDelegate(platform, protectCamera, accessory, this.ffmpegOptions, logging);
+            this.hksv = new ProtectRecordingDelegate(platform, camera, accessory, this.ffmpegOptions, this, logging);
+            this.livestreamManager = new LivestreamManager(ProtectStreamingDelegate.unifi, camera, logging);
         }
 
         // Setup for our camera controller.
@@ -122,7 +129,7 @@ export class ProtectStreamingDelegate implements CameraStreamingDelegate {
             delegate: this,
 
             // Our recording capabilities for HomeKit Secure Video.
-            /*recording: !this.platform.config.hksv ? undefined : {
+            recording: !this.platform.config.hksv ? undefined : {
                 delegate: this.hksv as ProtectRecordingDelegate,
                 options: {
                     audio: {
@@ -155,7 +162,7 @@ export class ProtectStreamingDelegate implements CameraStreamingDelegate {
                         type: this.api.hap.VideoCodecType.H264
                     }
                 }
-            }, */
+            },
 
             streamingOptions: {
                 audio: {

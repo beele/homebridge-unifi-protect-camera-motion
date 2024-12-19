@@ -709,6 +709,13 @@
                 "default": "",
                 "description": "Provide an absolute path to an FFmpeg binary to use that binary!",
                 "required": false
+            },
+            "hksv_enabled": {
+                "title": "Enable HomeKit Secure Video (HKSV)?",
+                "type": "boolean",
+                "default": false,
+                "description": "If enabled the HKSV functionality will be enabled, this requires a paid iCloud subscription to use!",
+                "required": false
             }
         }
     }
