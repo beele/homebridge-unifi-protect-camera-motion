@@ -293,7 +293,7 @@ export class MotionDetector {
 
         const temp: string = fileURLToPath(import.meta.url).replace('motion.js', '');
         try {
-            execa('python3', ['detector.py'], { cwd: temp + 'detector/' })
+            execa('../../../python-env/venv/bin/python', ['detector.py'], { cwd: temp + 'detector/' })
             .then((result) => {
                 this.log.debug(result.stdout);
                 this.log.warn(result.stderr);
