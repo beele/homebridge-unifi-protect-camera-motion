@@ -35,7 +35,7 @@
         "homebridge": ">=1.8.5"
     },
     "dependencies": {
-        "canvas": "^2.11.2",
+        "canvas": "^3.2.1",
         "execa": "^9.5.2",
         "ffmpeg-for-homebridge": "^2.1.7",
         "get-port": "^7.1.0",
